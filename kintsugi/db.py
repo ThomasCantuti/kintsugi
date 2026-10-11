@@ -6,7 +6,7 @@ from pymongo.operations import SearchIndexModel
 
 from . import config
 
-client = AsyncMongoClient(config.MONGODB_URI)
+client = AsyncMongoClient(config.MONGODB_URI, tz_aware=True)
 db = client[config.DB_NAME]
 
 # Tool data; every doc carries `world` ("live" or "eval:<run>:<case>")
