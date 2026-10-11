@@ -19,7 +19,7 @@ export type Episode = {
 export type Progress = { lesson: string; cases?: string[]; case?: string; passed?: boolean; retry?: boolean }
 export type Cycle = {
   _id: string; status: string; source?: string; kind?: string; tier?: string; correction?: string | null
-  lessons?: string[]; progress?: Progress[]; version?: number; created_at: string; ended_at?: string
+  lessons?: string[]; progress?: Progress[]; version?: number; why?: string; created_at: string; ended_at?: string
 }
 export type Run = {
   _id: string; label: string; split: string; model: string; genome_version: number | null

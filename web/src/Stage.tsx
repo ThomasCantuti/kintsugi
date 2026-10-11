@@ -80,10 +80,12 @@ function LoopRail({ view, state }: { view: View | null; state: State }) {
   const gatePass = ring ? ring.labels.slice(1).filter(l => ring.results[l]).length : 0
 
   const steps: { k: string; title: string; tag: string; state: StepState; open: boolean; sum: string; body?: React.ReactNode }[] = !view ? [] : [
-    { k: 'signal', title: 'Signal', tag: c!.kind === 'raindrop' ? 'raindrop' : 'episodes', state: 'done', open: st === 'proposing', sum: `${view.who}${view.correction ? ': a correction' : ''}`,
+    { k: 'signal', title: 'Signal', tag: c!.kind === 'raindrop' ? 'raindrop' : 'episodes', state: 'done', open: st === 'proposing' || st === 'false_alarm',
+      sum: `${view.who}${view.correction ? ': a correction' : ''}`,
       body: <><p><span className={'src ' + (c!.kind === 'raindrop' ? 'raindrop' : view.tier)}>{c!.kind === 'raindrop' ? 'raindrop' : view.tier}</span> {c!.kind === 'telegram' ? (view.tier === 'owner' ? 'reacted 👎 and replied:' : 'tried to teach a rule:') : `flagged ${c!.source}:`}</p>
-        {view.correction ? <p className="quote">"{view.correction}"</p> : <p className="mute">The supervisor is writing the correction from the failed checks.</p>}</> },
-    { k: 'propose', title: 'Propose', tag: 'supervisor', state: st === 'proposing' ? 'active' : view.cands.length ? 'done' : 'bad', open: st === 'proposing' || live.length > 0,
+        {st === 'false_alarm' ? <p className="mute">False alarm: the supervisor found this turn already correct{c!.why ? ` (${c!.why})` : ''}. Nothing to learn.</p>
+          : view.correction ? <p className="quote">"{view.correction}"</p> : <p className="mute">The supervisor is writing the correction from the failed checks.</p>}</> },
+    { k: 'propose', title: 'Propose', tag: 'supervisor', state: st === 'proposing' ? 'active' : view.cands.length ? 'done' : st === 'false_alarm' ? 'skip' : 'bad', open: st === 'proposing' || live.length > 0,
       sum: `${live.length} candidate${live.length === 1 ? '' : 's'}`,
       body: st === 'proposing' ? <p>Writing up to 3 alternative lessons; each one alone must cover the whole correction.</p>
         : <div className="cands">
@@ -141,7 +143,8 @@ function LoopRail({ view, state }: { view: View | null; state: State }) {
   }, [activeKey, c?._id])
 
   const sub = !view ? 'waiting for a signal' : view.ended
-    ? (st === 'accepted' ? `last cycle shipped ${shipped?._id ?? ''}` : st === 'quarantined' ? 'waiting for Thomas' : st === 'duplicate' ? 'last cycle: already known' : 'last cycle: nothing shipped')
+    ? (st === 'accepted' ? `last cycle shipped ${shipped?._id ?? ''}` : st === 'quarantined' ? 'waiting for Thomas' : st === 'duplicate' ? 'last cycle: already known'
+      : st === 'false_alarm' ? 'last cycle: false alarm' : 'last cycle: nothing shipped')
     : `learning from ${view.who}`
   return (
     <section className="loop" aria-label="The learning loop">
@@ -362,6 +365,7 @@ export default function Stage({ state, events, onLesson }: { state: State; event
     : quarantined ? "A stranger's lesson is waiting for Thomas"
     : c && ['rejected', 'no_candidates'].includes(c.status) && endedAgo < RECENT ? 'No candidate passed the gate. Nothing changed.'
     : c?.status === 'duplicate' && endedAgo < RECENT ? 'Already known: nothing new to learn'
+    : c?.status === 'false_alarm' && endedAgo < RECENT ? 'False alarm: the flagged turn was already correct'
     : 'Tsugi is listening'
   const [flash, setFlash] = useState(false), lastV = useRef(g.version)
   useEffect(() => { if (g.version !== lastV.current) { lastV.current = g.version; setFlash(true); const t = setTimeout(() => setFlash(false), 1700); return () => clearTimeout(t) } }, [g.version])
