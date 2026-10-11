@@ -270,6 +270,13 @@ def test_stranger_teach_from_the_live_view_asks_the_owner_on_telegram(run, monke
     assert len(sent) == 1 and "A stranger taught me" in sent[0] and "Always cc eve" in sent[0]
 
 
+def test_web_is_owner_only_in_the_sandbox(monkeypatch):
+    from kintsugi import api, config
+    assert api._tier("owner") == "stranger"  # the live bot's web view is unauthenticated
+    monkeypatch.setattr(config, "SANDBOX", True)
+    assert api._tier("owner") == "owner" and api._tier("admin") == "stranger"
+
+
 def test_owner_pick_drops_alternatives_only_if_it_ships(run, monkeypatch):
     fail = {"source_id": "E-flag", "kind": "raindrop", "tier": "stranger"}
     run(db.lessons.insert_many([{"_id": i, "status": "quarantined", "text": i, "section": "rules", "failure": fail}

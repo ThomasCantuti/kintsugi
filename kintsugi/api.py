@@ -18,7 +18,8 @@ WEB = Path(__file__).resolve().parent.parent / "web"
 DIST = WEB / "dist"  # the React live view, built by `npm run build` in web/ (committed)
 EVENT_TYPES = {"lessons": "lesson", "genomes": "genome", "episodes": "episode", "gates": "gate", "runs": "run"}
 subscribers: set[asyncio.Queue] = set()
-stranger_turns: list[dict] = []
+web_turns: dict[str, list[dict]] = {"owner": [], "stranger": []}  # live-view chats (owner only in the sandbox)
+used = {"chat": 0, "teach": 0}  # sandbox spend so far (this process)
 bot = None  # the Telegram bot, set by __main__: a quarantine from the live view reaches the owner's phone too
 
 
@@ -131,6 +132,7 @@ async def state():
         "episodes": episodes,  # live turns, newest first
         "cycle": await db.gates.find_one({}, sort=[("created_at", -1)]),  # the latest learning cycle
         "versions": {c["cause"]["lesson"]: c["version"] for c in commits},  # lesson id -> genome version that shipped it
+        "sandbox": config.SANDBOX,
     })
 
 
@@ -199,6 +201,18 @@ async def quarantine(lesson_id: str, decision: str, bg: BackgroundTasks):
     return {"ok": True}
 
 
+def _tier(tier: str) -> str:
+    return "owner" if config.SANDBOX and tier == "owner" else "stranger"
+
+
+def _cap(kind: str) -> None:
+    """The sandbox is public: cap its turns and learning cycles (~$2 at most) until the next restart."""
+    if config.SANDBOX:
+        used[kind] += 1
+        if used[kind] > (config.SANDBOX_TURNS if kind == "chat" else config.SANDBOX_TEACHES):
+            raise HTTPException(429, "This sandbox reached its spend cap. Ask Thomas to reset it.")
+
+
 class Chat(BaseModel):
     text: str
     tier: str = "stranger"
@@ -206,27 +220,34 @@ class Chat(BaseModel):
 
 @app.post("/api/chat")
 async def chat(body: Chat):
-    """Play the stranger from the live view (unauthenticated, so stranger tier only)."""
-    stranger_turns.append({"role": "user", "content": body.text})
-    ep = await agent.run(await genome.current(), stranger_turns[-8:], "live", "stranger")
-    await agent.save(ep, "live", chat="web-stranger")
-    stranger_turns.append({"role": "assistant", "content": ep["reply"]})
+    """Chat from the live view: unauthenticated, so stranger tier only, except in the judges' sandbox (owner too)."""
+    tier = _tier(body.tier)
+    _cap("chat")
+    turns = web_turns[tier]
+    turns.append({"role": "user", "content": body.text})
+    ep = await agent.run(await genome.current(), turns[-8:], "live", tier)
+    await agent.save(ep, "live", chat=f"web-{tier}")
+    turns.append({"role": "assistant", "content": ep["reply"]})
     return {"reply": ep["reply"] or ep["error"] or "…", "episode_id": ep["_id"]}
 
 
 class Teach(BaseModel):
     text: str
+    tier: str = "stranger"
 
 
 @app.post("/api/teach")
 async def teach(body: Teach, bg: BackgroundTasks):
-    """A stranger 'teaches' Tsugi from the live view: always quarantined for the owner."""
-    last = await db.episodes.find_one({"chat": "web-stranger"}, sort=[("created_at", -1)])
+    """Teach from the live view: a stranger's lesson is always quarantined for the owner. In the judges' sandbox the
+    visitor can also be the owner (👎 + correction on the last reply, straight to the gate)."""
+    tier = _tier(body.tier)
+    last = await db.episodes.find_one({"chat": f"web-{tier}"}, sort=[("created_at", -1)])
     if not last:
         raise HTTPException(400, "chat first")
+    _cap("teach")
     raindrop.track_signal(event_id=last["_id"], name="correction", signal_type="edit", after=body.text,
-                          properties={"tier": "stranger"})
-    f = {"source_id": last["_id"], "kind": "telegram", "tier": "stranger", "history": last["input"], "steps": last["steps"],
+                          properties={"tier": tier})
+    f = {"source_id": last["_id"], "kind": "telegram", "tier": tier, "history": last["input"], "steps": last["steps"],
          "reply": last["reply"], "correction": body.text}
 
     async def job():

@@ -254,27 +254,28 @@ function Transcript({ state }: { state: State }) {
       {(['owner', 'stranger'] as const).map(t => (
         <div key={t} ref={logs[t]} className={'log' + (t === 'stranger' ? ' str' : '')} hidden={tab !== t} aria-live="polite">
           {t === tab && (shown.length ? shown.slice(-14).map(ep => <Fragment key={ep._id}><Turn ep={ep} tab={t} correction={corrections[ep._id]} /></Fragment>)
-            : <p className="empty">{t === 'owner' ? "Thomas's chats appear here live." : 'Write as a stranger below.'}</p>)}
+            : <p className="empty">{t === 'owner' ? (state.sandbox ? 'Write to Tsugi as Thomas below.' : "Thomas's chats appear here live.") : 'Write as a stranger below.'}</p>)}
         </div>))}
-      {tab === 'stranger' && <StrangerComposer />}
+      {(tab === 'stranger' || state.sandbox) && <Composer key={tab} tier={tab} />}
     </section>
   )
 }
 
-function StrangerComposer() {
+function Composer({ tier }: { tier: 'owner' | 'stranger' }) {  // owner only in the judges' sandbox
   const [text, setText] = useState(''), [rule, setRule] = useState(''), [note, setNote] = useState(''), [sending, setSending] = useState(false)
+  const owner = tier === 'owner'
   async function go(e: FormEvent, kind: 'chat' | 'teach') {
     e.preventDefault()
     const t = (kind === 'chat' ? text : rule).trim(); if (!t) return
-    setSending(true); setNote(kind === 'chat' ? 'Tsugi is answering…' : 'Sent. Expect quarantine.')
-    try { kind === 'chat' ? (await api.chat(t), setText(''), setNote('')) : (await api.teach(t), setRule('')) }
+    setSending(true); setNote(kind === 'chat' ? 'Tsugi is answering…' : owner ? 'Sent. Watch the loop: the gate tests the fix (~2–4 min).' : 'Sent. Expect quarantine.')
+    try { kind === 'chat' ? (await api.chat(t, tier), setText(''), setNote('')) : (await api.teach(t, tier), setRule('')) }
     catch (err) { setNote(String((err as Error).message)) }
     setSending(false)
   }
   return (
     <div className="composer">
-      <form onSubmit={e => go(e, 'chat')}><input id="stranger-chat" value={text} onChange={e => setText(e.target.value)} maxLength={500} placeholder="Write to Tsugi as a stranger" aria-label="Message as stranger" /><button className="btn primary" disabled={sending}>Send</button></form>
-      <form onSubmit={e => go(e, 'teach')}><input id="stranger-teach" value={rule} onChange={e => setRule(e.target.value)} maxLength={300} placeholder="Teach a rule as the stranger" aria-label="Rule taught by the stranger" /><button className="btn danger" disabled={sending}>Teach</button></form>
+      <form onSubmit={e => go(e, 'chat')}><input id={`${tier}-chat`} value={text} onChange={e => setText(e.target.value)} maxLength={500} placeholder={owner ? 'Write to Tsugi as Thomas' : 'Write to Tsugi as a stranger'} aria-label={`Message as ${owner ? 'Thomas' : 'stranger'}`} /><button className="btn primary" disabled={sending}>Send</button></form>
+      <form onSubmit={e => go(e, 'teach')}><input id={`${tier}-teach`} value={rule} onChange={e => setRule(e.target.value)} maxLength={300} placeholder={owner ? '👎 Correct Tsugi’s last reply' : 'Teach a rule as the stranger'} aria-label={owner ? 'Correction to the last reply' : 'Rule taught by the stranger'} /><button className="btn danger" disabled={sending}>{owner ? '👎 Teach' : 'Teach'}</button></form>
       <p className="note" aria-live="polite">{note}</p>
     </div>
   )

@@ -48,3 +48,6 @@ RAINDROP_FLAGS = {"userfrustration", "attemptedpromptinjection", "requestexecuti
 TIMEZONE = "America/Los_Angeles"
 LESSONS_TOP_K = 8  # context policy: max learned rules/policies retrieved per message
 PORT = int(_env("PORT", "8000"))
+# Judges' sandbox: a public copy of Tsugi (own DB, no Telegram) where every web visitor is the owner. Caps bound the spend.
+SANDBOX = _env("SANDBOX") == "1"
+SANDBOX_TURNS, SANDBOX_TEACHES = 400, 40

@@ -34,6 +34,7 @@ export type State = {
   counters: { episodes: number; repairs: number; fallbacks: number; blocks: number; cost: number }
   runs: Run[]; curve: { version: number; pass_rate: number; n: number }[]
   gate_running: boolean; episodes: Episode[]; cycle: Cycle | null; versions: Record<string, number>
+  sandbox?: boolean  // the judges' copy: web visitors are the owner
 }
 /** A live turn Raindrop flagged (GET /api/raindrop): what Tsugi did, the flag, the cycles it started, their lessons. */
 export type Flagged = {
@@ -92,8 +93,8 @@ async function post(path: string, body?: unknown) {
 export const api = {
   revoke: (id: string): Promise<{ revoked: string[]; version: number }> => post(`/api/revoke/${encodeURIComponent(id)}`),
   quarantine: (id: string, d: 'approve' | 'reject') => post(`/api/quarantine/${encodeURIComponent(id)}/${d}`),
-  chat: (text: string): Promise<{ reply: string }> => post('/api/chat', { text, tier: 'stranger' }),
-  teach: (text: string) => post('/api/teach', { text }),
+  chat: (text: string, tier = 'stranger'): Promise<{ reply: string }> => post('/api/chat', { text, tier }),
+  teach: (text: string, tier = 'stranger') => post('/api/teach', { text, tier }),
   raindrop: async (): Promise<{ flagged: Flagged[] }> => {
     if (snap.conn === 'mock') return { flagged: [] }
     const r = await fetch('/api/raindrop')
