@@ -1,6 +1,7 @@
 """Telegram channel. 👍/👎 under every reply; 👎 asks for a correction, which goes to the learner.
 Owner = OWNER_TELEGRAM_ID, everyone else is a stranger (their lessons are quarantined for the owner).
 """
+import raindrop.analytics as raindrop
 from telegram import ForceReply, InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.constants import ChatAction
 from telegram.ext import Application, CallbackQueryHandler, CommandHandler, ContextTypes, MessageHandler, filters
@@ -84,6 +85,8 @@ async def learn_from(update: Update, ctx: ContextTypes.DEFAULT_TYPE, ep_id: str,
             pass
     f = {"source_id": ep_id, "kind": "telegram", "tier": item["tier"], "history": item["history"],
          "steps": ep["steps"], "reply": ep["reply"], "correction": correction}
+    raindrop.track_signal(event_id=ep_id, name="correction", signal_type="edit", after=correction,
+                          properties={"tier": item["tier"]})
 
     async def job():
         result = await learner.learn(f, notify)
@@ -103,8 +106,10 @@ async def on_button(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     q = update.callback_query
     action, ref = q.data.split(":", 1)
     if action == "up":
+        raindrop.track_signal(event_id=ref, name="thumbs_up", signal_type="feedback", comment="👍", sentiment="POSITIVE")
         await q.answer("Thanks! 🌱")
     elif action == "down":
+        raindrop.track_signal(event_id=ref, name="thumbs_down", signal_type="feedback", comment="👎", sentiment="NEGATIVE")
         await q.answer()
         awaiting[q.message.chat.id] = ref
         await q.message.reply_text("What should I have done?", reply_markup=ForceReply(selective=True))
@@ -129,7 +134,9 @@ async def _approve(q, lesson_id: str):
 def build() -> Application | None:
     if not config.TELEGRAM_BOT_TOKEN:
         return None
-    app = Application.builder().token(config.TELEGRAM_BOT_TOKEN).concurrent_updates(True).build()
+    # 5 s defaults lost a reply to a venue Wi-Fi connect stall (12:10, httpcore.ConnectTimeout on sendMessage)
+    app = (Application.builder().token(config.TELEGRAM_BOT_TOKEN).concurrent_updates(True)
+           .connect_timeout(20).read_timeout(20).write_timeout(20).build())
     app.add_handler(CommandHandler("start", on_start))
     app.add_handler(CommandHandler("genome", on_genome))
     app.add_handler(CallbackQueryHandler(on_button))

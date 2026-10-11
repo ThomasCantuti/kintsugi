@@ -165,3 +165,24 @@ def test_revoke_cascades_through_lineage(run, monkeypatch):
     assert set(out["revoked"]) == {"E-poison", a["_id"], b["_id"]}
     g = run(genome.current())
     assert [i["text"] for i in g["rules"] if i["lesson"]] == ["Focus blocks are 90 minutes."]
+
+
+def test_live_turns_go_to_raindrop_with_private_notes_hidden(run, monkeypatch):
+    sent = []
+
+    class Turn:
+        def track_tool(self, **kw): sent.append(("tool", kw))
+        def finish(self, **kw): sent.append(("finish", kw))
+
+    monkeypatch.setattr(agent.raindrop, "begin", lambda **kw: sent.append(("begin", kw)) or Turn())
+    monkeypatch.setattr(agent.config, "RAINDROP_WRITE_KEY", "test")
+    notes = json.dumps([{"text": "PIN 1234", "tags": ["private"]}, {"text": "buy milk", "tags": []}])
+    ep = {"_id": "E-1", "tier": "owner", "genome_version": 0, "model": "fake", "reply": "Here they are.", "error": None,
+          "input": [{"role": "user", "content": "my notes?"}], "steps": [{"tool": "note_search", "args": "{}", "result": notes}],
+          "cost": 0.0, "latency": 1.0, "counters": {"repairs": 0, "fallbacks": 0, "blocks": 0}}
+    run(agent.save(dict(ep), "eval", run="r", case="c"))
+    assert sent == []  # evals, gate and evolve never reach Raindrop
+    run(agent.save(dict(ep, _id="E-2"), "live", chat=42))
+    (_, begin), (_, tool), (_, finish) = sent
+    assert begin["event_id"] == "E-2" and begin["user_id"] == begin["convo_id"] == "42" and begin["input"] == "my notes?"
+    assert "PIN 1234" not in tool["output"] and "buy milk" in tool["output"] and finish["output"] == "Here they are."

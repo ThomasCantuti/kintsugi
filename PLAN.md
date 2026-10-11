@@ -50,6 +50,7 @@ stored run (CLAUDE.md rule 2).
 | App framework / orchestration | **Kintsugi**, our own harness (asyncio + FastAPI) |
 | Operational DB | Atlas: episodes, genomes, lessons, lineage, tool data, runs (transactions, change streams, `$graphLookup`) |
 | Vector DB | **Atlas Vector Search**, used where it earns its place (not basic RAG): (1) **lesson retrieval**: only the top-k lessons relevant to the message go into the prompt, so a small model isn't drowned in rules; k and the threshold live in `context_policies`, so the harness can learn them · (2) **failure dedup**: a new failure is matched to similar past failures/lessons → no duplicate lessons, lineage parents linked · (3) `note_search` hybrid |
+| Observability (production) | **Raindrop** SDK: every live turn, tool spans, feedback and outcome signals; its failure signals feed the learner (§12) |
 | Foundation models | Nemotron (agent) · supervisor (Ultra / Sonnet) · Voyage `voyage-4-lite` embeddings via **Atlas automated embedding** (`$vectorSearch` with `query.text`, public preview May 2026; fallback: Voyage API client-side) |
 Setup from the terminal with the **Atlas CLI** (`atlas`): DB user, access list, connection string, search indexes.
 
@@ -197,7 +198,7 @@ features land (teach ~14:15, revoke ~14:15, chart ~15:15) so the video isn't a 1
 | 16:45–17:00 | Submit | form sent |
 
 ## 9. Scope
-- **MUST**: runtime (models, Atlas tools, agent + repair, 4-section genome, Telegram, episodes) · **Atlas Vector Search** (lesson retrieval, failure dedup, note search) · evals
+- **MUST**: runtime (models, Atlas tools, agent + repair, 4-section genome, Telegram, episodes) · **Raindrop SDK** (§12, D32) · **Atlas Vector Search** (lesson retrieval, failure dedup, note search) · evals
   (cases, runner, pytest) · learner + gate · commit txn + hot-swap · lineage + revoke + quarantine ·
   chart A–D + curve · Tsugi SVG + live view · video + README.
 - **BOOST** (in order): RSI improver playbook (Raindrop) · **genome transfer**: run vN learned on Nemotron Super on another model (Lightning / Ultra) → do lessons carry over? · **deploy on Modelence** ($50 sponsor credits; only if it runs our Python process, ask their team) · Exa web search · reminder heartbeat · `red-team` agent pass.
@@ -232,3 +233,53 @@ lineage, or held-out evals.
 - *"Isn't B just distilling the frontier model?"* Partly, on purpose: teaching cost is reported separately,
   and the runtime model stays free. Bar D shows that pasting the same feedback into a frontier prompt isn't the same.
 - *"n is small."* Yes, n = 12 held-out; that's why we show it and report every run.
+- *"Why Raindrop if you have Atlas?"* Atlas is Tsugi's memory and the gate's ground truth. Raindrop watches
+  unlabeled production traffic and flags failures nobody 👎'd; Kintsugi turns each flag into a tested, revocable lesson.
+
+## 12. Raindrop (D32: the judges said "use its SDK, it's free")
+**Role: Raindrop is the eyes, Kintsugi is the hands.** Raindrop sees every live turn and flags failures, including
+silent ones nobody 👎'd. Kintsugi turns a flag into a gated, revocable lesson. Raindrop then shows the outcome on
+the same event and the signal on the next genome version. Raindrop's own self-healing loop has a human and a
+coding agent ship a PR; ours closes the loop by itself, at the harness level, behind the gate.
+
+**Free Hobby plan** (raindrop.ai/docs/platform/plans, read 11:30): 1,000 events/month (ingestion stops for the
+month at the cap), signals (7 presets + 1 custom), tracing, alerts, Query API, MCP. Pro only: Issue Detection,
+Experiments.
+
+**Where.** Inline at the existing call sites, with no wrapper module (Raindrop's setup skill). Off without
+`RAINDROP_WRITE_KEY`; only the bot server (`__main__`) starts it. SDK: `raindrop-ai`. Rows 1–4 built 12:05, row 5 next.
+| # | Hook | Raindrop call | What it gives |
+|---|---|---|---|
+| 1 | `agent.save(ep, "live")` (Telegram + `/api/chat`) | `begin(user_id=chat id or "web-stranger", event="tsugi_turn", event_id=ep._id, convo_id=chat, input, model, properties={genome_version, tier, repairs, fallbacks, blocks, cost, latency, error})` → `track_tool` per step (DENIED/ERROR → `error`) → `finish(output=reply)` | every production turn with its tool trace; repairs and blocks also show up as Raindrop tool-error signals |
+| 2 | Telegram 👍/👎 (`telegram.on_button`) | `track_signal(ep, "thumbs_up"/"thumbs_down", "feedback", sentiment)` | owner and stranger feedback |
+| 3 | `telegram.learn_from`, `api.teach` | `track_signal(ep, "correction", "edit", after=correction)` | the human correction (owner or stranger) |
+| 4 | learner outcome | `track_signal(ep, "lesson_shipped"/"lesson_quarantined"/"no_safe_fix", properties={lesson, section, text, version, regression x/y})` | the Raindrop event shows what Kintsugi did about it |
+| 5 | **Raindrop → Kintsugi** poller (`__main__` task, every 60 s) | Query API `GET query.raindrop.ai/v1/events?signal=<id>&timestamp[gte]=…` for Task Failure, User Frustration and the custom signal | a flagged live episode not yet learned from (no lineage node) → `learner.learn(kind="raindrop", tier=episode tier, failed=["Raindrop: <signal>"])` → the supervisor writes the correction → gate → a seam whose lineage root is the Raindrop flag. Stranger episodes → quarantine, as usual |
+
+- **Only `kind == "live"` goes to Raindrop.** Evals, gate runs and evolve never send anything: one evolve round
+  is hundreds of episodes and would hit the monthly cap. Guard: sending stops after `RAINDROP_EVENT_CAP` = 800 live episodes.
+- **Privacy:** in tool spans, notes tagged `private` are sent as `[private]` (the `note_search` output is JSON with
+  tags). User text and Tsugi's replies are sent as they are, because Raindrop has to see a leak to flag it (a private
+  note in a reply to a stranger is exactly the failure we want caught). The live world is seeded demo data.
+- **Custom signal** (the 1 free slot), "Broke a convention": *the assistant did the request in a way the user would
+  have to correct: wrong time, day, duration or recipient; ignored a stated preference; sent something without
+  confirmation; or revealed private information.* Sentiment Negative.
+- **Not used:** auto-instrumentation of the `openai` client (it would trace gate and eval calls too), so
+  `tracing_enabled=True, auto_instrument=False, bypass_otel_for_tools=True`. Self Diagnostics (TypeScript SDK only).
+  Issues and Experiments (Pro). The `raindrop-query` package, because it downgrades pydantic 2.14 → 2.12.5: the poller
+  makes one GET with urllib, like the Voyage client in `models.py`.
+
+**Demo (no new beat, the 3:00 holds):** 0:20 "Raindrop watches every live turn" · 0:35 after v+1, 3 s on the
+Raindrop event (👎, correction, `lesson_shipped v+1`) · 2:20 one "silent failure" seam whose lineage root is a
+Raindrop flag nobody 👎'd. It's pre-recorded if the signal latency is too long to show live (measure it first).
+Numbers come from Atlas only: Raindrop-flagged episodes → lessons shipped / rejected / quarantined; signal latency.
+
+**Setup ([you])**: raindrop.ai Hobby signup → write key `RAINDROP_WRITE_KEY` · Query API key (Settings → API
+Keys) `RAINDROP_QUERY_API_KEY` · enable presets Task Failure, User Frustration, Jailbreaking · create the custom signal above.
+
+**Order:** ~~(1) events + tool spans + 👍/👎/correction signals, with a test · (2) outcome signals~~ (done 12:05) · (3) poller, with a test, then measure signal latency → MEMORY.md · (4) README line + `raindrop` lineage node in the live view.
+**Fallback:** if the Query API or preset signals aren't on Hobby, or the latency is over 5 min, keep 1–4 (observability
+and verification) and show one recorded Raindrop-sourced lesson.
+**BOOST:** send one held-out run (A, 12 events, `kind=eval`, `passed`) → "Raindrop's Task Failure agreed with the
+ground-truth checks X/12" · Raindrop MCP (`claude mcp add raindrop --transport http https://mcp.raindrop.ai/mcp`) so
+the `red-team` agent turns flagged live events into regression cases.

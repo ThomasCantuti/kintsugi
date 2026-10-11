@@ -8,6 +8,8 @@ import uuid
 from collections.abc import Awaitable, Callable
 from datetime import UTC, datetime
 
+import raindrop.analytics as raindrop
+
 from . import config, gate, genome, models
 from .db import db
 from .genome import SECTIONS
@@ -117,6 +119,13 @@ async def _gate_and_commit(candidates: list[dict], f: dict, notify: Notify = Non
             break
         await db.lessons.update_one({"_id": lesson["_id"]}, {"$set": {"status": "rejected"}})
     await db.gates.update_one({"_id": gate_id}, {"$set": {"status": result["status"], "ended_at": datetime.now(UTC)}})
+    if f["kind"] == "telegram":  # live source: its Raindrop event shows what Kintsugi did about it
+        l = result.get("lesson")
+        raindrop.track_signal(
+            event_id=f["source_id"], name="lesson_shipped" if l else "no_safe_fix", sentiment="POSITIVE" if l else "NEGATIVE",
+            properties={"lesson": l["_id"], "section": l["section"], "text": l["text"], "genome_version": result["version"],
+                        "past_cases_passing": f"{l['gate']['regression_passed']}/{l['gate']['regression_total']}"}
+            if l else {"candidates_rejected": len(candidates)})
     return result
 
 
@@ -148,6 +157,8 @@ async def learn(f: dict, notify: Notify = None) -> dict:
         return {"status": "no_candidates" if not candidates else "duplicate", "lessons": candidates}
     if f["tier"] != "owner":  # every source untrusted → owner decides
         await db.lessons.update_many({"_id": {"$in": [l["_id"] for l in live]}}, {"$set": {"status": "quarantined"}})
+        if f["kind"] == "telegram":
+            raindrop.track_signal(event_id=f["source_id"], name="lesson_quarantined", properties={"candidates": len(live)})
         return {"status": "quarantined", "lessons": live}
     return await _gate_and_commit(live, f, notify)
 

@@ -13,6 +13,8 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from zoneinfo import ZoneInfo
 
+import raindrop.analytics as raindrop
+
 from . import config, models
 from .db import db
 from .genome import allowed_tools, similar_lessons
@@ -132,4 +134,32 @@ async def run(g: dict, history: list[dict], world: str, tier: str, now: str | No
 
 async def save(ep: dict, kind: str, **extra) -> dict:
     await db.episodes.insert_one({**ep, "kind": kind, "created_at": datetime.now(UTC), **extra})
+    # ponytail: the cap counts every live episode ever saved (conservative); per-month count if we outlive one month
+    if kind == "live" and config.RAINDROP_WRITE_KEY \
+            and await db.episodes.count_documents({"kind": "live"}) <= config.RAINDROP_EVENT_CAP:
+        try:  # observability must never break a turn
+            _to_raindrop(ep, str(extra["chat"]))
+        except Exception as e:
+            print(f"raindrop: {e!r}")
     return ep
+
+
+def _to_raindrop(ep: dict, chat: str) -> None:
+    """One Raindrop event per live turn (event id = episode id, so signals and flags map back), tool calls as spans."""
+    turn = raindrop.begin(
+        user_id=chat, event="tsugi_turn", event_id=ep["_id"], convo_id=chat, model=ep["model"],
+        input=next((m["content"] for m in reversed(ep["input"]) if m["role"] == "user"), ""),
+        properties={"genome_version": ep["genome_version"], "tier": ep["tier"], **ep["counters"],
+                    "cost_usd": ep["cost"], "latency_s": ep["latency"], "error": ep["error"] or ""})
+    for s in ep["steps"]:
+        turn.track_tool(name=s["tool"], input=s["args"], output=_private_hidden(s),
+                        error=s["result"] if s["result"].startswith(("ERROR", "DENIED")) else None)
+    turn.finish(output=ep["reply"] or ep["error"] or "")
+
+
+def _private_hidden(step: dict) -> str:
+    """Notes tagged private never leave Atlas in tool spans. Replies are sent as they are: Raindrop must see a leak."""
+    if step["tool"] != "note_search" or not step["result"].startswith("["):
+        return step["result"]
+    return json.dumps([{**n, "text": "[private]"} if "private" in n.get("tags", []) else n
+                       for n in json.loads(step["result"])])

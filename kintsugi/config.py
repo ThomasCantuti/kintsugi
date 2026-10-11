@@ -35,6 +35,9 @@ EMBED_API_KEY = _env("EMBED_API_KEY")
 EMBED_BASE_URL = _env("EMBED_BASE_URL", "https://ai.mongodb.com/v1")
 EMBED_MODEL = _env("EMBED_MODEL", "voyage-4-lite" if EMBED_API_KEY else "nvidia/nemotron-3-embed-1b:free")
 BUDGET_USD = float(_env("BUDGET_USD", "5"))
+# Raindrop watches live turns (bot server only; evals, gate and evolve never send). Empty key = off.
+RAINDROP_WRITE_KEY = _env("RAINDROP_WRITE_KEY")
+RAINDROP_EVENT_CAP = 800  # free Hobby plan: 1,000 events/month, and ingestion stops for the month at the cap
 
 TIMEZONE = "America/Los_Angeles"
 LESSONS_TOP_K = 8  # context policy: max learned rules/policies retrieved per message

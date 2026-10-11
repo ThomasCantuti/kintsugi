@@ -3,6 +3,7 @@ import asyncio
 import json
 from pathlib import Path
 
+import raindrop.analytics as raindrop
 from fastapi import BackgroundTasks, FastAPI, HTTPException
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import FileResponse, StreamingResponse
@@ -147,6 +148,8 @@ async def teach(body: Teach, bg: BackgroundTasks):
     last = await db.episodes.find_one({"chat": "web-stranger"}, sort=[("created_at", -1)])
     if not last:
         raise HTTPException(400, "chat first")
+    raindrop.track_signal(event_id=last["_id"], name="correction", signal_type="edit", after=body.text,
+                          properties={"tier": "stranger"})
     bg.add_task(learner.learn, {"source_id": last["_id"], "kind": "telegram", "tier": "stranger",
                                 "history": last["input"], "steps": last["steps"], "reply": last["reply"],
                                 "correction": body.text})
