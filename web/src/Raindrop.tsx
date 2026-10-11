@@ -1,7 +1,7 @@
 /** Raindrop: every live turn Raindrop flagged, told end to end. What Tsugi did, Raindrop's flag, the lessons Kintsugi
  *  proposed, what the gate decided, what shipped. All from GET /api/raindrop (Atlas); private notes are blanked server-side. */
 import { useEffect, useRef, useState } from 'react'
-import { api, CAUGHT_TIP, letter, parseT, RAINDROP_URL, SEC, type Flagged, type State } from './live'
+import { api, CAUGHT_TIP, letter, parseT, RAINDROP_URL, SEC, type Agreement, type Flagged, type State } from './live'
 
 const time = (s?: string) => s ? new Date(parseT(s)).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) : ''
 const secs = (a?: string, b?: string) => a && b ? Math.round((parseT(b) - parseT(a)) / 1000) : null
@@ -86,11 +86,41 @@ function Case({ f, versions, onLesson }: { f: Flagged; versions: State['versions
   )
 }
 
+// what Kintsugi writes back onto Raindrop's event for each cycle outcome (learner.py track_signal names)
+const BACK: Record<string, string> = { quarantined: 'Lesson quarantined', rejected: 'No safe fix', accepted: 'Lesson shipped', false_alarm: 'False alarm' }
+
+/** The other three uses: Raindrop on the hidden tests, its false alarms (why Kintsugi re-checks), outcomes written back. */
+function Uses({ a, f }: { a: Agreement | null; f?: Flagged }) {
+  const r = a?.raindrop_agreement, back = (f?.cycles ?? []).map(c => BACK[c.status]).filter(Boolean)
+  return (
+    <div className="ruses">
+      {a && r && <section className="ruse" style={{ ['--i' as string]: 5 }}>
+        <span className="rk">Raindrop on the hidden tests</span>
+        <p className="rbig"><b className="num">{r.caught} of {r.failed}</b><span className="mute">failures caught</span></p>
+        <p>We sent one held-out run to Raindrop on purpose ({a.label}: {a.model.replace(/^[^/]+\//, '')}, genome v{a.genome_version ?? '?'}, n={r.n}).
+          It caught the loud failures, private notes leaked and an email sent for a stranger without a draft, and none of the quiet ones where only the data in Atlas was wrong.</p>
+      </section>}
+      {a && r && <section className="ruse" style={{ ['--i' as string]: 6 }}>
+        <span className="rk">False alarms, so Kintsugi checks</span>
+        <p className="rbig"><b className="num">{r.false_alarms} of {r.passed}</b><span className="mute">correct replies flagged too</span></p>
+        <p>A flag is only a signal. The supervisor re-checks every flag (a false alarm makes no lesson), and the gate decides.
+          Raindrop sees what users see; the checks see what Atlas holds.</p>
+      </section>}
+      {f && back.length > 0 && <section className="ruse" style={{ ['--i' as string]: 7 }}>
+        <span className="rk">The loop closes in Raindrop</span>
+        <p>Kintsugi writes each outcome back onto Raindrop's event for the flagged turn, so Raindrop shows what was done about its flag:</p>
+        <ol className="rback">{f.flags.map(x => <li key={x} className="in">🌧️ {x}</li>)}{back.map((x, i) => <li key={i}>{x}</li>)}</ol>
+        <a className="rchip" href={RAINDROP_URL} target="_blank" rel="noreferrer" style={{ justifySelf: 'start' }}>Open Raindrop ↗</a>
+      </section>}
+    </div>
+  )
+}
+
 export default function Raindrop({ state, visible, onLesson }: { state: State; visible: boolean; onLesson: (id: string) => void }) {
-  const [flagged, setFlagged] = useState<Flagged[] | null>(null), [err, setErr] = useState('')
+  const [flagged, setFlagged] = useState<Flagged[] | null>(null), [agreement, setAgreement] = useState<Agreement | null>(null), [err, setErr] = useState('')
   useEffect(() => {
     if (!visible) return
-    api.raindrop().then(r => { setFlagged(r.flagged); setErr('') }, e => setErr((e as Error).message))
+    api.raindrop().then(r => { setFlagged(r.flagged); setAgreement(r.agreement); setErr('') }, e => setErr((e as Error).message))
   }, [visible, state])
   const all = flagged ?? [], lessons = all.flatMap(f => f.lessons)
   const shipped = lessons.filter(l => state.versions[l._id] != null).length, rejected = lessons.filter(l => l.status === 'rejected').length
@@ -100,12 +130,13 @@ export default function Raindrop({ state, visible, onLesson }: { state: State; v
         <h2>Raindrop sees it. Kintsugi fixes it.</h2>
         <p>Raindrop watches every live turn and flags the ones that went wrong, even when nobody complained.
           Kintsugi turns each flag into a lesson, and the lesson ships only if the gate passes it.</p>
-        {flagged && <p className="mute rsmall">{all.length} flagged turn{all.length === 1 ? '' : 's'} · {shipped} lesson{shipped === 1 ? '' : 's'} shipped · {rejected} rejected by the gate · eval and gate runs are never sent to Raindrop</p>}
+        {flagged && <p className="mute rsmall">{all.length} flagged turn{all.length === 1 ? '' : 's'} · {shipped} lesson{shipped === 1 ? '' : 's'} shipped · {rejected} rejected by the gate · gate and evolve runs never go to Raindrop</p>}
       </div>
       {err ? <p className="mute">Raindrop view unavailable: {err}</p>
         : !flagged ? <p className="empty">Loading…</p>
         : !all.length ? <p className="empty">No Raindrop flags yet. Flagged live turns show up here within a minute.</p>
-        : <div className="rcases">{all.map(f => <Case key={f._id} f={f} versions={state.versions} onLesson={onLesson} />)}</div>}
+        : <div className="rcases"><h3 className="rh">Catch → lesson</h3>{all.map(f => <Case key={f._id} f={f} versions={state.versions} onLesson={onLesson} />)}
+          <Uses a={agreement} f={all[0]} /></div>}
     </div>
   )
 }

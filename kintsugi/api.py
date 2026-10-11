@@ -168,7 +168,10 @@ async def raindrop_flagged():
             "scar": await db.scars.count_documents({"_id": n["_id"]}) > 0,  # replayed by every later gate (D39)
         })
     out.sort(key=lambda r: str(r["created_at"]), reverse=True)
-    return jsonable_encoder({"flagged": out})
+    # one held-out run re-sent to Raindrop on purpose: how its flags compare with the ground-truth checks
+    run = await db.runs.find_one({"raindrop_agreement": {"$exists": True}}, {"raindrop_agreement": 1, "label": 1, "split": 1,
+                                 "model": 1, "genome_version": 1}, sort=[("created_at", -1)])
+    return jsonable_encoder({"flagged": out, "agreement": run})
 
 
 @app.get("/api/lineage/{node_id}")

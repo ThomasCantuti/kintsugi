@@ -42,6 +42,9 @@ export type Flagged = {
   message: string; tools: string[]; reply: string; leaked_private: number; cycles: Cycle[]
   lessons: Pick<Lesson, '_id' | 'title' | 'text' | 'section' | 'status' | 'gate' | 'created_at'>[]; scar: boolean
 }
+/** A run re-sent to Raindrop: its flags vs the deterministic checks (caught = flagged failures, false alarms = flagged passes). */
+export type Agreement = { _id: string; label: string; split: string; model: string; genome_version: number | null
+  raindrop_agreement: { n: number; failed: number; caught: number; passed: number; false_alarms: number; by_signal: Record<string, number> } }
 export type LiveEvent = { coll: string; op: string; id: string; note?: string; t: number }
 export type LNode = { _id: string; type: string; status: string; label: string; parents?: string[]; flags?: string[]; flag_latency_s?: number }
 export type Conn = 'connecting' | 'live' | 'reconnecting' | 'mock'
@@ -95,8 +98,8 @@ export const api = {
   quarantine: (id: string, d: 'approve' | 'reject') => post(`/api/quarantine/${encodeURIComponent(id)}/${d}`),
   chat: (text: string, tier = 'stranger'): Promise<{ reply: string }> => post('/api/chat', { text, tier }),
   teach: (text: string, tier = 'stranger') => post('/api/teach', { text, tier }),
-  raindrop: async (): Promise<{ flagged: Flagged[] }> => {
-    if (snap.conn === 'mock') return { flagged: [] }
+  raindrop: async (): Promise<{ flagged: Flagged[]; agreement: Agreement | null }> => {
+    if (snap.conn === 'mock') return { flagged: [], agreement: null }
     const r = await fetch('/api/raindrop')
     if (!r.ok) throw new Error(`/api/raindrop ${r.status}`)
     return r.json()
