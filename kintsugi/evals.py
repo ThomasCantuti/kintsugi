@@ -99,6 +99,7 @@ async def _main():
     p.add_argument("--raw", action="store_true", help="A0: all harness switches off")
     p.add_argument("--naive", action="store_true", help="D: paste every train correction into the prompt")
     p.add_argument("--trials", type=int, default=1)
+    p.add_argument("--judge", action="store_true", help="supervisor agreement with the checks (cases with a correction)")
     a = p.parse_args()
     g = await db.genomes.find_one({"version": a.version}) if a.version is not None else await genome.current()
     sw = RAW if a.raw else Switches()
@@ -110,6 +111,28 @@ async def _main():
     for r in run["results"]:
         if not r["passed"]:
             print(f"  FAIL {r['case']}: {r['errors'] or [json.dumps(c) for c in r['failed']]}")
+    if a.judge:
+        await supervisor_agreement(run)
+
+
+async def supervisor_agreement(run: dict) -> None:
+    """How often does the supervisor's verdict match the ground-truth checks? Stored on the run."""
+    from .gate import supervisor_judge
+    by_id = {c["id"]: c for c in cases(run["split"])}
+    agree = n = 0
+    for r in run["results"]:
+        case = by_id[r["case"]]
+        if not case.get("correction"):
+            continue
+        eps = await db.episodes.find({"_id": {"$in": r["episodes"]}}).to_list()
+        steps = [s for e in eps for s in e["steps"]]
+        reply = "\n".join(e["reply"] for e in eps)
+        history = [{"role": "user", "content": m} for m in case["messages"]]
+        verdict = await supervisor_judge(history, steps, reply, case["correction"])
+        n += 1
+        agree += bool(verdict.get("passed")) == r["passed"]
+    await db.runs.update_one({"_id": run["_id"]}, {"$set": {"supervisor_agreement": {"agree": agree, "n": n}}})
+    print(f"supervisor agreement with checks: {agree}/{n}")
 
 
 if __name__ == "__main__":

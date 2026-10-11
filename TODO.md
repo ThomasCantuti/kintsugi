@@ -15,38 +15,38 @@ Scope and timeline: PLAN.md §8–9. **No project code before 10:30.**
 - [ ] [you] Ask the Modelence team: Python process with a custom start command? external Atlas URI? what do the $50 credits cover?
 
 ## 10:30–10:45 Setup
-- [ ] [you] Create the **public** GitHub repo; first commit = planning docs
-- [ ] `uv init`, deps (openai, fastapi, uvicorn, pymongo, python-telegram-bot, pytest), `config.py`, `db.py` → Sandbox ping
+- [x] [you] Create the **public** GitHub repo; first commit = planning docs
+- [x] `uv init`, deps (openai, fastapi, uvicorn, pymongo, python-telegram-bot, pytest), `config.py`, `db.py` → Sandbox ping
 - [ ] Spike: automated embedding index + one `$vectorSearch` with `query.text` (else Voyage client-side)
 
 ## 10:45–11:45 Runtime
-- [ ] `models.py`: chat via `openai` SDK, base URL from config, fallback chain, cost meter; `ScriptedModel`; every repair/fallback logged (wrangling counters)
-- [ ] Harness switches (`repair`, `fallback`, `guardrails`, `genome`, `retrieval`) so A0 = all off
-- [ ] `tools.py`: 8 Atlas tools, `world`-scoped, risk levels
-- [ ] `agent.py`: genome → prompt with top-k lessons via `$vectorSearch`, tool_access filter, guardrail check before writes, tool-call repair
-- [ ] `telegram.py` + `main.py`: owner/stranger tiers, episodes saved
-- [ ] (subagent) `evals/cases.json` drafts from PLAN.md §5 conventions → [you] edit by hand
-- [ ] (subagent) Tsugi SVG + `web/index.html`
+- [x] `models.py`: chat via `openai` SDK, base URL from config, fallback chain, cost meter; `ScriptedModel`; every repair/fallback logged (wrangling counters)
+- [x] Harness switches (`repair`, `fallback`, `guardrails`, `genome`, `retrieval`) so A0 = all off
+- [x] `tools.py`: 8 Atlas tools, `world`-scoped, risk levels
+- [x] `agent.py`: genome → prompt with top-k lessons via `$vectorSearch`, tool_access filter, guardrail check before writes, tool-call repair
+- [x] `telegram.py` + `main.py`: owner/stranger tiers, episodes saved
+- [x] (subagent) `evals/cases.json` drafts from PLAN.md §5 conventions → [you] edit by hand
+- [x] (subagent) Tsugi SVG + `web/index.html`
 - [ ] ✅ Check: Tsugi creates a calendar event in Atlas from Telegram
 
 ## 11:45–12:45 Evals + learning
-- [ ] `evals.py`: seed world, run case, DB-state checks, results → `runs`
+- [x] `evals.py`: seed world, run case, DB-state checks, results → `runs`
 - [ ] Freeze held-out: commit hash → MEMORY.md
 - [ ] Baseline **A0** (raw loop) and **A** (Nemotron v0) on held-out → MEMORY.md Numbers
-- [ ] Failure dedup via `$vectorSearch` on failures/lessons → lineage parents
-- [ ] `learner.py`: supervisor `critique(episode, genome) -> {passed, critique, correction}` + `propose(failure)` ≤3 delta lessons; quarantine on stranger-only source
+- [x] Failure dedup via `$vectorSearch` on failures/lessons → lineage parents
+- [x] `learner.py`: supervisor `critique(episode, genome) -> {passed, critique, correction}` + `propose(failure)` ≤3 delta lessons; quarantine on stranger-only source
 - [ ] Supervisor agreement vs ground-truth checks on all cases → MEMORY.md Numbers
-- [ ] `gate.py`: failing case + train + held-out, accept iff fixed and no regression
-- [ ] `tests/`: repair, gate accept/reject, held-out isolation, revoke, quarantine (ScriptedModel)
+- [x] `gate.py`: failing case + train + held-out, accept iff fixed and no regression
+- [x] `tests/`: repair, gate accept/reject, held-out isolation, revoke, quarantine (ScriptedModel)
 - [ ] [you] $5 decision
 
 ## 12:45–13:15 Lunch
 - [ ] Evolution run on train in the background
 
 ## 13:15–14:15 Commit + trust
-- [ ] Commit txn (genome + lesson + lineage) → change stream → hot-swap
-- [ ] Revoke via `$graphLookup`; quarantine ✅/❌ buttons
-- [ ] `api.py`: SSE, `/revoke/{id}`, `/chat?tier=stranger`
+- [x] Commit txn (genome + lesson + lineage) → change stream → hot-swap
+- [x] Revoke via `$graphLookup`; quarantine ✅/❌ buttons
+- [x] `api.py`: SSE, `/revoke/{id}`, `/chat?tier=stranger`
 - [ ] ✅ Check: live teach works end to end on Telegram
 
 ## 14:15–15:15 Proof

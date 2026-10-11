@@ -63,7 +63,7 @@ Telegram (owner / stranger) ─► agent.run(genome vN, msgs, world, tier)
                  dedup ($vectorSearch similar failures/lessons) → learner.propose(failure) → ≤3 lessons {section, delta, prediction}
                  stranger-only source? → quarantine → owner ✅/❌
                                       ▼
-                 gate: candidate genome on failing case + train + HELD-OUT (only the gate reads it)
+                 gate: candidate genome on the failing case + train cases that passed before (held-out never)
                        accept iff the case is fixed and nothing regresses
                                       ▼
    txn: genomes vN+1 + lessons + lineage ──► change stream ──► agent hot-swaps · live view (SSE) · Tsugi seam
@@ -112,8 +112,8 @@ AWS Kiro credits are for Kiro's own coding agent, not AWS services or an API we 
    - **Owner** 👎 / correction on Telegram (live demo, overrides the supervisor) · red-team cases that got through.
 2. **Propose** (supervisor model): ≤ 3 **delta** lessons, each `{section, delta, prediction}`, never a rewrite (ACE).
 3. **Trust**: if every source is a stranger → quarantine → owner ✅/❌.
-4. **Gate**: candidate genome runs the failing case + train + held-out (temp 0, seeded worlds).
-   Accept iff the case passes and pass count doesn't drop.
+4. **Gate**: candidate genome runs the failing case + up to 8 train cases that passed before (temp 0, seeded worlds).
+   Accept iff the case is fixed and none of them regress. Held-out never influences a decision.
 5. **Commit** in one transaction: genome vN+1 + lesson + lineage node → change stream → hot-swap, new seam.
 6. **Revoke**: `$graphLookup` descendants → revoked → genome rebuilt without them → commit.
 7. *(BOOST, Raindrop RSI)*: the improver's own playbook evolves from its prediction-vs-outcome record.
