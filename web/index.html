@@ -13,7 +13,7 @@
 :root{
   --bg:#f3ede1; --panel:#fffaf1; --panel-2:#f1e9da; --ink:#26211b; --ink-2:#5c5447; --muted:#857b6c;
   --line:#e3d8c4; --gold:#c8962e; --gold-2:#f3cd70; --gold-soft:#fbefd0; --gold-ink:#8a6414;
-  --red:#b3362b; --red-soft:#f8e0db; --glow:#fffaf0; --halo:rgba(232,189,87,.22);
+  --red:#b3362b; --red-soft:#f8e0db; --rain:#2f6fb0; --glow:#fffaf0; --halo:rgba(232,189,87,.22);
   --shadow:0 12px 32px -20px rgba(70,45,10,.4); --radius:18px;
   --font:"IBM Plex Sans",system-ui,-apple-system,sans-serif; --display:"Fraunces",Georgia,serif;
   color-scheme:light;
@@ -21,7 +21,7 @@
 @media (prefers-color-scheme: dark){
   :root{ --bg:#13110e; --panel:#1c1915; --panel-2:#27221b; --ink:#f3ead8; --ink-2:#d2c7b1; --muted:#9a8f7b;
     --line:#352e25; --gold:#e2ae46; --gold-2:#f3cd70; --gold-soft:#3a2e15; --gold-ink:#f3cd70;
-    --red:#e66b5d; --red-soft:#3d1f1b; --glow:rgba(255,236,190,.16); --halo:rgba(226,174,70,.18);
+    --red:#e66b5d; --red-soft:#3d1f1b; --rain:#7fb2e5; --glow:rgba(255,236,190,.16); --halo:rgba(226,174,70,.18);
     --shadow:0 12px 32px -20px rgba(0,0,0,.9); color-scheme:dark; }
 }
 *{box-sizing:border-box}
@@ -211,6 +211,8 @@ dialog::backdrop{background:rgba(20,16,10,.45);backdrop-filter:blur(6px)}
 .ln.s-revoked rect{fill:var(--red-soft);stroke:var(--red);stroke-width:2}
 .ln.s-revoked .v{text-decoration:line-through}
 .ln.s-quarantined rect{fill:var(--red-soft);stroke:var(--red);stroke-dasharray:5 4}
+.ln.t-raindrop rect{stroke:var(--rain);stroke-width:2}
+.ln.t-raindrop .k{fill:var(--rain)}
 .ln.sel rect{stroke-width:3.5}
 .ln.cascade{transform-box:fill-box;transform-origin:center;animation:hit .5s ease-out}
 @keyframes hit{40%{transform:scale(1.08)}}
@@ -835,7 +837,7 @@ function lineageSvg({nodes = [], edges = []}, sel) {
     const p = pos[n._id], label = String(n.label || n._id), short = label.length > 32 ? label.slice(0, 31) + '…' : label;
     return `<g class="ln t-${esc(n.type)} s-${esc(n.status)}${n._id === sel ? ' sel' : ''}" data-id="${esc(n._id)}"><title>${esc(label)}</title>
       <rect x="${p.x}" y="${p.y}" width="${W}" height="${H}" rx="10"/>
-      <text class="k" x="${p.x + 10}" y="${p.y + 18}">${esc(String(n.type).toUpperCase())} · ${esc(n.status || '')}</text>
+      <text class="k" x="${p.x + 10}" y="${p.y + 18}">${n.type === 'raindrop' ? 'RAINDROP FLAG' : esc(String(n.type).toUpperCase())} · ${esc(n.status || '')}</text>
       <text class="v" x="${p.x + 10}" y="${p.y + 39}">${esc(short)}</text></g>`;
   }).join('');
   return `<svg viewBox="0 0 ${width} ${height}" style="max-width:${width}px" role="img" aria-label="Lineage graph">${es}${ns}</svg>`;
