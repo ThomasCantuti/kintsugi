@@ -29,6 +29,7 @@ class Switches:
     repair: bool = True
     fallback: bool = True
     naive_memory: str = ""  # bar D: raw past corrections pasted into the prompt
+    reasoning: bool = config.AGENT_REASONING
 
 
 RAW = Switches(genome=False, retrieval=False, repair=False, fallback=False)
@@ -108,7 +109,7 @@ async def run(g: dict, history: list[dict], world: str, tier: str, now: str | No
     for _ in range(MAX_STEPS):
         try:
             r = await models.chat(msgs, [TOOLS[n]["schema"] for n in allowed] or None, model=model,
-                                  fallbacks=None if sw.fallback else [])
+                                  fallbacks=None if sw.fallback else [], reasoning=sw.reasoning)
         except Exception as e:
             ep["error"] = f"model: {e!r}"
             break

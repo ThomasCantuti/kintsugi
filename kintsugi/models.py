@@ -54,7 +54,8 @@ def _cost(usage) -> float:
 
 
 async def chat(messages: list[dict], tools: list[dict] | None = None, model: str | None = None,
-               fallbacks: list[str] | None = None, temperature: float = 0.0, json_mode: bool = False) -> Reply:
+               fallbacks: list[str] | None = None, temperature: float = 0.0, json_mode: bool = False,
+               reasoning: bool = True) -> Reply:
     """One completion. Tries `model`, then each fallback, on any provider error."""
     global spent
     if spent >= config.BUDGET_USD:
@@ -67,6 +68,8 @@ async def chat(messages: list[dict], tools: list[dict] | None = None, model: str
             kw["tools"] = tools
         if json_mode:
             kw["response_format"] = {"type": "json_object"}
+        if not reasoning:
+            kw["extra_body"] = {"reasoning": {"enabled": False}}
         try:
             for wait in RATE_LIMIT_WAITS:  # rate limited: wait it out on the same model before falling back
                 try:

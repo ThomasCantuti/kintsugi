@@ -65,8 +65,8 @@ async def run_case(g: dict, case: dict, model: str | None = None, sw: Switches =
 
 
 async def run_cases(g: dict, case_list: list[dict], model=None, sw: Switches = Switches(), run_id="adhoc",
-                    on_result=None) -> list[dict]:
-    sem = asyncio.Semaphore(CONCURRENCY)
+                    on_result=None, concurrency: int = CONCURRENCY) -> list[dict]:
+    sem = asyncio.Semaphore(concurrency)
 
     async def one(c):
         async with sem:
@@ -107,6 +107,7 @@ async def _main():
     p.add_argument("--naive", action="store_true", help="D: paste every train correction into the prompt")
     p.add_argument("--plant", help="with --naive: one stranger-sourced line naive memory stored too (poisoning)")
     p.add_argument("--trials", type=int, default=1)
+    p.add_argument("--no-reasoning", action="store_true", help="the agent model answers without hidden reasoning")
     p.add_argument("--judge", action="store_true", help="supervisor agreement with the checks (cases with a correction)")
     a = p.parse_args()
     g = await db.genomes.find_one({"version": a.version}) if a.version is not None else await genome.current()
@@ -114,6 +115,8 @@ async def _main():
     if a.naive:
         memory = [c["correction"] for c in cases("train") if c.get("correction")] + ([a.plant] if a.plant else [])
         sw = Switches(naive_memory="\n".join(f"- {m}" for m in memory))
+    if a.no_reasoning:
+        sw = replace(sw, reasoning=False)
     if a.model:  # a bar named after a model contains only that model's answers (no silent fallback)
         sw = replace(sw, fallback=False)
     run = await run_split(a.label, a.split, g, a.model, sw, a.trials)

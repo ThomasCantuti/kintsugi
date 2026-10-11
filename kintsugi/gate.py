@@ -90,7 +90,8 @@ async def judge(lesson: dict, f: dict, g: dict, progress: Progress = None) -> di
 
     async def tell(r: dict, retry: bool = False) -> None:
         await say({"lesson": lesson["_id"], "case": r["case"], "passed": r["passed"], **({"retry": True} if retry else {})})
-    results = await evals.run_cases(cand, sample, run_id=f"gate-{lesson['_id']}", on_result=tell)
+    results = await evals.run_cases(cand, sample, run_id=f"gate-{lesson['_id']}", on_result=tell,
+                                    concurrency=len(sample) or 1)  # all at once: the stage teach waits on the slowest case
     for i, r in enumerate(results):  # one retry per failure: separate model noise from real regressions
         if not r["passed"]:
             results[i] = await evals.run_case(cand, sample[i], run_id=f"gate-{lesson['_id']}")
