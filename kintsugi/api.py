@@ -10,7 +10,7 @@ from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from . import agent, config, genome, learner
+from . import agent, config, genome, learner, telegram
 from .db import db
 
 app = FastAPI(title="Kintsugi")
@@ -19,6 +19,7 @@ DIST = WEB / "dist"  # the React live view, built by `npm run build` in web/ (co
 EVENT_TYPES = {"lessons": "lesson", "genomes": "genome", "episodes": "episode", "gates": "gate", "runs": "run"}
 subscribers: set[asyncio.Queue] = set()
 stranger_turns: list[dict] = []
+bot = None  # the Telegram bot, set by __main__: a quarantine from the live view reaches the owner's phone too
 
 
 async def watch() -> None:
@@ -198,7 +199,12 @@ async def teach(body: Teach, bg: BackgroundTasks):
         raise HTTPException(400, "chat first")
     raindrop.track_signal(event_id=last["_id"], name="correction", signal_type="edit", after=body.text,
                           properties={"tier": "stranger"})
-    bg.add_task(learner.learn, {"source_id": last["_id"], "kind": "telegram", "tier": "stranger",
-                                "history": last["input"], "steps": last["steps"], "reply": last["reply"],
-                                "correction": body.text})
+    f = {"source_id": last["_id"], "kind": "telegram", "tier": "stranger", "history": last["input"], "steps": last["steps"],
+         "reply": last["reply"], "correction": body.text}
+
+    async def job():
+        result = await learner.learn(f)
+        if result["status"] == "quarantined" and bot:
+            await telegram.ask_owner(bot, result["lessons"], "🔒 <b>A stranger taught me</b> (live view)")
+    bg.add_task(job)
     return {"ok": True}

@@ -76,6 +76,7 @@ async def main() -> None:
     g = await genome.current()
     server = uvicorn.Server(uvicorn.Config(api.app, host="0.0.0.0", port=config.PORT, log_level="warning"))
     bot = telegram.build()
+    api.bot = bot.bot if bot else None
     if bot:
         await bot.initialize()
         await bot.start()

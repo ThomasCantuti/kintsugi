@@ -217,7 +217,7 @@ const Turn = memo(function Turn({ ep, tab, correction }: { ep: Episode; tab: str
       </motion.div>
       {correction && <motion.div className={'msg me' + (tab === 'stranger' ? ' stranger' : '')} {...anim}>
         <div className="who"><b>{tab === 'owner' ? 'Thomas' : 'stranger'}</b><span>correction</span></div>
-        <div className="qref">{(ep.reply || '').slice(0, 90)}</div>{correction}
+        <div className="qref">{(ep.reply || '').replace(/\*\*/g, '').slice(0, 90)}</div>{correction}
       </motion.div>}
     </>
   )
@@ -236,7 +236,10 @@ function Transcript({ state }: { state: State }) {
   useEffect(() => { if (newest) setTab(newest.tier === 'owner' ? 'owner' : 'stranger') }, [newest?._id])  // eslint-disable-line react-hooks/exhaustive-deps
   const logs = { owner: useRef<HTMLDivElement>(null), stranger: useRef<HTMLDivElement>(null) }
   const shown = eps.filter(e => (e.tier === 'owner') === (tab === 'owner'))
-  useLayoutEffect(() => { const l = logs[tab].current; l?.scrollTo({ top: l.scrollHeight, behavior: RM ? 'auto' : 'smooth' }) }, [shown.length, tab])  // eslint-disable-line react-hooks/exhaustive-deps
+  useLayoutEffect(() => {
+    const l = logs[tab].current, end = () => l?.scrollTo({ top: l.scrollHeight, behavior: RM ? 'auto' : 'smooth' })
+    end(); document.fonts.ready.then(end)  // first load: web fonts reflow the log after the first scroll
+  }, [shown.length, tab])  // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <section className="chat" aria-label="Telegram mirror">
