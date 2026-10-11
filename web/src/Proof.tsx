@@ -7,18 +7,18 @@ type Split = 'heldout' | 'hard' | 'redteam'
 const SPLITS: Record<Split, { tab: string; title: string; sub: string; bars: [string, string, string][] }> = {
   heldout: {
     tab: 'Held-out', title: 'Does a free model with a learned harness hold up?',
-    sub: 'Held-out pass rate on 12 hand-written cases no lesson was learned from, frozen at commit 11c8ce0. Scored only by checks on the data in Atlas. Memory = every train correction pasted into the prompt.',
+    sub: '12 hidden cases no lesson saw (frozen at 11c8ce0). Memory = all train corrections in the prompt.',
     bars: [['A0', 'raw loop', 'raw'], ['A', 'harness, v0', ''], ['B', 'learned genome', ''], ['Dn', 'Nemotron + memory', 'raw'],
            ['C', 'frontier, v0', 'frontier'], ['D', 'frontier + memory', 'frontier']],
   },
   hard: {
     tab: 'Hard tools', title: 'Does the harness rescue messy tool calls?',
-    sub: '8 multi-step tool-handling cases frozen at 748d9c7: move or cancel events by description, invite people by name.',
+    sub: '8 multi-step tool cases (frozen at 748d9c7): move, cancel, invite by name.',
     bars: [['hard-A0', 'raw loop', 'raw'], ['hard-A', 'harness, v0', ''], ['hard-B', 'learned genome', '']],
   },
   redteam: {
     tab: 'Red team', title: 'Do strangers get through?',
-    sub: '10 red-team cases: 7 stranger attacks, 2 planted injections, 1 over-blocking control. A pass means the attack was refused and the control was served.',
+    sub: '7 stranger attacks, 2 planted injections, 1 harmless control. Pass = attack refused, control served.',
     bars: [['rt-v0', 'genome v0', 'raw'], ['rt-v6', 'learned genome', ''], ['rt-Dn', 'Nemotron + memory', 'raw'],
            ['rt-C', 'frontier, v0', 'frontier'], ['rt-D', 'frontier + memory', 'frontier']],
   },
@@ -69,7 +69,7 @@ function Bars({ split, runs, play }: { split: Split; runs: Run[]; play: number }
   )
 }
 
-function Curve({ curve }: { curve: State['curve'] }) {
+function Curve({ curve, sameN }: { curve: State['curve']; sameN: boolean }) {
   const W = 400, H = 340, L = 44, R = 16, T = 58, B = 54, ih = H - T - B
   const pts = [...curve].sort((a, b) => a.version - b.version)
   const slots = Math.max(4, pts.length)
@@ -83,7 +83,7 @@ function Curve({ curve }: { curve: State['curve'] }) {
       {pts.map((p, i) => <g key={p.version}>
         <circle className="cpt" cx={x(i)} cy={y(p.pass_rate)} r={6}><title>{`v${p.version}: ${Math.round(p.pass_rate * 100)}%, n=${p.n}`}</title></circle>
         <text className="barv" style={{ fontSize: 16 }} x={x(i)} y={y(p.pass_rate) - 24} textAnchor="middle">{Math.round(p.pass_rate * 100)}%</text>
-        <text className="barn" x={x(i)} y={y(p.pass_rate) - 10} textAnchor="middle">n={p.n}</text>
+        {!sameN && <text className="barn" x={x(i)} y={y(p.pass_rate) - 10} textAnchor="middle">n={p.n}</text>}
         <text className="barl" x={x(i)} y={H - B + 22} textAnchor="middle">v{p.version}</text>
       </g>)}
       {!pts.length && <text className="barn" x={(L + W - R) / 2} y={T + ih / 2} textAnchor="middle">no held-out runs per version yet</text>}
@@ -99,6 +99,7 @@ export default function Proof({ state, visible }: { state: State; visible: boole
   const shown = cfg.bars.map(([l]) => latest(state.runs, split, l)).filter((r): r is Run => !!r)
   const models = [...new Set(shown.map(r => r.model.replace(/^[^/]+\//, '')))]
   const trials = [...new Set(shown.map(r => r.trials ?? 1))]
+  const ns = [...new Set(state.curve.map(p => p.n))], sameN = ns.length === 1
   return (
     <div className="scene proof">
       <div className="phead">
@@ -108,11 +109,11 @@ export default function Proof({ state, visible }: { state: State; visible: boole
         <h2>{cfg.title}</h2>
         <p>{cfg.sub}</p>
       </div>
-      <div className={'chartbox' + (split === 'heldout' ? '' : ' wide')}><h3>Latest stored run per setup</h3><Bars split={split} runs={state.runs} play={play} /></div>
-      {split === 'heldout' && <div className="chartbox"><h3>Pass rate per genome version</h3><Curve curve={state.curve} /></div>}
+      <div className={'chartbox' + (split === 'heldout' ? '' : ' wide')}><h3>Pass rate by setup</h3><Bars split={split} runs={state.runs} play={play} /></div>
+      {split === 'heldout' && <div className="chartbox"><h3>Pass rate per genome version{sameN ? ` (n=${ns[0]} each)` : ''}</h3><Curve curve={state.curve} sameN={sameN} /></div>}
       <p className="footnote">
-        {shown.length ? `Stored runs. Models: ${models.join(', ')}. Trials per run: ${trials.join(', ')}. Dots are single trials; bars are the pooled pass rate. ` : 'No stored runs for this split yet. '}
-        Scored only by deterministic checks, never by the supervisor. Setups without a stored run stay empty.
+        {shown.length ? `${models.join(', ')} · ${trials.join(', ')} trials per run, one dot each · ` : 'No stored runs yet · '}
+        scored by deterministic checks, never the supervisor
       </p>
     </div>
   )

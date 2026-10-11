@@ -32,7 +32,7 @@ type View = { cycle: Cycle; cands: Lesson[]; tested?: string; ring: Ring; who: s
 
 function whoOf(c: Cycle) {
   if (c.kind === 'raindrop') return 'a Raindrop flag'
-  if (c.kind === 'case' || c.kind === 'redteam') return `case ${c.source}`
+  if (c.kind === 'case' || c.kind === 'redteam' || c.source?.startsWith('case:')) return `case ${c.source?.replace(/^case:/, '')}`
   return c.tier === 'owner' ? 'Thomas' : c.tier === 'stranger' ? 'a stranger' : 'a failure'
 }
 const STALE = 5 * 60_000  // a cycle still "proposing"/"running" after this crashed: treat it as ended
@@ -59,7 +59,7 @@ function cycleView(state: State): View | null {
 }
 
 const CAND_LABEL: Record<string, string> = {
-  candidate: 'candidate', active: 'shipped', rejected: 'rejected', quarantined: 'quarantined', skipped: 'untested alternative',
+  candidate: 'candidate', active: 'shipped', rejected: 'rejected', quarantined: 'quarantined', skipped: 'untested',
   duplicate: 'already known', revoked: 'revoked',
 }
 
@@ -81,54 +81,54 @@ function LoopRail({ view, state }: { view: View | null; state: State }) {
 
   const steps: { k: string; title: string; tag: string; state: StepState; open: boolean; sum: string; body?: React.ReactNode }[] = !view ? [] : [
     { k: 'signal', title: 'Signal', tag: c!.kind === 'raindrop' ? 'raindrop' : 'episodes', state: 'done', open: st === 'proposing' || st === 'false_alarm',
-      sum: `${view.who}${view.correction ? ': a correction' : ''}`,
-      body: <><p><span className={'src ' + (c!.kind === 'raindrop' ? 'raindrop' : view.tier)}>{c!.kind === 'raindrop' ? 'raindrop' : view.tier}</span> {c!.kind === 'telegram' ? (view.tier === 'owner' ? 'reacted 👎 and replied:' : 'tried to teach a rule:') : `flagged ${c!.source}:`}</p>
-        {st === 'false_alarm' ? <p className="mute">False alarm: the supervisor found this turn already correct{c!.why ? ` (${c!.why})` : ''}. Nothing to learn.</p>
-          : view.correction ? <p className="quote">"{view.correction}"</p> : <p className="mute">The supervisor is writing the correction from the failed checks.</p>}</> },
+      sum: view.who,
+      body: <><p><span className={'src ' + (c!.kind === 'raindrop' ? 'raindrop' : view.tier)}>{c!.kind === 'raindrop' ? 'raindrop' : view.tier}</span> {c!.kind === 'telegram' ? (view.tier === 'owner' ? '👎 and replied:' : 'tried to teach:') : `flagged ${c!.source}:`}</p>
+        {st === 'false_alarm' ? <p className="mute">False alarm: already correct{c!.why ? ` (${c!.why})` : ''}.</p>
+          : view.correction ? <p className="quote">"{view.correction}"</p> : <p className="mute">Supervisor is writing the correction…</p>}</> },
     { k: 'propose', title: 'Propose', tag: 'supervisor', state: st === 'proposing' ? 'active' : view.cands.length ? 'done' : st === 'false_alarm' ? 'skip' : 'bad', open: st === 'proposing' || live.length > 0,
       sum: `${live.length} candidate${live.length === 1 ? '' : 's'}`,
-      body: st === 'proposing' ? <p>Writing up to 3 alternative lessons; each one alone must cover the whole correction.</p>
+      body: st === 'proposing' ? <p>Writing up to 3 candidate lessons…</p>
         : <div className="cands">
             <AnimatePresence initial={false}>
               {live.map((l, i) => (
                 <motion.div key={l._id} layout data-cand={l._id} className={'cand ' + (l._id === view.tested && st === 'running' ? 'testing' : l.status)}
                   initial={RM ? false : { opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * .12, type: 'spring', stiffness: 260, damping: 26 }}>
                   <div className="ch"><span>#{i + 1} {SEC[l.section].toLowerCase()}</span><span className="st">{l._id === view.tested && st === 'running' ? 'testing' : CAND_LABEL[l.status] ?? l.status}</span></div>
-                  <p>{l.text}</p>
+                  <p title={l.text}>{l.text}</p>
                 </motion.div>))}
             </AnimatePresence>
           </div> },
     { k: 'dedup', title: 'Dedup', tag: '$vectorSearch', state: st === 'proposing' ? '' : view.cands.length ? 'done' : 'skip', open: false,
       sum: dups.length ? `${dups.length} already known` : (() => {
         const best = Math.max(0, ...view.cands.flatMap(l => (l.similar || []).map(s => s.score)))
-        return best ? `new, closest match ${best.toFixed(2)}` : 'new lessons'
+        return best ? `new (closest ${best.toFixed(2)})` : 'new'
       })() },
     st === 'quarantined' || live.some(l => l.status === 'quarantined')
       ? { k: 'gate', title: 'Quarantine', tag: 'owner decides', state: 'bad', open: true, sum: '',
-          body: <><p>Every source is a stranger, so the lesson waits for Thomas. Approved lessons still have to pass the gate.</p>
+          body: <><p>From a stranger, so Thomas decides. Approved lessons still face the gate.</p>
             {live.filter(l => l.status === 'quarantined').map(l => (
               <div className="acts" key={l._id}>
                 <button className="btn primary" disabled={!!busy} onClick={() => decide(l._id, 'approve')}>Approve</button>
                 <button className="btn danger" disabled={!!busy} onClick={() => decide(l._id, 'reject')}>Reject</button>
               </div>))}
             {err && <p className="verdict"><span className="no">{err}</span></p>}</> }
-      : { k: 'gate', title: 'Gate', tag: 'train cases only', state: st === 'running' ? 'active' : st === 'accepted' ? 'done' : ['rejected', 'no_candidates'].includes(st) ? 'bad' : st === 'duplicate' ? 'skip' : '',
+      : { k: 'gate', title: 'Gate', tag: 'train only', state: st === 'running' ? 'active' : st === 'accepted' ? 'done' : ['rejected', 'no_candidates'].includes(st) ? 'bad' : st === 'duplicate' ? 'skip' : '',
           open: st === 'running' || st === 'rejected',
-          sum: st === 'accepted' && shipped?.gate ? `fixed it, ${shipped.gate.regression_passed}/${shipped.gate.regression_total} past cases still pass` : st === 'duplicate' ? 'nothing new to test' : st === 'rejected' ? 'no candidate passed' : '',
+          sum: st === 'accepted' && shipped?.gate ? `fixed, ${shipped.gate.regression_passed}/${shipped.gate.regression_total} past cases pass` : st === 'duplicate' ? 'nothing new' : st === 'rejected' ? 'no candidate passed' : '',
           body: <>
             {ring && <div className="gl"><b>{testedIdx >= 0 ? `Candidate ${testedIdx + 1}` : 'Candidate'}</b><span className="num">{ring.results[ring.labels[0]] === undefined ? 'replaying' : `${gatePass}/${ring.labels.length - 1}`}</span></div>}
-            <p className="mute">The failure first (cases re-run, live turns replayed and judged by the supervisor), then train cases that passed before. Held-out is never used.</p>
+            <p className="mute">The failure, then past train cases. Never held-out.</p>
             <div className="verdict">{live.filter(l => l.gate).map(l => {
-              const g = l.gate!, n = live.indexOf(l) + 1
-              return g.accepted ? <span key={l._id} className="ok">#{n} fixed it, {g.regression_passed}/{g.regression_total} still pass. Shipped.</span>
-                : <span key={l._id} className="no">#{n} {g.fixed ? `fixed it but broke ${g.regression_total - g.regression_passed} past case${g.regression_total - g.regression_passed === 1 ? '' : 's'}` : 'did not fix the failure'}. Rejected.</span>
+              const g = l.gate!, n = live.indexOf(l) + 1, broke = g.regression_total - g.regression_passed
+              return g.accepted ? <span key={l._id} className="ok">#{n} shipped: fixed, {g.regression_passed}/{g.regression_total} pass</span>
+                : <span key={l._id} className="no">#{n} rejected: {g.fixed ? `broke ${broke} past case${broke === 1 ? '' : 's'}` : 'not fixed'}</span>
             })}</div>
             {ringDone === 0 && st === 'running' && <p className="mute">Starting…</p>}
           </> },
     { k: 'commit', title: 'Commit', tag: 'transaction', state: st === 'accepted' ? 'done' : view.ended ? 'skip' : '', open: false,
-      sum: st === 'accepted' && shipped ? `genome v${version}, ${shipped._id}, lineage` : '' },
+      sum: st === 'accepted' && shipped ? `v${version} · ${shipped._id}` : '' },
     { k: 'swap', title: 'Hot-swap', tag: 'change stream', state: st === 'accepted' ? (swapped ? 'done' : 'active') : view.ended ? 'skip' : '', open: st === 'accepted' && !swapped,
-      sum: swapped ? `agent on v${state.genome.version}` : '', body: <p>The change stream delivers the new genome to the running agent. No restart.</p> },
+      sum: swapped ? `agent on v${state.genome.version}` : '', body: <p>Pushing to the running agent, no restart.</p> },
   ]
 
   async function decide(id: string, d: 'approve' | 'reject') {
@@ -151,7 +151,7 @@ function LoopRail({ view, state }: { view: View | null; state: State }) {
       <h2 className="ptitle">The loop <span className="sub">{sub}</span></h2>
       {!view ? <ol className="steps"><li className="step open"><span className="n">1</span><div>
         <div className="shead"><b>Signal</b><code>episodes</code></div>
-        <div className="sdetail"><div><div className="in"><p>A 👎 with a correction, a failed case, or a Raindrop flag starts the loop.</p></div></div></div></div></li></ol>
+        <div className="sdetail"><div><div className="in"><p>Starts on a 👎, a failed case, or a Raindrop flag.</p></div></div></div></div></li></ol>
         : <ol className="steps" ref={box}>
           {steps.map((s, i) => (
             <li key={s.k} data-step={s.k} className={`step ${s.state}${s.open ? ' open' : ''}`}>
@@ -179,8 +179,8 @@ function parseArgs(s: string): [string, string][] {
 }
 function resultLabel(s: ToolStep): [string, string] {
   const r = s.result || ''
-  if (r.startsWith('DENIED')) return ['denied', 'denied: not allowed for this user']
-  if (r.startsWith('ERROR')) return ['error', 'error, fed back']
+  if (r.startsWith('DENIED')) return ['denied', 'denied']
+  if (r.startsWith('ERROR')) return ['error', 'error']
   try { const j = JSON.parse(r); if (Array.isArray(j)) return ['', `${j.length} found`] } catch { /* not JSON */ }
   return ['', /create|add|set|draft|send|update|cancel/.test(s.tool) ? 'saved to Atlas' : 'ok']
 }
@@ -201,7 +201,7 @@ const Turn = memo(function Turn({ ep, tab, correction }: { ep: Episode; tab: str
           return <div key={i} className={'call ' + cls}><div className="ch"><span className="fn">{s.tool}</span><span className="res">{label}</span></div>
             <div className="args">{parseArgs(s.args).map(([k, v]) => <span key={k}><i>{k}</i> {v}</span>)}</div></div>
         })}
-        {reply && <div>{reply.length > 420 ? reply.slice(0, 419) + '…' : reply}</div>}
+        {reply && <div>{reply.length > 280 ? reply.slice(0, 279) + '…' : reply}</div>}
         {ep.error && <div className="err">{ep.error.slice(0, 160)}</div>}
         {correction !== undefined && <span className="react" aria-label="thumbs down">👎</span>}
       </motion.div>
@@ -240,7 +240,7 @@ function Transcript({ state }: { state: State }) {
       {(['owner', 'stranger'] as const).map(t => (
         <div key={t} ref={logs[t]} className={'log' + (t === 'stranger' ? ' str' : '')} hidden={tab !== t} aria-live="polite">
           {t === tab && (shown.length ? shown.slice(-14).map(ep => <Fragment key={ep._id}><Turn ep={ep} tab={t} correction={corrections[ep._id]} /></Fragment>)
-            : <p className="empty">{t === 'owner' ? "Thomas's messages to Tsugi show up here as they happen." : 'Messages from people Tsugi does not know. Play one below.'}</p>)}
+            : <p className="empty">{t === 'owner' ? "Thomas's chats appear here live." : 'Write as a stranger below.'}</p>)}
         </div>))}
       {tab === 'stranger' && <StrangerComposer />}
     </section>
@@ -252,7 +252,7 @@ function StrangerComposer() {
   async function go(e: FormEvent, kind: 'chat' | 'teach') {
     e.preventDefault()
     const t = (kind === 'chat' ? text : rule).trim(); if (!t) return
-    setSending(true); setNote(kind === 'chat' ? 'Tsugi is answering…' : 'Sent. It should land in quarantine.')
+    setSending(true); setNote(kind === 'chat' ? 'Tsugi is answering…' : 'Sent. Expect quarantine.')
     try { kind === 'chat' ? (await api.chat(t), setText(''), setNote('')) : (await api.teach(t), setRule('')) }
     catch (err) { setNote(String((err as Error).message)) }
     setSending(false)
@@ -299,7 +299,7 @@ function Genome({ state, events, onLesson }: { state: State; events: LiveEvent[]
   const allTools = [...new Set(Object.values(ta).flat())]
   return (
     <section className="ribbon" aria-label="Genome">
-      <div className="rhead"><h2 className="ptitle">Genome <span className="num">v{state.genome.version}</span><span className="sub">what Tsugi runs on, changed only by lessons that pass the gate</span></h2></div>
+      <div className="rhead"><h2 className="ptitle">Genome <span className="sub">edited only by lessons that pass the gate</span></h2></div>
       <div className="genome" ref={root}>
         {(['rules', 'context_policies', 'guardrails'] as const).map(s => (
           <div className="gcol" key={s}>
@@ -309,7 +309,7 @@ function Genome({ state, events, onLesson }: { state: State; events: LiveEvent[]
                 {items[s].map(i => (
                   <motion.li key={i.lesson ?? i.text} data-l={i.lesson ?? undefined} className={i.lesson ? 'learned' : ''} layout="position"
                     exit={RM ? undefined : { opacity: 0, x: 18, transition: { duration: .8 } }}>
-                    <span>{i.text}</span>
+                    <span title={i.text}>{i.text}</span>
                     {i.lesson && <button className="lid" onClick={() => onLesson(i.lesson!)} aria-label={`Lineage of ${i.lesson}`}>{i.lesson}</button>}
                   </motion.li>))}
               </AnimatePresence>
@@ -358,14 +358,14 @@ export default function Stage({ state, events, onLesson }: { state: State; event
   const shipped = view?.cands.find(l => l.status === 'active')
   const testedIdx = view?.tested ? view.cands.filter(l => l.status !== 'duplicate').findIndex(l => l._id === view.tested) : -1
   const caption =
-    c?.status === 'proposing' ? `Learning from ${view!.who}: the supervisor is writing candidate lessons`
-    : c?.status === 'running' ? (ring ? `Gate: candidate ${testedIdx + 1} against the failure and ${ring.labels.length - 1} past cases` : 'Gate: preparing the test')
-    : revokedAgo < RECENT ? `Revoked ${g.cause?.revoked?.length ?? 1} node${(g.cause?.revoked?.length ?? 1) === 1 ? '' : 's'}. Genome v${g.version} was rebuilt without them.`
+    c?.status === 'proposing' ? `Learning from ${view!.who}…`
+    : c?.status === 'running' ? (ring ? `Gate: testing candidate ${testedIdx + 1} on ${ring.labels.length} cases` : 'Gate: preparing…')
+    : revokedAgo < RECENT ? `Revoked ${g.cause?.revoked?.length ?? 1}. Genome v${g.version} rebuilt.`
     : c?.status === 'accepted' && endedAgo < RECENT ? `Shipped ${shipped?._id ?? ''}. Genome v${c.version} is live.`
-    : quarantined ? "A stranger's lesson is waiting for Thomas"
-    : c && ['rejected', 'no_candidates'].includes(c.status) && endedAgo < RECENT ? 'No candidate passed the gate. Nothing changed.'
-    : c?.status === 'duplicate' && endedAgo < RECENT ? 'Already known: nothing new to learn'
-    : c?.status === 'false_alarm' && endedAgo < RECENT ? 'False alarm: the flagged turn was already correct'
+    : quarantined ? 'A stranger’s lesson waits for Thomas'
+    : c && ['rejected', 'no_candidates'].includes(c.status) && endedAgo < RECENT ? 'Gate said no. Nothing changed.'
+    : c?.status === 'duplicate' && endedAgo < RECENT ? 'Already known'
+    : c?.status === 'false_alarm' && endedAgo < RECENT ? 'False alarm: already correct'
     : 'Tsugi is listening'
   const [flash, setFlash] = useState(false), lastV = useRef(g.version)
   useEffect(() => { if (g.version !== lastV.current) { lastV.current = g.version; setFlash(true); const t = setTimeout(() => setFlash(false), 1700); return () => clearTimeout(t) } }, [g.version])
@@ -387,11 +387,11 @@ export default function Stage({ state, events, onLesson }: { state: State; event
           <motion.p key={caption} className="caption" aria-live="polite" initial={RM ? false : { opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: .25 }}>{caption}</motion.p>
         </AnimatePresence>
         <dl className="counters">
-          <div><dt>episodes, all runs</dt><dd><Count value={state.counters.episodes} /></dd></div>
-          <div><dt>lessons live</dt><dd><Count value={live} /></dd></div>
-          <div><dt>tool repairs</dt><dd><Count value={state.counters.repairs} /></dd></div>
+          <div title="all runs, evals included"><dt>episodes</dt><dd><Count value={state.counters.episodes} /></dd></div>
+          <div><dt>lessons</dt><dd><Count value={live} /></dd></div>
+          <div title="bad tool calls caught and fixed"><dt>repairs</dt><dd><Count value={state.counters.repairs} /></dd></div>
           <div><dt>fallbacks</dt><dd><Count value={state.counters.fallbacks} /></dd></div>
-          <div><dt>blocked calls</dt><dd><Count value={state.counters.blocks} /></dd></div>
+          <div title="tool calls denied by tool access"><dt>blocked</dt><dd><Count value={state.counters.blocks} /></dd></div>
         </dl>
       </section>
       <Transcript state={state} />

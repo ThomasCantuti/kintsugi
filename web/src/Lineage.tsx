@@ -79,9 +79,9 @@ export default function Lineage({ state, selected, onSelect, visible, toast }:
   return (
     <div className="scene lineage">
       <div className="lhead"><h2>Where every lesson came from</h2>
-        <p>Each lesson points back to the failure that caused it. Revoking one removes everything built on it, in one transaction.</p></div>
+        <p>Revoke a lesson and everything built on it goes too.</p></div>
       <div className="graph">
-        {err ? <p className="mute">Lineage unavailable: {err}</p> : !nodes.length ? <p className="mute">No lessons yet. A 👎 and a correction on Telegram starts the first one.</p> :
+        {err ? <p className="mute">Lineage unavailable: {err}</p> : !nodes.length ? <p className="mute">No lessons yet. A 👎 + correction on Telegram starts one.</p> :
           <svg ref={svg} viewBox={`-4 -4 ${width + 8} ${height + 8}`} style={{ maxWidth: width + 8 }} role="img" aria-label="Lineage graph">
             {nodes.flatMap(n => (n.parents || []).filter(p => pos[p]).map(p => {
               const a = pos[p], b = pos[n._id], x1 = a.x + W, y1 = a.y + H / 2, x2 = b.x, y2 = b.y + H / 2, m = (x1 + x2) / 2
@@ -89,7 +89,7 @@ export default function Lineage({ state, selected, onSelect, visible, toast }:
             }))}
             {nodes.map(n => {
               const p = pos[n._id], lesson = n.type === 'lesson', label = n.label.length > 31 ? n.label.slice(0, 30) + '…' : n.label
-              const k = lesson ? `${n._id} · ${status(n).toUpperCase()}` : `${SOURCE[n.type] ?? n.type.toUpperCase()} · ${n.status.toUpperCase()}`
+              const k = lesson ? `${n._id} · ${status(n).toUpperCase()}` : SOURCE[n.type] ?? n.type.toUpperCase()
               return (
                 <g key={n._id} data-id={n._id} className={`gn ${lesson ? 'lesson' : 'source'} t-${n.type} ${status(n)}${n._id === sel ? ' sel' : ''}`}
                   style={{ transformBox: 'fill-box', transformOrigin: 'center' }}
@@ -104,19 +104,19 @@ export default function Lineage({ state, selected, onSelect, visible, toast }:
           </svg>}
       </div>
       <aside className="inspector" aria-live="polite">
-        {!sel || !node ? <p className="mute">Select a lesson in the graph, or click a gold seam on Tsugi.</p> : <>
+        {!sel || !node ? <p className="mute">Pick a lesson, or click a gold seam on Tsugi.</p> : <>
           <div className="ihead"><span className={'tag ' + status(node)}>{status(node)}</span><span className="mono mute">{sel}</span></div>
           <p className="itext">{l?.text ?? node.label}</p>
           <dl className="meta">
             {l && <div><dt>Section</dt><dd>{SEC[l.section]}{l.section === 'tool_access' && l.tools ? `: ${l.allow ? 'allow' : 'remove'} ${l.tools.join(', ')} for ${l.tier}` : ''}</dd></div>}
             <div><dt>Came from</dt><dd>{sourceOf(sel) || (l ? `${l.source.tier}, ${l.source.kind}` : 'unknown')}</dd></div>
-            {l?.gate && <div><dt>Gate</dt><dd>{l.gate.fixed ? 'fixed the failure' : 'did not fix the failure'}, {l.gate.regression_passed}/{l.gate.regression_total} past cases pass</dd></div>}
+            {l?.gate && <div><dt>Gate</dt><dd>{l.gate.fixed ? 'fixed' : 'not fixed'}, {l.gate.regression_passed}/{l.gate.regression_total} past cases pass</dd></div>}
             <div><dt>Shipped in</dt><dd>{state.versions[sel] != null ? `genome v${state.versions[sel]}` : 'not shipped'}</dd></div>
-            <div><dt>Built on it</dt><dd>{kids.length ? kids.join(', ') : 'nothing'}</dd></div>
+            {kids.length > 0 && <div><dt>Built on it</dt><dd>{kids.join(', ')}</dd></div>}
           </dl>
           {node.status === 'active' && !cascade.length && <button className="btn danger solid" disabled={running} onClick={revoke} style={{ justifySelf: 'start' }}>
             Revoke{liveKids.length ? ` with ${liveKids.length} descendant${liveKids.length === 1 ? '' : 's'}` : ''}</button>}
-          <div><p className="mute" style={{ margin: '0 0 .35rem', fontSize: '.8rem' }}>What revoke runs in Atlas, inside one transaction</p>
+          <div><p className="mute" style={{ margin: '0 0 .35rem', fontSize: '.8rem' }}>Revoke in Atlas, one transaction</p>
 <pre className={'code' + (running ? ' run' : '')}>{`db.lineage.aggregate([
   { $match: { _id: "${sel}" } },
   { `}<b>$graphLookup</b>{`: {

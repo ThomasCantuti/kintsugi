@@ -62,7 +62,7 @@ export default function App() {
           </AnimatePresence></span></span></span>
           <span className={'chip gate' + (state?.gate_running ? ' on' : '')}>{state?.gate_running ? 'gate testing' : 'gate idle'}</span>
           <span className={'chip c-' + conn}><span className="live" />{CONN[conn]}</span>
-          <span className="chip"><b><Count value={state?.counters.cost ?? 0} fmt={v => '$' + v.toFixed(4)} /></b>&nbsp;agent spend</span>
+          <span className="chip"><b><Count value={state?.counters.cost ?? 0} fmt={v => '$' + v.toFixed(2)} /></b>&nbsp;spent</span>
           <button className="themebtn" type="button" onClick={() => setTheme(t => t === 'dark' ? 'light' : 'dark')} aria-label={`Theme: ${theme === 'dark' ? 'Lacquer' : 'Porcelain'}. Switch theme`}>
             {theme === 'dark' ? 'Lacquer' : 'Porcelain'}</button>
         </div>

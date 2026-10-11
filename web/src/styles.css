@@ -134,6 +134,10 @@ main { position: relative; min-height: 0 }
   transition: opacity .4s, border-color .3s, background-color .3s, box-shadow .3s }
 .cand .ch { display: flex; justify-content: space-between; gap: .5rem; font: 500 .7rem var(--mono); color: var(--mute) }
 .cand p { margin: 0; font-size: .86rem; color: var(--ink); text-wrap: pretty }
+/* long lesson text: full only where it matters (shipped, under test, awaiting Thomas); hover shows the rest */
+.cand p { display: -webkit-box; -webkit-box-orient: vertical; overflow: hidden; -webkit-line-clamp: 3 }
+.cand.active p, .cand.testing p, .cand.quarantined p { -webkit-line-clamp: none }
+.cand.rejected p, .cand.skipped p, .cand.duplicate p, .cand.revoked p { -webkit-line-clamp: 1 }
 .cand.testing { border-color: var(--gold); box-shadow: 0 0 0 3px var(--gold-wash) }
 .cand.rejected, .cand.duplicate { opacity: .5 }
 .cand.rejected p { text-decoration: line-through; text-decoration-color: var(--shu) }
@@ -253,6 +257,7 @@ main { position: relative; min-height: 0 }
 .gcol ul { position: relative; list-style: none; margin: 0; padding: 0; display: grid; gap: .2rem; max-height: 6.6rem; overflow-y: auto; align-content: start; scrollbar-width: thin }
 .gcol li { font-size: .82rem; padding: .2rem .45rem; border-radius: 7px; color: var(--ink-2); display: flex; gap: .5rem; align-items: baseline; justify-content: space-between; position: relative; overflow: hidden }
 .gcol li.learned { color: var(--ink); background: var(--gold-wash) }
+.gcol li > span { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden }
 .gcol li .lid { font: 500 .68rem var(--mono); color: var(--gold-ink); white-space: nowrap; background: none; border: 0; padding: 0 }
 .gcol li .lid:hover { text-decoration: underline }
 .gcol li.land { animation: land 1.6s ease-out }
