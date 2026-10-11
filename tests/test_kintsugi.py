@@ -113,6 +113,15 @@ def test_gate_accepts_fix_and_rejects_regression(run, monkeypatch):
     assert not useless["fixed"] and not useless["accepted"]
 
 
+def test_gate_tool_access_lesson_regresses_only_its_tier(monkeypatch):
+    train = [{"id": "o", "tier": "owner"}, {"id": "s", "tier": "stranger"}, {"id": "n"}]  # no tier = owner
+    monkeypatch.setattr(evals, "cases", lambda split: train if split == "train" else 1 / 0)
+    ids = lambda l: [c["id"] for c in gate._sample(["o", "s", "n"], None, l)]
+    assert ids({"section": "tool_access", "tier": "stranger"}) == ["s"]  # owner cases see the same prompt and tools
+    assert ids({"section": "tool_access", "tier": "owner"}) == ["o", "n"]
+    assert ids({"section": "rules"}) == ["o", "s", "n"]
+
+
 def test_learner_and_gate_never_read_heldout():
     for module in (learner, gate):
         assert "heldout" not in inspect.getsource(module)

@@ -54,8 +54,12 @@ async def baseline_passing(g: dict) -> list[str]:
     return doc["passing"]
 
 
-def _sample(passing: list[str], case_id: str | None) -> list[dict]:
-    return [c for c in evals.cases("train") if c["id"] in passing and c["id"] != case_id][:REGRESSION_SAMPLE]
+def _sample(passing: list[str], case_id: str | None, lesson: dict) -> list[dict]:
+    # a tool_access lesson changes only its tier's tools: every other case sees the same prompt and tools, so it can't
+    # regress there, and re-running it only measures model noise (which rejected L-82dfca and L-b7ba0c on team-03)
+    tier = lesson.get("tier") if lesson.get("section") == "tool_access" else None
+    return [c for c in evals.cases("train") if c["id"] in passing and c["id"] != case_id
+            and tier in (None, c.get("tier", "owner"))][:REGRESSION_SAMPLE]
 
 
 async def _quiet(_: dict) -> None:
@@ -72,7 +76,7 @@ async def judge(lesson: dict, f: dict, g: dict, progress: Progress = None) -> di
     # the past cases are listed up front only when the baseline is cached: measuring a missing one runs the train
     # split, which stays behind the fix check (an unfixed candidate never pays for regression runs)
     known = await db.baselines.find_one({"_id": g["version"]})
-    sample = _sample(known["passing"], case_id) if known else []
+    sample = _sample(known["passing"], case_id, lesson) if known else []
     await say({"lesson": lesson["_id"], "cases": [first] + [c["id"] for c in sample]})
     fixed, why = await _fixes(cand, f)
     await say({"lesson": lesson["_id"], "case": first, "passed": fixed})
@@ -80,7 +84,7 @@ async def judge(lesson: dict, f: dict, g: dict, progress: Progress = None) -> di
     if not fixed:
         return v
     if not known:
-        sample = _sample(await baseline_passing(g), case_id)
+        sample = _sample(await baseline_passing(g), case_id, lesson)
         await say({"lesson": lesson["_id"], "cases": [first] + [c["id"] for c in sample]})
         await say({"lesson": lesson["_id"], "case": first, "passed": True})
 
