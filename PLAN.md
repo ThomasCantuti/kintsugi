@@ -168,7 +168,7 @@ teaches once, the free model runs every day.*
 State at 14:45: genome v10 (10 lessons: 7 from train cases, 3 taught live, one of them from a Raindrop flag). Numbers: README Results.
 | t | Beat |
 |---|---|
-| before | Live view on :8000 (Stage). Optional: a tab on the Raindrop event E-b3176a9f. Send "Set up a call with Maya Chen tomorrow at 2pm" from Telegram while the judges settle (reply ~20 s). |
+| before | Live view on :8000 (Stage). Optional: a tab on the leak event in Raindrop (Events filtered by signal "Attempted Prompt Injection", 1 match; or Raindrop id 57b4332a-2390-5f41-aaee-133daf23d6fc; searching E-b3176a9f finds nothing). Judges can try the sandbox: https://tsugi-production.up.railway.app (README "Try it"). Send "Set up a call with Maya Chen tomorrow at 2pm" from Telegram while the judges settle (reply ~20 s). |
 | 0:00 | **Hook** (above). Tsugi has replied: 30 min, but titled "Call with Maya Chen". |
 | 0:15 | **Revoke** (Lineage → "Say degrees, not F" → Revoke, one transaction, instant → v11): "This lesson passed the gate this afternoon and shouldn't have: its replay had no weather tool, so nothing was tested. One click removes it and everything built on it." It goes **before** the 👎: a revoke during a gate changes the genome under the test. |
 | 0:25 | **Teach**: 👎 + "Investor calls are 30 min, titled 'Investor: <name>'" → 3 candidates (~12 s) → the gate starts. It runs ~2 min (failing case + 8 past cases + scars at once); the ring ticks on the live view while we go on. |
