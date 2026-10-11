@@ -147,6 +147,13 @@ async def learn(f: dict, notify: Notify = None) -> dict:
     if not f.get("correction"):
         f["correction"] = await write_correction(f)
         await db.gates.update_one({"_id": f["gate_id"]}, {"$set": {"correction": f["correction"]}})
+    if f["kind"] == "raindrop":  # Raindrop flags, the supervisor confirms: a turn that already follows the feedback teaches nothing
+        v = await gate.supervisor_judge(f["history"], f["steps"], f["reply"], f["correction"])
+        if v.get("passed"):
+            await db.gates.update_one({"_id": f["gate_id"]}, {"$set": {"status": "false_alarm", "why": v.get("why", ""),
+                                                                      "ended_at": datetime.now(UTC)}})
+            raindrop.track_signal(event_id=f["source_id"], name="false_alarm", properties={"why": v.get("why", "")})
+            return {"status": "false_alarm", "why": v.get("why", ""), "lessons": []}
     g = await genome.current()
     candidates = []
     for lesson in await propose(f, g):

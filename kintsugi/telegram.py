@@ -33,6 +33,8 @@ def describe(result: dict) -> str:
         return "🔒 Thanks! Your suggestion is waiting for my owner's approval."
     if s == "duplicate":
         return "I already know this one. 🌱"
+    if s == "false_alarm":
+        return f"🌦️ My supervisor checked: that turn was already right ({result['why']}). Nothing to learn."
     lessons = result.get("lessons", [])
     return f"I couldn't find a safe fix ({len(lessons)} candidate{'s' if len(lessons) != 1 else ''} failed the gate)."
 
