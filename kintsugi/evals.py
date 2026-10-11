@@ -10,6 +10,7 @@ import argparse
 import asyncio
 import json
 import uuid
+from dataclasses import replace
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -107,6 +108,8 @@ async def _main():
     sw = RAW if a.raw else Switches()
     if a.naive:
         sw = Switches(naive_memory="\n".join(f"- {c['correction']}" for c in cases("train") if c.get("correction")))
+    if a.model:  # a bar named after a model contains only that model's answers (no silent fallback)
+        sw = replace(sw, fallback=False)
     run = await run_split(a.label, a.split, g, a.model, sw, a.trials)
     print(f"{run['label']} {run['split']} model={run['model']} genome=v{run['genome_version']} "
           f"passed {run['passed']}/{run['n']} ({run['pass_rate']:.0%}) cost=${run['cost']:.4f} {run['counters']}")

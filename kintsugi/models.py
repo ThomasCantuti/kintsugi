@@ -7,7 +7,7 @@ import json
 import urllib.request
 from dataclasses import dataclass, field
 
-from openai import AsyncOpenAI
+from openai import AsyncOpenAI, RateLimitError
 
 from . import config
 
@@ -34,6 +34,8 @@ class BudgetExceeded(RuntimeError):
 
 
 spent = 0.0  # process-wide cost meter (USD)
+# ponytail: fixed backoff sized for OpenRouter's new-account cap (20 req/min per model); None = give up
+RATE_LIMIT_WAITS = (10, 20, 30, None)
 _client: AsyncOpenAI | None = None
 
 
@@ -66,10 +68,17 @@ async def chat(messages: list[dict], tools: list[dict] | None = None, model: str
         if json_mode:
             kw["response_format"] = {"type": "json_object"}
         try:
-            r = await client().chat.completions.create(**kw)
+            for wait in RATE_LIMIT_WAITS:  # rate limited: wait it out on the same model before falling back
+                try:
+                    r = await client().chat.completions.create(**kw)
+                    break
+                except RateLimitError:
+                    if wait is None:
+                        raise
+                    await asyncio.sleep(wait)
             if not r.choices:
                 raise RuntimeError(f"{m}: empty response")
-        except Exception as e:  # provider down, rate limited, bad request for this model...
+        except Exception as e:  # provider down, still rate limited, bad request for this model...
             error = e
             continue
         msg = r.choices[0].message

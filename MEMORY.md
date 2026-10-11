@@ -84,6 +84,13 @@ Living facts and decisions. Append; don't rewrite history. Date every entry.
   Lightning A0 lost 2 cases to `429 rate-limited upstream` (no fallback in the raw loop); no 429 hit the A run, so no rescue measured.
 - Curve: evolution run (1 trial per version, old 8-tool registry, labels v1–v6 written by `evolve --measure`): v1 8/12 · v2 6/12 ·
   v3 7/12 · v4 9/12 · v5 10/12 · v6 9/12. **Superseded by the 3-trial batch** (labels v1–v5 + B at v6) launched ~12:40.
+- **Curve, 3 trials per version** (held-out n=36, paid Nemotron Super, current tools, 0 repairs/fallbacks/blocks, ~12:20–12:30 PT):
+  v0 17/36 47% (A, R-de32c8) · v1 16/36 44% (R-98fcdb, 5/5/6) · v2 22/36 61% (R-9b8a53, 8/7/7) · v3 22/36 61% (R-950a23, 8/7/7) ·
+  v4 24/36 67% (R-b6d547, 9/8/7) · v5 **29/36 81%** (R-eec8a3, 10/9/10) · v6 = **B 27/36 75%** (R-4efb73, 9/9/9). $0.03–0.06 per run.
+- Red-team (10 cases × 3 trials = 30): **v0 9/30** (R-9091cc, 3/3/3) → **v6 20/30** (R-927e0d, 6/7/7). Hard split at v6: 21/24 (R-81a386, 7/7/7) = same as v0, no regression.
+- **INVALID frontier runs** (do not chart): R-e37e9a "C" 18/36 and R-fdb27d "D" 34/36: Sonnet hit OpenRouter's **new-account cap of
+  20 req/min per model** and 73/78 calls fell back to free Nemotron (so R-fdb27d is mostly Nemotron + naive memory). R-6cd9fc "C" 8/36:
+  fallback off, trial 1 = 8/12 on Sonnet, trials 2–3 all 429 errors. Fixes: `--model` disables fallback; models.chat waits out 429s.
 - Evolution (2 rounds on train, Sonnet supervisor, paid Nemotron): genome v0 → **v6**, 6 lessons accepted, 11 rejected by the gate,
   10 untested alternatives marked `skipped`. Lessons: focus blocks (rules), reminders 15 min before (rules), check calendar for
   conflicts (context_policies), draft unless "send it now" (guardrails), never reveal private notes (guardrails), strangers → take a

@@ -186,3 +186,20 @@ def test_live_turns_go_to_raindrop_with_private_notes_hidden(run, monkeypatch):
     (_, begin), (_, tool), (_, finish) = sent
     assert begin["event_id"] == "E-2" and begin["user_id"] == begin["convo_id"] == "42" and begin["input"] == "my notes?"
     assert "PIN 1234" not in tool["output"] and "buy milk" in tool["output"] and finish["output"] == "Here they are."
+
+def test_rate_limit_waits_on_the_same_model_before_falling_back(run, monkeypatch):
+    import httpx
+    from types import SimpleNamespace as NS
+    from openai import RateLimitError
+    calls = []
+
+    async def create(**kw):
+        calls.append(kw["model"])
+        if len(calls) == 1:
+            raise RateLimitError("429", response=httpx.Response(429, request=httpx.Request("POST", "http://x")), body=None)
+        return NS(choices=[NS(message=NS(content="hi", tool_calls=None))], usage=None)
+
+    monkeypatch.setattr(models, "_client", NS(chat=NS(completions=NS(create=create))))
+    monkeypatch.setattr(models, "RATE_LIMIT_WAITS", (0, None))
+    r = run(models.chat([{"role": "user", "content": "x"}], model="frontier", fallbacks=["cheap"]))
+    assert calls == ["frontier", "frontier"] and r.model == "frontier" and r.fallbacks == 0
