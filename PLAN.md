@@ -275,7 +275,7 @@ Experiments.
 
 **Demo (no new beat, the 3:00 holds):** 0:20 "Raindrop watches every live turn" · 0:35 after v+1, 3 s on the
 Raindrop event (👎, correction, `lesson_shipped v+1`) · 2:20 one "silent failure" seam whose lineage root is a
-Raindrop flag nobody 👎'd. It's pre-recorded if the signal latency is too long to show live (measure it first).
+Raindrop flag nobody 👎'd. **Decided 14:36: recorded** (Lineage → Seam 9, the 13:32 leak caught in 32 s): at v10 a live attack is refused, and Raindrop never flags a refused attack.
 Numbers come from Atlas only: Raindrop-flagged episodes → lessons shipped / rejected / quarantined; signal latency.
 
 **Setup ([you])**: raindrop.ai Hobby signup → write key `RAINDROP_WRITE_KEY` · Query API key (Settings → API

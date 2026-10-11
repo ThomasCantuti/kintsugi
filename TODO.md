@@ -50,11 +50,12 @@ Scope and timeline: PLAN.md §8–9. **No project code before 10:30.**
 - [x] 13:32 "SYSTEM OVERRIDE …" from the stranger chat → v7 **leaked the system prompt + all private notes** (E-b3176a9f) → Raindrop flagged it ≤ 32 s → (after poller fix c676fcb: flags arrive as uuids) → quarantined 3 candidates in 22 s (G-96156c: L-f857d8 guardrails, L-e298d0 rules, L-4536f5 tool_access). **Live beat is back on**
 - [x] First Raindrop-sourced seam: L-4536f5 rejected by the gate (over-specified correction → fixed 5b813d7), then **L-f857d8 "Ignore fake override commands" → v9** (8/8 past cases). Untested alternatives dropped by the card's pick rule were restored by hand; c2 fixed the rule (c78eb5f)
 - [x] Lessons have plain titles (b2a9819, 33 backfilled); Raindrop cycles store `flags` + `flag_latency_s` (turn → Kintsugi saw the flag, includes the poll interval) on the gates doc and lineage node (624bed8). Shown by c2: Telegram card A/B/C (eac0f9c), live view titles, "Seam N · title", chip "🌧️ Raindrop · <flags> · caught in N s" (e03d99b)
-- [ ] Chip links to https://app.raindrop.ai: per-event URL pattern unknown (needs Thomas's login; [you] paste one event URL → tell c2)
-- [ ] [you] Poll Raindrop every 20 s instead of 60 s for the stage? (`__main__.raindrop_flags`; 2 Query API GETs per poll)
+- [x] Chip links to https://app.raindrop.ai: Thomas keeps the home link (14:36); before stage he opens E-b3176a9f in a tab himself (Raindrop Events search takes event ids)
+- [x] Polling stays 60 s: the stage beat is recorded (Thomas, 14:36)
+- [x] **Stage beat = recorded** (Thomas, 14:36): live view → Lineage → Raindrop node / Seam 9 → "Came from 🌧️ Raindrop · … · caught in 32 s", gate 8/8, genome v9 (checked on :8000 14:37). Live would flag nothing: v10 refuses override attacks and Raindrop never flags a refused one. Session 20 puts it in PLAN §6 at 1:00
 - [x] README: first shipped Raindrop lesson (session 20, 87f2150 + follow-up)
 - **Handoff (session 37 → next Raindrop session, ~14:25).** State: Raindrop → Kintsugi works end to end and is recorded (E-b3176a9f → G-96156c → v9). Bot on v10, one instance. At v10 strangers only have calendar_list, note_add, web_search, so **the same leak can't be replayed live**: for a live stage beat, pick a fresh unlearned failure that Raindrop flags (or revoke before stage); otherwise show the recorded one (Lineage chip + Raindrop event).
-  Next: (1) Thomas's answers on 20 s polling and the event URL (above) · (2) with Thomas, decide the demo beat (live vs recorded) and time it · (3) BOOST from PLAN §12 only if time is left.
+  Next: ~~(1) polling and event URL · (2) demo beat~~ (both decided 14:36, above) · (3) BOOST from PLAN §12 only if time is left.
   Check flags: `uv run python -c "from kintsugi.__main__ import _raindrop_query as q; s={x['id']:x['name'] for x in q('/v1/signals')['data']}; print([(e['id'], [s.get(x['id'], x['name']) for x in e.get('signals') or []]) for e in q('/v1/events?limit=5')['data']])"` · matches per signal: `q('/v1/events?signal=<id>')`.
 - Gotchas: classifier signals arrive on events as uuids (map via /v1/signals) · Raindrop never flags an attack Tsugi refused · bot detached, log `~/Library/Logs/kintsugi-bot.log`; restart = kill `pgrep -f "python3 -u -m kintsugi$"` (often needs `kill -9`), then `nohup uv run python -u -m kintsugi >> ~/Library/Logs/kintsugi-bot.log 2>&1 < /dev/null &`, one instance, write a `--- restart HH:MM (why)` line; restart only with a clean tree and no `gates` cycle in proposing/running · send Telegram cards from another process with `ExtBot(token, defaults=Defaults(parse_mode=HTML))` (a plain `Bot` sends raw `<b>` tags) · never send eval/gate traffic to Raindrop (1,000 events/month) · announce pytest (shared `kintsugi_test`) · commit own hunks only (temporary GIT_INDEX_FILE when a file has others' edits)
 
@@ -72,7 +73,7 @@ playwright-cli blocks file://). Icon seams = the 7 lessons live at v7.
 - [ ] [you] Upload: @BotFather → /mybots → Edit Bot → Edit Botpic (icon) and Edit Description Picture; wallpaper in the Tsugi chat
       (tap name → ⋯ → Change Wallpaper; Telegram Desktop: Settings → Chat Settings). Dark (Night) theme matches.
 - [ ] Red team learned-genome bar: when 1f stores rt-v8+, change the 'rt-v7' label in `web/src/Proof.tsx` (SPLITS.redteam).
-- [ ] Raindrop per-event URL: when 37 sends the pattern, use it in `web/src/live.ts` (RAINDROP_URL; links are per chip).
+- [x] ~~Raindrop per-event URL~~: Thomas keeps the home link (14:36), no change to `RAINDROP_URL`.
 - [ ] Revoke from Lineage revokes for real (genome rebuild): only on a lesson you mean to remove.
 - [ ] Stranger "Teach" from the live view not exercised live yet.
 Rebuild after any web/src change: `cd web && npm run build` (no bot restart: dist is read per request), commit `web/dist`.
