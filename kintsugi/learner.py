@@ -119,12 +119,13 @@ async def _gate_and_commit(candidates: list[dict], f: dict, notify: Notify = Non
         await db.gates.update_one({"_id": gate_id}, {"$push": {"progress": e}})
     result = {"status": "rejected", "lessons": candidates}
     for n, lesson in enumerate(candidates, 1):
-        await _say(notify, f"🧪 Gate: testing #{n}…")
+        k = chr(64 + n)  # candidates are A, B, C for people
+        await _say(notify, f"🧪 Gate: testing {k}…")
         v = await gate.judge(lesson, f, g, progress)
         await _say(notify, (
-            f"✅ #{n} fixed, {v['regression_passed']}/{v['regression_total']} past cases pass" if v["accepted"]
-            else f"✗ #{n} broke {v['regression_total'] - v['regression_passed']} past case(s)" if v["fixed"]
-            else f"✗ #{n} not fixed"))
+            f"✅ {k} fixed, {v['regression_passed']}/{v['regression_total']} past cases pass" if v["accepted"]
+            else f"✗ {k} broke {v['regression_total'] - v['regression_passed']} past case(s)" if v["fixed"]
+            else f"✗ {k} not fixed"))
         await db.lessons.update_one({"_id": lesson["_id"]}, {"$set": {"gate": v}})
         if v["accepted"]:
             new = await genome.commit({**lesson, "gate": v}, lesson["parents"])
@@ -184,8 +185,8 @@ async def learn(f: dict, notify: Notify = None) -> dict:
         await asyncio.sleep(2)
     await db.gates.update_one({"_id": f["gate_id"]}, {"$set": {"lessons": [l["_id"] for l in candidates]}})
     live = [l for l in candidates if l["status"] == "candidate"]
-    await _say(notify, f"💡 <b>{len(live)} candidate(s)</b>\n<blockquote expandable>" + "\n".join(
-        f"{n}. {escape(clip(l['text']), quote=False)}" for n, l in enumerate(live, 1)) + "</blockquote>")
+    await _say(notify, f"💡 <b>{len(live)} candidate(s)</b>\n" + "\n".join(
+        f"{chr(64 + n)} · {escape(l.get('title') or clip(l['text'], 40), quote=False)}" for n, l in enumerate(live, 1)))
     if not live:
         status = "no_candidates" if not candidates else "duplicate"
         await db.gates.update_one({"_id": f["gate_id"]}, {"$set": {"status": status, "ended_at": datetime.now(UTC)}})
