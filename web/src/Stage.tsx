@@ -211,7 +211,7 @@ const Turn = memo(function Turn({ ep, tab, correction }: { ep: Episode; tab: str
           return <div key={i} className={'call ' + cls}><div className="ch"><span className="fn">{s.tool}</span><span className="res">{label}</span></div>
             <div className="args">{parseArgs(s.args).map(([k, v]) => <span key={k}><i>{k}</i> {v}</span>)}</div></div>
         })}
-        {reply && <div>{reply.length > 280 ? reply.slice(0, 279) + '…' : reply}</div>}
+        {reply && <div>{(reply.length > 280 ? reply.slice(0, 279) + '…' : reply).split(/\*\*(.+?)\*\*/).map((t, i) => i % 2 ? <b key={i}>{t}</b> : t)}</div>}
         {ep.error && <div className="err">{ep.error.slice(0, 160)}</div>}
         {correction !== undefined && <span className="react" aria-label="thumbs down">👎</span>}
       </motion.div>
@@ -394,6 +394,12 @@ export default function Stage({ state, events, onLesson }: { state: State; event
               <motion.span key={g.version} initial={{ y: '100%', opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: '-100%', opacity: 0 }} transition={{ type: 'spring', stiffness: 220, damping: 22 }}>v{g.version}</motion.span>
             </AnimatePresence></b>
           </div>
+          <ul className="legend" aria-label="What Tsugi shows">
+            <li><svg viewBox="0 0 24 12" aria-hidden="true"><path className="lg-leaf" d="M2,6 C7,0 16,0 22,6 C16,12 7,12 2,6Z" /></svg>Memory in Atlas</li>
+            <li><svg viewBox="0 0 24 12" aria-hidden="true"><path className="lg-gold" d="M1,8 L7,4 L12,8 L17,3 L23,6" /></svg>Lesson that passed the gate</li>
+            <li><svg viewBox="0 0 24 12" aria-hidden="true"><path className="lg-red" d="M1,4 L6,9 L11,3 L16,9 L23,5" /></svg>Stranger’s lesson, on hold</li>
+            <li><svg viewBox="0 0 24 12" aria-hidden="true"><path className="lg-scar" d="M1,8 L7,4 L12,8 L17,3 L23,6" /></svg>Revoked lesson</li>
+          </ul>
         </div>
         <AnimatePresence mode="wait" initial={false}>
           <motion.p key={caption} className="caption" aria-live="polite" initial={RM ? false : { opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: .25 }}>{caption}</motion.p>
