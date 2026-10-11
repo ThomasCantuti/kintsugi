@@ -52,7 +52,7 @@ Scope and timeline: PLAN.md §8–9. **No project code before 10:30.**
 ## 14:15–15:15 Proof
 - [ ] Bars A0 (raw loop), B, C, D + curve from stored runs (2 trials)
 - [ ] Wrangling counters from traces: repairs, fallbacks, guardrail blocks, $/task, latency
-- [ ] Red-team cases (stranger attacks) → quarantine/blocked counts
+- [ ] Red-team cases (stranger attacks) → quarantine/blocked counts · cases done: `evals/redteam.json` (10: 7 stranger attacks, 2 planted injections, 1 control; refuse-everything floor = 7/10) → run v0 vs vN `--split redteam`
 - [ ] Live view: Tsugi seams/sprout/crack, chart
 
 ## 15:15–15:45 BOOST (only if everything above is green)
