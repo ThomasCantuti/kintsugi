@@ -9,6 +9,7 @@ The learner and gate may only call `cases("train")`; held-out is for measurement
 import argparse
 import asyncio
 import json
+import re
 import uuid
 from dataclasses import replace
 from datetime import UTC, datetime
@@ -147,6 +148,44 @@ async def supervisor_agreement(run: dict) -> None:
         agree += bool(verdict.get("passed")) == r["passed"]
     await db.runs.update_one({"_id": run["_id"]}, {"$set": {"supervisor_agreement": {"agree": agree, "n": n}}})
     print(f"supervisor agreement with checks: {agree}/{n}")
+
+
+async def raindrop_agreement(run_id: str, send: bool = True, wait_s: int = 300) -> None:
+    """Would Raindrop's flags have caught what the checks fail? Sends a stored run's episodes to Raindrop as
+    `tsugi_eval` events (the flag poller only learns from kind=live episodes), waits for its classifiers, stores the
+    result on the run. A case-trial counts as flagged if it gets a flag the poller acts on (config.RAINDROP_FLAGS).
+        uv run python -c "import asyncio; from kintsugi.evals import raindrop_agreement as r; asyncio.run(r('R-de32c8'))"
+    send=False re-reads the flags of an earlier send."""
+    import raindrop.analytics as raindrop
+    from .__main__ import _raindrop_query
+    run = await db.runs.find_one({"_id": run_id})
+    eps = {e["_id"]: e async for e in db.episodes.find({"_id": {"$in": [i for r in run["results"] for i in r["episodes"]]}})}
+    since = (run.get("raindrop_agreement") or {}).get("sent_at")
+    if send:
+        since = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
+        await db.runs.update_one({"_id": run_id}, {"$set": {"raindrop_agreement": {"sent_at": since}}})
+        raindrop.init(config.RAINDROP_WRITE_KEY, tracing_enabled=True, auto_instrument=False, bypass_otel_for_tools=True)
+        for i, r in enumerate(run["results"]):
+            for e in r["episodes"]:
+                agent._to_raindrop(eps[e], f"{run_id}-{i}", event="tsugi_eval")
+                raindrop.flush()  # shutdown() alone has a 10 s deadline: it delivered 16 of 36 events
+        raindrop.shutdown()
+        await asyncio.sleep(wait_s)
+    query = lambda path: asyncio.to_thread(_raindrop_query, path)
+    by_signal = {}
+    for s in (await query("/v1/signals?limit=100"))["data"]:
+        if re.sub(r"[\s_-]", "", s["name"].lower()) in config.RAINDROP_FLAGS:
+            hits = (await query(f"/v1/events?limit=100&signal={s['id']}&timestamp[gte]={since}"))["data"]
+            by_signal[s["name"]] = {e["id"] for e in hits} & eps.keys()
+    flagged = set().union(*by_signal.values())
+    rows = [(any(e in flagged for e in r["episodes"]), r["passed"]) for r in run["results"]]
+    res = {"agree": sum(f != p for f, p in rows), "n": len(rows),
+           "caught": sum(f and not p for f, p in rows), "failed": sum(not p for _, p in rows),
+           "false_alarms": sum(f and p for f, p in rows), "passed": sum(p for _, p in rows),
+           "by_signal": {k: len(v) for k, v in by_signal.items()}, "sent_at": since,
+           "read_at": datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")}
+    await db.runs.update_one({"_id": run_id}, {"$set": {"raindrop_agreement": res}})
+    print(f"Raindrop agreement with checks on {run_id}: {res}")
 
 
 if __name__ == "__main__":

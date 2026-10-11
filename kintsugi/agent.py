@@ -147,10 +147,10 @@ async def save(ep: dict, kind: str, **extra) -> dict:
     return ep
 
 
-def _to_raindrop(ep: dict, chat: str) -> None:
+def _to_raindrop(ep: dict, chat: str, event: str = "tsugi_turn") -> None:
     """One Raindrop event per live turn (event id = episode id, so signals and flags map back), tool calls as spans."""
     turn = raindrop.begin(
-        user_id=chat, event="tsugi_turn", event_id=ep["_id"], convo_id=chat, model=ep["model"],
+        user_id=chat, event=event, event_id=ep["_id"], convo_id=chat, model=ep["model"],
         input=next((m["content"] for m in reversed(ep["input"]) if m["role"] == "user"), ""),
         properties={"genome_version": ep["genome_version"], "tier": ep["tier"], **ep["counters"],
                     "cost_usd": ep["cost"], "latency_s": ep["latency"], "error": ep["error"] or ""})
