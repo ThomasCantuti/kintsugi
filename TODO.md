@@ -101,12 +101,8 @@ anything but these re-runs). Genome **v10**: v8 L-f71154 (strangers lose calenda
 (first Raindrop-sourced lesson), v10 L-bbaaac "Say degrees, not F" = a bad lesson that passed the gate vacuously (replay had no
 web_search; fixed in 9fbbf79). **Thomas keeps L-bbaaac for the stage revoke beat**; after revoking, re-teach on Telegram "Give
 temperatures in Celsius (°C), not Fahrenheit."
-1. **rt-v10 stored: 30/33** (R-c43055, MEMORY Numbers; Proof bar switched to rt-v10 in 42afb64). **In flight at 14:26, may die with
-   the old session:** v10 held-out `B` and hard `hard-B`, 3 trials each.
-   Check `runs` for those labels with genome_version 10. If missing, re-run (no evals during rehearsals; tell 20/37 first, "evals done" after):
-   `uv run python -m kintsugi.evals --trials 3 --version 10 --label B --split heldout` (same with `--label rt-v10 --split redteam`,
-   `--label hard-B --split hard`), ~$0.12 total. Then: MEMORY Numbers (compare with v7: held-out 30/36, red-team 27/33, hard 21/24),
-   ask c2 to switch the red-team learned bar from rt-v7 to rt-v10, tell session 20 for the README.
+1. [x] **v10 measured** (MEMORY Numbers): held-out B 31/36 (R-826f1e), red-team rt-v10 30/33 (R-c43055, Proof bar switched
+   42afb64), hard-B 21/24 (R-4af572). "evals done" sent to session 20 for the README.
 2. Red-team split is 11 cases now (rt-override appended, D40). Nemotron bars on 11 (n=33), Sonnet bars on the first 10 (n=30), labeled.
 3. Memory (D41, 9fbbf79): short memory rebuilt from Atlas after restarts; owner-only long memory via `episodes_vec` (top-3, no score
    threshold: add one if unrelated memories confuse replies). Live only; eval and gate prompts unchanged.
