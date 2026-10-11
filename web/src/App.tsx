@@ -2,6 +2,7 @@ import { Activity, lazy, Suspense, useCallback, useEffect, useLayoutEffect, useR
 import { AnimatePresence, motion } from 'motion/react'
 import { useLive, type Conn } from './live'
 import Stage, { Count } from './Stage'
+import Tour from './Tour'
 
 const Proof = lazy(() => import('./Proof'))
 const Lineage = lazy(() => import('./Lineage'))
@@ -16,6 +17,9 @@ export default function App() {
   const [selected, setSelected] = useState<string | null>(null)
   const [theme, setTheme] = useState(() => document.documentElement.dataset.theme || 'dark')
   const [toastMsg, setToast] = useState('')
+  const [tour, setTour] = useState(false)
+  const [toured, setToured] = useState(() => { try { return !!localStorage.getItem('toured') } catch { return false } })
+  const startTour = () => { setTour(true); setToured(true); try { localStorage.setItem('toured', '1') } catch { /* private mode */ } }
   const tabs = useRef<HTMLElement>(null), ind = useRef<HTMLSpanElement>(null)
 
   const go = useCallback((s: Scene) => {
@@ -68,7 +72,10 @@ export default function App() {
             {theme === 'dark' ? 'Lacquer' : 'Porcelain'}</button>
         </div>
       </header>
-      {state?.sandbox && <p className="sandbox-note">Judges' sandbox: a copy of Tsugi where you are Thomas, the owner. Chat in the Telegram panel (Thomas tab), 👎 a reply and correct it, then watch the gate test your lesson. Thomas's own Tsugi isn't affected.</p>}
+      {state?.sandbox && <div className="sandbox-note">
+        <button className={'tour-btn' + (toured ? '' : ' pulse')} onClick={startTour}>▶ Start the tour</button>
+        <p>Judges' sandbox: a copy of Tsugi where you are Thomas, the owner. Chat in the Telegram panel (Thomas tab), 👎 a reply and correct it, then watch the gate test your lesson. Thomas's own Tsugi isn't affected.</p>
+      </div>}
       <main>
         {!state ? <div className="scene"><p className="empty">Connecting to Atlas…</p></div> : <>
           <Activity mode={scene === 'stage' ? 'visible' : 'hidden'}><Stage state={state} events={events} onLesson={openLesson} /></Activity>
@@ -80,6 +87,7 @@ export default function App() {
         </>}
       </main>
       {toastMsg && <div className="toast" role="status">{toastMsg}</div>}
+      {tour && state && <Tour go={go} onClose={() => setTour(false)} />}
     </>
   )
 }

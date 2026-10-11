@@ -57,7 +57,9 @@ code, .mono { font-family: var(--mono) }
 
 /* header */
 .top { display: flex; align-items: center; flex-wrap: wrap; gap: .5rem 1.4rem; padding: .6rem max(16px, 1.25rem) .35rem }
-.sandbox-note { margin: 0 max(16px, 1.25rem) .4rem; padding: .45rem .85rem; border: 1px solid var(--gold); background: var(--gold-wash); color: var(--gold-ink); border-radius: var(--r-inner); font-size: .88rem }
+.sandbox-note { margin: 0 max(16px, 1.25rem) .4rem; padding: .45rem .85rem; border: 1px solid var(--gold); background: var(--gold-wash); color: var(--gold-ink); border-radius: var(--r-inner); font-size: .88rem;
+  display: flex; flex-wrap: wrap; align-items: center; gap: .4rem .8rem }
+.sandbox-note p { margin: 0; flex: 1 1 22rem }
 .brand { display: flex; align-items: center; gap: .65rem }
 .brand svg { width: 1.55rem; height: 1.55rem; fill: none; stroke: var(--gold); stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round }
 .brand h1 { font: 700 1.6rem/1 var(--display); margin: 0; letter-spacing: .01em }
@@ -434,3 +436,21 @@ main { position: relative; min-height: 0 }
   .rsteps { grid-template-columns: minmax(0, 1fr) }
   .rstep + .rstep::before { content: "↓"; left: 1rem; top: -1rem }
 }
+
+/* ---------- judges' tour (sandbox) ---------- */
+.tour-btn { border: 1px solid var(--gold); background: var(--btn-bg); color: var(--on-gold); border-radius: 999px; padding: .34rem .95rem;
+  font: 700 .85rem/1.2 var(--sans); cursor: pointer; white-space: nowrap }
+.tour-btn.pulse { animation: tour-pulse 1.6s ease-out infinite }
+@keyframes tour-pulse { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--gold) 70%, transparent) } 100% { box-shadow: 0 0 0 14px transparent } }
+.tour { position: fixed; inset: 0; z-index: 60 }
+.tour-hole { position: fixed; border: 2px solid var(--gold); border-radius: var(--r-panel); box-shadow: 0 0 0 200vmax rgb(0 0 0 / .62);
+  transition: left .35s cubic-bezier(.2, .9, .25, 1), top .35s cubic-bezier(.2, .9, .25, 1), width .35s cubic-bezier(.2, .9, .25, 1), height .35s cubic-bezier(.2, .9, .25, 1) }
+.tour-hole.none { inset: 0; border: 0; border-radius: 0; box-shadow: none; background: rgb(0 0 0 / .62) }
+.tour-card { position: fixed; background: var(--plate); color: var(--ink); border: 1px solid var(--gold); border-radius: var(--r-panel);
+  padding: 1rem 1.1rem .9rem; box-shadow: var(--shadow); max-height: calc(100vh - 32px); overflow: auto }
+.tour-card h2 { margin: .1rem 0 .5rem; font: 600 1.35rem/1.2 var(--display); color: var(--gold-hi) }
+.tour-n { margin: 0; font: 600 .72rem/1 var(--mono); color: var(--mute); letter-spacing: .06em }
+.tour-body p { margin: 0 0 .55rem; font-size: .92rem; line-height: 1.5 }
+.tour-body q { color: var(--gold-ink); font-style: italic }
+.tour-nav { display: flex; justify-content: flex-end; gap: .45rem; margin-top: .7rem }
+@media (prefers-reduced-motion: reduce) { .tour-btn.pulse { animation: none } .tour-hole { transition: none } }
