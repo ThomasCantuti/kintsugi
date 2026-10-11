@@ -86,28 +86,24 @@ Prototype + plan: https://claude.ai/artifact/JMwZ6ocNfWh41j12H5VkLi
 - [ ] Red-team cases (stranger attacks) → quarantine/blocked counts · cases done: `evals/redteam.json` (10: 7 stranger attacks, 2 planted injections, 1 control; refuse-everything floor = 7/10) → run v0 vs vN `--split redteam`
 - [x] Live view: React + Vite rebuild (D34): loop rail on the real cycle doc, gate ring per case, Telegram mirror, genome ribbon, change-stream ticker, Proof (held-out / hard / red-team + curve), Lineage + revoke cascade
 
-## Next (handoff from the evals session 1f, 13:15)
-All in MEMORY.md Numbers + D35–D37 (3 trials, run ids there). Held-out n=36: A0 18 · A v0 17 · B v6 27 → **B v7 30 (83%)** · Dn
-(Nemotron + memory) 28 · C Sonnet v0 24 · **D Sonnet + memory 36**. Red-team n=30: v0 9 · v6 20 · **v7 27** · Dn 23 · C 27 · D 27 ·
-poisoned memory Dnp 21 / Dp 27. Curve v0 47% → v5 81% → v6 75% → v7 83%. Wrangling: 1 repair in 802 Nemotron episodes, 0 fallbacks,
-blocks 0 until v7 (rt-v7: 2). Spend $3.79 of the $10 key at 13:15 ($5 BUDGET_USD: ask Thomas before more Sonnet runs).
-- [x] D / Dn stored (R-a7ebca 36/36, R-ff6cfe 28/36). [x] Wrangling counters → MEMORY.md. [x] Red-team C/D/Dn + poisoning (D37).
-- [x] Gate fix 6410f87 (tool_access lessons regression-tested on their tier only) → **v7 = L-950b70** stranger tool access, live
-  since the 12:59 restart. Disclose D35 wherever v7 numbers appear (the red-team result led to the gate fix; red-team never fed the learner).
-- [x] Stage teach convention (D36): "Investor calls are 30 min, titled 'Investor: <name>'".
-1. **Pitch framing** ([you] decide, honest version): memory ≈ Kintsugi on clean held-out (D 36/36 beats everything). Kintsugi's
-   measured edge: v7 Nemotron = Sonnet on red-team (27/30) at ~1/14 the cost, through a tool-access edit memory can't make (blocks are
-   code, not prompt); held-out 47% → 83% at $0.0015/task vs Sonnet v0 67% at $0.013. One planted line didn't poison either model.
-2. **Known hole** ([you] decide): v7 strangers keep note_search, contact_lookup, calendar_move, calendar_cancel (lesson text says
-   "only note_add + calendar_list", tool list removed 4). Fix = tool_access lessons that set an allowlist (`genome.materialize` + learner
-   schema) and one more cycle; again red-team-informed → disclose. No case tests stranger cancel.
-3. **Time a live investor teach** on Telegram with NO evals running (v7 cycle took 66 s with 2 regression cases; owner lessons run 8).
-4. rt-two-step fails for v7 and Sonnet: both over-serve/over-block on a strict "exactly 1 note" check. Check stays (no goalpost moves).
-
-**Parallel sessions** (shared working tree): **20** = docs, cases, README · **37** = Raindrop (bot runs detached, see its handoff) ·
-**c2** = React + Vite live view (`web/`, `api.py`, gate progress). Commit your own finished, tested work without asking Thomas
-(his rule), own hunks only (temporary index via `GIT_INDEX_FILE`; never `-a`/`add -A`), no push unless asked. Announce pytest
-before running it and send "pytest done" (shared `kintsugi_test` DB). Wrap up at ~30% context: commit, hand off here, tell the others.
+## Next (handoff from the evals session 1f, 14:30)
+All numbers in MEMORY.md Numbers + D35–D41 (run ids there). Spend $4.20 of the $10 key at 14:25 (BUDGET_USD $5: ask Thomas before
+anything but these re-runs). Genome **v10**: v8 L-f71154 (strangers lose calendar_move/cancel, note_search, contact_lookup), v9 L-f857d8
+(first Raindrop-sourced lesson), v10 L-bbaaac "Say degrees, not F" = a bad lesson that passed the gate vacuously (replay had no
+web_search; fixed in 9fbbf79). **Thomas keeps L-bbaaac for the stage revoke beat**; after revoking, re-teach on Telegram "Give
+temperatures in Celsius (°C), not Fahrenheit."
+1. **In flight at 14:26, may die with the old session:** v10 held-out `B`, red-team `rt-v10` (11 cases), hard `hard-B`, 3 trials each.
+   Check `runs` for those labels with genome_version 10. If missing, re-run (no evals during rehearsals; tell 20/37 first, "evals done" after):
+   `uv run python -m kintsugi.evals --trials 3 --version 10 --label B --split heldout` (same with `--label rt-v10 --split redteam`,
+   `--label hard-B --split hard`), ~$0.12 total. Then: MEMORY Numbers (compare with v7: held-out 30/36, red-team 27/33, hard 21/24),
+   ask c2 to switch the red-team learned bar from rt-v7 to rt-v10, tell session 20 for the README.
+2. Red-team split is 11 cases now (rt-override appended, D40). Nemotron bars on 11 (n=33), Sonnet bars on the first 10 (n=30), labeled.
+3. Memory (D41, 9fbbf79): short memory rebuilt from Atlas after restarts; owner-only long memory via `episodes_vec` (top-3, no score
+   threshold: add one if unrelated memories confuse replies). Live only; eval and gate prompts unchanged.
+4. Stage timing: a live teach took 344 s end to end at 14:20 (session 20, Nemotron slow); have a recorded fallback for the teach beat.
+5. Pitch facts (honest): naive memory ≥ Kintsugi on clean held-out (D 36/36); v7 = Sonnet on the 10 red-team cases at ~1/14 the cost
+   via tool-access edits; one planted memory line didn't poison Sonnet; the gate rejected L-4536f5 on an over-specified correction and
+   passed L-bbaaac vacuously (both bugs fixed: 5b813d7, 9fbbf79), which is the honest revoke story.
 
 ## Session 20 (13:15–14:05): tools + stage speed
 Done: web_search (Exa, live only, D38) · reminders ping on Telegram · scars (D39) · gate runs its past cases at once ·
