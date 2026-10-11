@@ -255,14 +255,14 @@ Experiments.
 | 2 | Telegram 👍/👎 (`telegram.on_button`) | `track_signal(ep, "thumbs_up"/"thumbs_down", "feedback", sentiment)` | owner and stranger feedback |
 | 3 | `telegram.learn_from`, `api.teach` | `track_signal(ep, "correction", "edit", after=correction)` | the human correction (owner or stranger) |
 | 4 | learner outcome | `track_signal(ep, "lesson_shipped"/"lesson_quarantined"/"no_safe_fix", properties={lesson, section, text, version, regression x/y})` | the Raindrop event shows what Kintsugi did about it |
-| 5 | **Raindrop → Kintsugi** poller (`__main__` task, every 60 s) | Query API `GET query.raindrop.ai/v1/events?timestamp[gte]=<now − 2 h>`: each event lists its signals, and our event ids are episode ids. Flags: Task Failure, User Frustration, Broke a convention, Jailbreaking | a flagged live episode not yet learned from (no lineage node) → `learner.learn(kind="raindrop", tier=episode tier, failed=["Raindrop: <signal>"])` → the supervisor writes the correction → gate → a seam whose lineage root is the Raindrop flag. The owner watches it in Telegram (🌧️ flagged → gate → result). Stranger episodes → quarantine with ✅/❌, as usual |
+| 5 | **Raindrop → Kintsugi** poller (`__main__` task, every 60 s) | Query API `GET query.raindrop.ai/v1/events?timestamp[gte]=<now − 2 h>`: each event lists its signals, and our event ids are episode ids. Flags (Raindrop's real names): User Frustration, Attempted Prompt Injection, Request Execution Needs Correction (our custom signal) | a flagged live episode not yet learned from (no lineage node) → `learner.learn(kind="raindrop", tier=episode tier, failed=["Raindrop: <signal>"])` → the supervisor writes the correction and checks the turn really broke it (if not: `false_alarm`, no lesson, 🌦️) → gate → a seam whose lineage root is the Raindrop flag. The owner watches it in Telegram (🌧️ flagged → gate → result). Stranger episodes → quarantine with ✅/❌, as usual |
 
 - **Only `kind == "live"` goes to Raindrop.** Evals, gate runs and evolve never send anything: one evolve round
   is hundreds of episodes and would hit the monthly cap. Guard: sending stops after `RAINDROP_EVENT_CAP` = 800 live episodes.
 - **Privacy:** in tool spans, notes tagged `private` are sent as `[private]` (the `note_search` output is JSON with
   tags). User text and Tsugi's replies are sent as they are, because Raindrop has to see a leak to flag it (a private
   note in a reply to a stranger is exactly the failure we want caught). The live world is seeded demo data.
-- **Custom signal** (the 1 free slot), "Broke a convention": *the assistant did the request in a way the user would
+- **Custom signal** (the 1 free slot; Raindrop names it from the text: "Request Execution Needs Correction"): *the assistant did the request in a way the user would
   have to correct: wrong time, day, duration or recipient; ignored a stated preference; sent something without
   confirmation; or revealed private information.* Sentiment Negative.
 - **Not used:** auto-instrumentation of the `openai` client (it would trace gate and eval calls too), so
@@ -276,11 +276,11 @@ Raindrop flag nobody 👎'd. It's pre-recorded if the signal latency is too long
 Numbers come from Atlas only: Raindrop-flagged episodes → lessons shipped / rejected / quarantined; signal latency.
 
 **Setup ([you])**: raindrop.ai Hobby signup → write key `RAINDROP_WRITE_KEY` · Query API key (Settings → API
-Keys) `RAINDROP_QUERY_API_KEY` · enable presets Task Failure, User Frustration, Jailbreaking · create the custom signal above.
+Keys) `RAINDROP_QUERY_API_KEY` · enable presets User Frustration, Attempted Prompt Injection, Repeated Tool Call Failures (dashboard only) · create the custom signal above. Done 12:50–12:55. There is no Task Failure or Jailbreaking preset.
 
-**Order:** ~~(1) events + tool spans + 👍/👎/correction signals, with a test · (2) outcome signals~~ (done 12:05) · (3) poller, with a test, then measure signal latency → MEMORY.md · (4) README line + `raindrop` lineage node in the live view.
+**Order:** ~~(1) events + tool spans + 👍/👎/correction signals, with a test · (2) outcome signals~~ (done 12:05) · ~~(3) poller, with a test~~ (12:33), signal latency measured 13:21: **no flag within 30 min** (MEMORY.md Numbers) → fallback · (4) README line + `raindrop` lineage node in the live view.
 **Fallback:** if the Query API or preset signals aren't on Hobby, or the latency is over 5 min, keep 1–4 (observability
 and verification) and show one recorded Raindrop-sourced lesson.
-**BOOST:** send one held-out run (A, 12 events, `kind=eval`, `passed`) → "Raindrop's Task Failure agreed with the
+**BOOST:** send one held-out run (A, 12 events, `kind=eval`, `passed`) → "Raindrop's custom signal agreed with the
 ground-truth checks X/12" · Raindrop MCP (`claude mcp add raindrop --transport http https://mcp.raindrop.ai/mcp`) so
 the `red-team` agent turns flagged live events into regression cases.
