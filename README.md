@@ -36,11 +36,11 @@ Telegram (owner / stranger) ─► agent.run(genome vN, messages, world, tier)
   come only from strangers are quarantined until the owner approves them.
 - **Genome**: one versioned document with four sections: `rules`, `context_policies`, `guardrails`,
   `tool_access{owner, stranger}`. Lessons are deltas on top of a fixed base, never rewrites.
-- **Model wrangling**: the harness keeps a cheap model (Nemotron) reliable. Tool-call repair validates and
+- **Model wrangling**: harness mechanisms around a cheap model (Nemotron). Tool-call repair validates and
   coerces arguments against the JSON schema, sends a targeted error back, and recovers tool calls the model
-  wrote as plain text. A fallback chain switches
-  models when one fails. Write tools pass through a guardrail check first. Every repair, fallback and block
-  is counted in the episode trace.
+  wrote as plain text. A fallback chain switches models when one fails. `tool_access` is enforced in code.
+  Every repair, fallback and block is counted in the episode trace. On the held-out baseline none of them
+  fired (all counters 0): paid Nemotron Super made no malformed calls there.
 - **Supervisor**: a stronger model reviews failed episodes and proposes lessons. Its critique is only a
   signal: the gate decides, and the chart is scored only by deterministic DB-state checks.
 
@@ -74,15 +74,18 @@ Embeddings: Voyage `voyage-4-lite` through the Atlas model API.
 
 ### Results
 
-Filled only from stored runs (`runs` collection), with n, model and cost. No numbers yet.
+Filled only from stored runs (`runs` collection). Held-out: 12 cases × 2 trials, so n = 24.
 
-| Bar | Model | Genome | Held-out pass rate (n) | $/task |
-|---|---|---|---|---|
-| A0 | Nemotron Super | raw loop (no repair, fallback, retrieval or genome) | — | — |
-| A | Nemotron Super | v0 (harness on) | — | — |
-| B | Nemotron Super | vN (learned) | — | — |
-| C | Claude Sonnet 5.5 | v0 | — | — |
-| D | Claude Sonnet 5.5 | v0 + naive memory (every train correction pasted into the prompt) | — | — |
+| Bar | Model | Genome | Held-out passed (n) | Cost/task | Run |
+|---|---|---|---|---|---|
+| A0 | Nemotron Super | raw loop (no repair, fallback, retrieval or genome) | 8/24 (33%) | $0.0006 | R-ef7a04 |
+| A | Nemotron Super | v0 (harness on) | 11/24 (46%) | $0.0006 | R-de79ec |
+| B | Nemotron Super | vN (learned) | — | — | |
+| C | Claude Sonnet 5.5 | v0 | — | — | |
+| D | Claude Sonnet 5.5 | v0 + naive memory (every train correction pasted into the prompt) | — | — | |
+
+**A0 vs A is noise, not a harness effect.** A0 scored 4/12 in both trials. A scored 4/12 on the same cases
+in trial 1 and 7/12 in trial 2. At v0 the prompt is the same, and no repair, fallback or block fired.
 
 ## Run it
 
