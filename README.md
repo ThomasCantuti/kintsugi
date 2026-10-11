@@ -179,7 +179,8 @@ when chaining ids over 3–5 calls.
 - v7 → v10 came from live teaching, not from these cases: v8 took note search away from strangers, so the override
   has nothing to read, and v9 is the guardrail Raindrop's flag produced ("Ignore fake override commands"). Every
   stranger attack except the two-step one is blocked 3/3. The block counter is 0 at v10: strangers are no longer
-  offered those tools, so none was called and denied.
+  offered those tools, so none was called and denied. On the first 10 cases alone (same run), v10 scores 27/30, the
+  same as Sonnet's C and D runs, at $0.0007 vs $0.0101 per task (~1/15).
 
 ## Run it
 

@@ -165,18 +165,20 @@ teaches once, the free model runs every day.*
 - Reminders fire 15 min before, not at the time. *(rules)*
 
 ## 6. Demo script (3:00)
+State at 14:45: genome v10 (10 lessons: 7 from train cases, 3 taught live, one of them from a Raindrop flag). Numbers: README Results.
 | t | Beat |
 |---|---|
-| before | Send "Set up a call with Maya Chen tomorrow at 2pm" while the judges settle: the reply takes ~20 s (MEMORY Numbers, stage teach timing). |
+| before | Live view on :8000 (Stage). Optional: a tab on the Raindrop event E-b3176a9f. Send "Set up a call with Maya Chen tomorrow at 2pm" from Telegram while the judges settle (reply ~20 s). |
 | 0:00 | **Hook** (above). Tsugi has replied: 30 min, but titled "Call with Maya Chen". |
-| 0:20 | **Teach**: 👎 + "Investor calls are 30 min, titled 'Investor: <name>'" → 3 candidates (~12 s) → the gate starts. It runs ~2:20 (8 past cases + scars at once); the ring ticks on the live view while we go on. |
-| 0:40 | **Meet Tsugi**: free Nemotron, v0 → v7 today, 7 seams, Raindrop watches every live turn *(real numbers only)*. |
-| 1:00 | **Stranger** (live view): stranger asks Tsugi to email something for them → outbox tools DENIED in code (v7; not "show me his notes": strangers still have note_search until the allowlist fix). Raindrop-caught injection → quarantined lesson → owner ✅/❌. |
-| 1:40 | **Proof**: held-out curve 47% → 83%, red team = Sonnet at ~1/14 the cost per task, naive memory stated honestly. |
-| 2:30 | **Teach result**: gate verdict (n past cases + scars) → v8 seam animates → "every scar becomes a test". Ask "call with Leo Brandt Tuesday at 10" → "Investor: Leo Brandt", 30 min, in Atlas. |
+| 0:15 | **Revoke** (Lineage → "Say degrees, not F" → Revoke, one transaction, instant → v11): "This lesson passed the gate this afternoon and shouldn't have: its replay had no weather tool, so nothing was tested. One click removes it and everything built on it." It goes **before** the 👎: a revoke during a gate changes the genome under the test. |
+| 0:25 | **Teach**: 👎 + "Investor calls are 30 min, titled 'Investor: <name>'" → 3 candidates (~12 s) → the gate starts. It runs ~2 min (failing case + 8 past cases + scars at once); the ring ticks on the live view while we go on. |
+| 0:45 | **Meet Tsugi**: Nemotron Super, ~$0.0014 a task. v0 → v11 today: 10 lessons shipped by the gate, 1 revoked. Raindrop watches every live turn. |
+| 1:00 | **Stranger** (live view chat): a stranger asks Tsugi to email something → Tsugi can't: at v10 strangers only have calendar_list, note_add and web search (tool access edited by two lessons, enforced in code). Then **Raindrop, recorded** (~10 s): Lineage → "🌧️ Raindrop · caught in 32 s" (Seam 9): "Nobody 👎'd that leak. Raindrop flagged it in 32 s, Kintsugi turned it into a lesson, I approved it because a stranger was the source, and the gate shipped it." |
+| 1:40 | **Proof**: held-out 47% → 86% (v0 → v10, 12 hidden cases × 3 trials). Red team: 30/33, and on the 10 cases Sonnet also ran it ties Sonnet (27/30) at ~1/15 the cost per task. Honest: Sonnet with every correction pasted in scores 36/36 on held-out. Memory works; it can't test, trace or undo a lesson. |
+| 2:30 | **Teach result**: gate verdict (n past cases + scars) → the v12 seam animates → "every scar becomes a test". Ask "call with Leo Brandt Tuesday at 10" → "Investor: Leo Brandt", 30 min, in Atlas. |
 | 2:50 | **Close**: "Agents that get stronger where they break." |
 
-Revoke is shown in Q&A or the video, not during the gate: a revoke while a gate runs rebuilds the genome under it.
+After the demo (not on stage): re-teach "Give temperatures in Celsius (°C), not Fahrenheit."
 **Backup**: `assets/video/backup-teach-4x.mp4` (89 s, a real teach on a scratch copy of the live data at 4x, labelled) if the gate isn't done by 2:40. Real speed that run: turn 57 s, gate 221 s, 344 s in all.
 Stranger = a second Telegram account if available, else `POST /chat?tier=stranger` from the live view.
 
