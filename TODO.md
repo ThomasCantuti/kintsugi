@@ -74,8 +74,12 @@ playwright-cli blocks file://). Icon seams = the 7 lessons live at v7.
       (tap name → ⋯ → Change Wallpaper; Telegram Desktop: Settings → Chat Settings). Dark (Night) theme matches.
 - [x] Red team learned-genome bar: rt-v10 30/33 (42afb64).
 - [x] ~~Raindrop per-event URL~~: Thomas keeps the home link (14:36), no change to `RAINDROP_URL`.
-- [ ] Revoke from Lineage revokes for real (genome rebuild): only on a lesson you mean to remove.
-- [ ] Stranger "Teach" from the live view not exercised live yet.
+- [x] Revoke from Lineage tested ~14:45 on a scratch copy of live (DB `kintsugi_c2`, dropped after): Seam 10 → genome v11 without
+      L-bbaaac, toast, red struck seam; live genome untouched. On live it revokes for real: only the stage beat on L-bbaaac.
+- [x] Stranger chat + Teach from the live view tested on the same copy: chat 21 s (email request → note for Thomas, outbox tools
+      not offered), teach → 3 quarantined candidates in 15 s, Approve A/B/C/None on the rail, None → all rejected, rail reads
+      "Thomas said no" (fixed e553461). The teach now also sends Thomas the Telegram ✅/❌ card (e176eea, bot restarted 14:40);
+      card tested with a fake bot only, never on the live phone.
 Rebuild after any web/src change: `cd web && npm run build` (no bot restart: dist is read per request), commit `web/dist`.
 A hash-only navigation doesn't reload the app: reload to see a new build. Bot restart: gate idle + clean tree first; kill, then
 `kill -9` if it lingers (it ignored SIGTERM twice today); one instance; write the restart line in the log.
