@@ -101,32 +101,33 @@ Filled only from stored runs (`runs` collection, 2026-10-11). Held-out: 12 cases
 |---|---|---|---|---|---|---|
 | A0 | Nemotron Super | raw loop (no repair, fallback, retrieval or genome) | 18/36 (50%) | 6 · 5 · 7 | $0.0007 | R-ecb0c9 |
 | A | Nemotron Super | v0 (harness on) | 17/36 (47%) | 6 · 6 · 5 | $0.0008 | R-de32c8 |
-| B | Nemotron Super | v7 (7 learned lessons) | **30/36 (83%)** | 10 · 10 · 10 | $0.0015 | R-bb02a7 |
+| B | Nemotron Super | v10 (10 learned lessons) | **31/36 (86%)** | 10 · 11 · 10 | $0.0014 | R-826f1e |
 | C | Claude Sonnet 5.5 | v0 | 24/36 (67%) | 8 · 8 · 8 | $0.0128 | R-f7bdc0 |
 | Dn | Nemotron Super | v0 + naive memory | 28/36 (78%) | 10 · 10 · 8 | $0.0014 | R-ff6cfe |
 | D | Claude Sonnet 5.5 | v0 + naive memory (every train correction pasted into the prompt) | **36/36 (100%)** | 12 · 12 · 12 | $0.0171 | R-a7ebca |
 
-- **A → B is the self-edited harness:** 17 → 30 of 36. The 7 lessons came from train failures only; held-out
-  never influenced which lesson shipped. v6 → v7 changed only stranger cases (6 → 9 of 9; owner cases 21 → 21):
-  v7's one lesson takes write tools away from strangers. Disclosure: it shipped after a gate fix that the red-team
-  results prompted (tool-access lessons are now regression-tested only on cases of their tier; MEMORY.md D35).
-  The red-team cases never fed the learner.
-- **B vs C:** Nemotron with the learned genome passed 30/36, Sonnet at v0 24/36, at about 1/8 of the cost per
+- **A → B is the self-edited harness:** 17 → 31 of 36. Of the 10 lessons, 7 came from train failures (v1–v7) and
+  3 from live teaching (v8–v10, see the curve); held-out never influenced which lesson shipped. Most of the gain is
+  in by v7 (30/36). v6 → v7 changed only stranger cases (6 → 9 of 9; owner cases 21 → 21): v7's one lesson takes
+  write tools away from strangers. Disclosure: it shipped after a gate fix that the red-team results prompted
+  (tool-access lessons are now regression-tested only on cases of their tier; MEMORY.md D35). The red-team cases
+  never fed the learner.
+- **B vs C:** Nemotron with the learned genome passed 31/36, Sonnet at v0 24/36, at about 1/9 of the cost per
   task. Sonnet also taught the lessons as the supervisor (a one-time cost).
 - **A0 vs A is noise, not a harness effect:** 18 vs 17. At v0 the prompt is the same, and no repair, fallback
   or block fired.
-- **Naive memory on a frontier model beats Kintsugi on held-out:** D 36/36 vs B 30/36, at about 11× B's cost
+- **Naive memory on a frontier model beats Kintsugi on held-out:** D 36/36 vs B 31/36, at about 12× B's cost
   per task. Held-out tests the same conventions the train corrections state, so pasting all of them into
   Sonnet's prompt solves it. What memory doesn't do is test a correction before it goes live, trace it, revoke it,
   quarantine one from a stranger, or change tool access in code.
   (An earlier D run, R-fdb27d, is invalid: rate limits sent 78 calls to Nemotron.)
-- **On the cheap model, learned lessons ≈ pasting every correction:** B 30/36 vs Dn 28/36, within noise, at
+- **On the cheap model, learned lessons ≈ pasting every correction:** B 31/36 vs Dn 28/36, within noise, at
   about the same cost per task. On this held-out set the gate doesn't buy accuracy over naive memory; it buys
   lessons that were tested before they went live and can be revoked.
 
 **Curve** (held-out pass rate per genome version, Nemotron Super, n = 36 each):
 
-| v0 | v1 | v2 | v3 | v4 | v5 | v6 | v7 (B) | v10 |
+| v0 | v1 | v2 | v3 | v4 | v5 | v6 | v7 | v10 (B) |
 |---|---|---|---|---|---|---|---|---|
 | 17 (47%) | 16 (44%) | 22 (61%) | 22 (61%) | 24 (67%) | 29 (81%) | 27 (75%) | 30 (83%) | 31 (86%) |
 
@@ -148,7 +149,7 @@ when chaining ids over 3–5 calls.
 |---|---|---|---|---|---|
 | Nemotron v0 | 0/21 | 6/6 | 3/3 | $0.0005 | R-9091cc |
 | Nemotron v6 | 11/21 | 6/6 | 3/3 | $0.0008 | R-927e0d |
-| **Nemotron v7 (B)** | **18/21** | 6/6 | 3/3 | $0.0007 | R-b81f58 |
+| **Nemotron v7** | **18/21** | 6/6 | 3/3 | $0.0007 | R-b81f58 |
 | Nemotron + naive memory (Dn) | 14/21 | 6/6 | 3/3 | $0.0007 | R-22a0a7 |
 | Sonnet v0 (C) | 18/21 | 6/6 | 3/3 | $0.0101 | R-926e56 |
 | Sonnet + naive memory (D) | 18/21 | 6/6 | 3/3 | $0.0109 | R-b3d04f |
@@ -171,7 +172,7 @@ when chaining ids over 3–5 calls.
 |---|---|---|---|---|---|---|
 | Nemotron v0 | 1/24 | 0/3 | 6/6 | 3/3 | $0.0006 | R-4b7fc8 |
 | Nemotron v7 | 18/24 | 1/3 | 6/6 | 3/3 | $0.0008 | R-565ac7 |
-| **Nemotron v10** | **21/24** | **3/3** | 6/6 | 3/3 | $0.0007 | R-c43055 |
+| **Nemotron v10 (B)** | **21/24** | **3/3** | 6/6 | 3/3 | $0.0007 | R-c43055 |
 | Nemotron + naive memory (Dn) | 13/24 | 2/3 | 6/6 | 3/3 | $0.0008 | R-05f380 |
 | Nemotron + poisoned memory (Dnp) | 13/24 | 0/3 | 6/6 | 3/3 | $0.0008 | R-5dc2c6 |
 
