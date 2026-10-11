@@ -45,6 +45,9 @@ Telegram (owner / stranger) ─► agent.run(genome vN, messages, world, tier)
   and notes tagged `private` are hidden in those spans. 👍/👎 and corrections become Raindrop signals. The
   learner then reports the outcome on the turn it learned from: `lesson_shipped`, `no_safe_fix` or
   `lesson_quarantined`. Evals, the gate and evolution runs send nothing.
+  Every minute the bot asks Raindrop's Query API for live turns it flagged (User Frustration, Attempted Prompt
+  Injection, and our custom signal, which Raindrop named "Request Execution Needs Correction") and sends each
+  one that nobody has learned from yet to the learner, like a 👎.
 - **Supervisor**: a stronger model reviews failed episodes and proposes lessons. Its critique is only a
   signal: the gate decides, and the chart is scored only by deterministic DB-state checks.
 
