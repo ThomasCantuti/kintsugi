@@ -94,6 +94,15 @@ Living facts and decisions. Append; don't rewrite history. Date every entry.
   (correction: strangers only note_add + calendar_list), dentist event restored before any replay. Cycle G-f2ef6f quarantined 3
   candidates, first **L-c7e955 tool_access only [note_add, calendar_list]**, waiting for Thomas's ✅.
 
+- 2026-10-11 D41 **Memory** (Thomas asked ~14:15 after "B" got "your message might be incomplete") (9fbbf79). Short: Telegram kept
+  the last 8 turns in RAM, wiped at every restart; now a chat's first message after a restart rebuilds them from its live episodes.
+  Long ("second brain"): each owner turn is embedded on its episode (`memory`, `embedding`); the top-3 past owner turns by meaning
+  ($vectorSearch `episodes_vec`, filter chat, no score threshold) go in as one system message. Owner only, live only: eval and gate
+  prompts unchanged. Also: v10 = L-bbaaac "Say degrees, not F" passed the gate vacuously (replay world "gate:…" had no web_search,
+  so the reply had no temperature); fixed (gate replays get live-only tools). Thomas keeps L-bbaaac for the stage revoke beat, then
+  re-teach "Give temperatures in Celsius (°C), not Fahrenheit." Genome at 14:20: v8 L-f71154 (strangers lose calendar_move/cancel,
+  note_search, contact_lookup), v9 L-f857d8 (first Raindrop-sourced lesson), v10 L-bbaaac. The allowlist L-c7e955 was not picked.
+
 ## Open questions
 - ~~Modelence: Python / custom start command?~~ Answered: Node.js only (D31).
 - ~~**Live teach convention**~~ Answered: investor calls (D36). Still open: learning cycle 66–95 s vs ~55 s teach beat (the v7 cycle
