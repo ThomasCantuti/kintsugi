@@ -29,7 +29,11 @@ AGENT_FALLBACK_MODELS = _list(
 )
 SUPERVISOR_MODEL = _env("SUPERVISOR_MODEL", "nvidia/nemotron-3-ultra-550b-a55b:free")
 FRONTIER_MODEL = _env("FRONTIER_MODEL", "anthropic/claude-sonnet-5.5")
-EMBED_MODEL = _env("EMBED_MODEL", "nvidia/nemotron-3-embed-1b:free")
+# Voyage via an Atlas model API key (https://ai.mongodb.com/v1) or a voyageai.com key (https://api.voyageai.com/v1).
+# EMBED_API_KEY empty → embeddings come from the LLM endpoint instead (EMBED_MODEL must be one it serves).
+EMBED_API_KEY = _env("EMBED_API_KEY")
+EMBED_BASE_URL = _env("EMBED_BASE_URL", "https://ai.mongodb.com/v1")
+EMBED_MODEL = _env("EMBED_MODEL", "voyage-4-lite" if EMBED_API_KEY else "nvidia/nemotron-3-embed-1b:free")
 BUDGET_USD = float(_env("BUDGET_USD", "5"))
 
 TIMEZONE = "America/Los_Angeles"

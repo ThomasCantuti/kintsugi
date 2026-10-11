@@ -130,7 +130,7 @@ async def embed_lesson(lesson: dict) -> None:
 async def similar_lessons(text: str, k: int = config.LESSONS_TOP_K, statuses=("active",)) -> list[dict] | None:
     """Top-k lessons by meaning ($vectorSearch). None if vector search isn't available yet."""
     try:
-        [vec] = await models.embed([text])
+        [vec] = await models.embed([text], "query")
         return await (await db.lessons.aggregate([
             {"$vectorSearch": {"index": VECTOR_INDEX, "path": "embedding", "queryVector": vec,
                                "numCandidates": max(50, k * 10), "limit": k,

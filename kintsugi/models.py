@@ -2,7 +2,9 @@
 
 Tests swap `chat` for `scripted([...])`, so no tokens are spent.
 """
+import asyncio
 import json
+import urllib.request
 from dataclasses import dataclass, field
 
 from openai import AsyncOpenAI
@@ -95,9 +97,21 @@ def parse_json(text: str) -> dict:
         return json.loads(text[start:end + 1])
 
 
-async def embed(texts: list[str]) -> list[list[float]]:
-    r = await client().embeddings.create(model=config.EMBED_MODEL, input=texts)
-    return [d.embedding for d in r.data]
+async def embed(texts: list[str], input_type: str = "document") -> list[list[float]]:
+    """Voyage (Atlas model API key or voyageai.com key) if EMBED_API_KEY is set, else the LLM endpoint."""
+    if not config.EMBED_API_KEY:
+        r = await client().embeddings.create(model=config.EMBED_MODEL, input=texts)
+        return [d.embedding for d in r.data]
+
+    def post() -> dict:
+        req = urllib.request.Request(
+            f"{config.EMBED_BASE_URL}/embeddings", method="POST",
+            data=json.dumps({"input": texts, "model": config.EMBED_MODEL, "input_type": input_type}).encode(),
+            headers={"Authorization": f"Bearer {config.EMBED_API_KEY}", "Content-Type": "application/json"})
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            return json.load(resp)
+
+    return [d["embedding"] for d in (await asyncio.to_thread(post))["data"]]
 
 
 def scripted(replies: list):
