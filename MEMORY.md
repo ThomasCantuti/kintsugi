@@ -112,6 +112,8 @@ Living facts and decisions. Append; don't rewrite history. Date every entry.
   rejects it: project/service/vars/domain made via GraphQL, deploy = `railway up --service tsugi` with a project token.
   Atlas access list opened to 0.0.0.0/0 ("Railway sandbox (hackathon)", Thomas OK'd): remove after judging. The real
   server now binds 127.0.0.1 (approve/revoke no longer reachable from the venue network; judge-panel finding).
+  Deploy only from a clean export (`git archive HEAD | tar -x -C <dir>`, then `railway up --service tsugi` there):
+  `railway up` uploads the working tree, including other sessions' uncommitted files (happened once at 15:11, fixed 15:14).
 
 ## Open questions
 - ~~Modelence: Python / custom start command?~~ Answered: Node.js only (D31).
