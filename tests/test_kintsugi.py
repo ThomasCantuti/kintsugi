@@ -141,6 +141,24 @@ def test_gate_accepts_fix_and_rejects_regression(run, monkeypatch):
     assert not useless["fixed"] and not useless["accepted"]
 
 
+def test_a_live_mistake_the_gate_fixed_guards_later_lessons(run, monkeypatch):
+    monkeypatch.setattr(models, "chat", fake_chat)
+    monkeypatch.setattr(models, "embed", no_embed)
+    monkeypatch.setattr(evals, "cases", lambda split: [] if split == "train" else 1 / 0)
+
+    async def judge(history, steps, reply, correction):  # supervisor stand-in: did it call the tool the owner asked for?
+        return {"passed": any(s["tool"] == correction for s in steps)}
+    monkeypatch.setattr(gate, "supervisor_judge", judge)
+    g = run(genome.current())
+    notes = lesson("Save notes when asked.")
+    live = {"source_id": "E-live", "tier": "owner", "history": [{"role": "user", "content": "note: buy milk"}],
+            "correction": "note_add"}
+    assert run(gate.judge(notes, live, g))["accepted"] and run(db.scars.count_documents({})) == 1
+    run(db.lessons.insert_one({**notes, "status": "active"}))
+    bad = run(gate.judge(lesson("Focus blocks are 90 minutes. Never save notes."), {"source_id": "case:focus", "case": FOCUS}, g))
+    assert bad["fixed"] and not bad["accepted"] and bad["regression_total"] == 1  # no train case left: the scar caught it
+
+
 def test_gate_tool_access_lesson_regresses_only_its_tier(monkeypatch):
     train = [{"id": "o", "tier": "owner"}, {"id": "s", "tier": "stranger"}, {"id": "n"}]  # no tier = owner
     monkeypatch.setattr(evals, "cases", lambda split: train if split == "train" else 1 / 0)
