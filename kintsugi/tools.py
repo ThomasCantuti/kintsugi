@@ -2,6 +2,8 @@
 import json
 import re
 
+from bson import ObjectId
+
 from . import models
 from .db import NOTES_TEXT, NOTES_VEC, db
 
@@ -10,6 +12,8 @@ INT = {"type": "integer"}
 LIST = {"type": "array", "items": {"type": "string"}}
 WHEN = {"type": "string", "pattern": r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$", "description": "YYYY-MM-DDTHH:MM, Pacific time"}
 DATE = {"type": "string", "pattern": r"^\d{4}-\d{2}-\d{2}$", "description": "YYYY-MM-DD"}
+EMAILS = {"type": "array", "items": {"type": "string", "pattern": r"^[^@\s]+@[^@\s]+\.\w+$", "description": "an email address"},
+          "description": "emails"}
 
 
 def _strip(doc: dict) -> dict:
@@ -43,7 +47,26 @@ async def calendar_create(world, title, start, duration_min, attendees=()):
 
 async def calendar_list(world, date):
     events = await db.events.find({"world": world, "start": {"$regex": f"^{re.escape(date)}"}}).sort("start").to_list()
-    return json.dumps([_strip(e) for e in events]) if events else f"No events on {date}"
+    return json.dumps([{"id": str(e["_id"]), **_strip(e)} for e in events]) if events else f"No events on {date}"
+
+
+async def _event(world, event_id) -> dict:
+    e = await db.events.find_one({"_id": ObjectId(event_id), "world": world}) if ObjectId.is_valid(event_id) else None
+    if not e:
+        raise ValueError(f"No event with id '{event_id}'. Call calendar_list for that date to get event ids.")
+    return e
+
+
+async def calendar_move(world, event_id, start):
+    e = await _event(world, event_id)
+    await db.events.update_one({"_id": e["_id"]}, {"$set": {"start": start}})
+    return f"Moved '{e['title']}' from {e['start']} to {start}"
+
+
+async def calendar_cancel(world, event_id):
+    e = await _event(world, event_id)
+    await db.events.delete_one({"_id": e["_id"]})
+    return f"Cancelled '{e['title']}' at {e['start']}"
 
 
 async def note_add(world, text, tags=()):
@@ -105,16 +128,19 @@ def _spec(fn, desc, props, required, risk):
 
 TOOLS = dict([
     _spec(calendar_create, "Create a calendar event.",
-          {"title": STR, "start": WHEN, "duration_min": INT, "attendees": {**LIST, "description": "emails"}},
+          {"title": STR, "start": WHEN, "duration_min": INT, "attendees": EMAILS},
           ["title", "start", "duration_min"], "write"),
-    _spec(calendar_list, "List calendar events on a date.", {"date": DATE}, ["date"], "read"),
+    _spec(calendar_list, "List calendar events on a date (with their ids).", {"date": DATE}, ["date"], "read"),
+    _spec(calendar_move, "Move an event to a new start time (same duration).", {"event_id": STR, "start": WHEN},
+          ["event_id", "start"], "write"),
+    _spec(calendar_cancel, "Cancel (delete) an event.", {"event_id": STR}, ["event_id"], "write"),
     _spec(note_add, "Save a note.", {"text": STR, "tags": LIST}, ["text"], "write"),
     _spec(note_search, "Search notes by meaning, words or tag.", {"query": STR}, ["query"], "read"),
     _spec(reminder_set, "Set a reminder that pings Thomas at a time.", {"text": STR, "at": WHEN}, ["text", "at"], "write"),
     _spec(contact_lookup, "Find contacts by name or tag.", {"query": STR}, ["query"], "read"),
-    _spec(outbox_draft, "Save an email draft (not sent).", {"to": {**LIST, "description": "emails"}, "subject": STR, "body": STR},
+    _spec(outbox_draft, "Save an email draft (not sent).", {"to": EMAILS, "subject": STR, "body": STR},
           ["to", "subject", "body"], "write"),
-    _spec(outbox_send, "Send an email now.", {"to": {**LIST, "description": "emails"}, "subject": STR, "body": STR},
+    _spec(outbox_send, "Send an email now.", {"to": EMAILS, "subject": STR, "body": STR},
           ["to", "subject", "body"], "write"),
 ])
 ALL_TOOLS = list(TOOLS)
@@ -151,6 +177,10 @@ def validate(name: str, raw: str) -> tuple[dict | None, str | None]:
             continue
         if "pattern" in spec and not re.match(spec["pattern"], value):
             problems.append(f"'{key}' must match {spec.get('description', spec['pattern'])}, got '{value}'")
+            continue
+        item = spec.get("items", {})
+        if "pattern" in item and (bad := [v for v in value if not (isinstance(v, str) and re.match(item["pattern"], v))]):
+            problems.append(f"each '{key}' item must be {item.get('description', item['pattern'])}, got {bad}")
             continue
         fixed[key] = value
     problems += [f"missing '{k}'" for k in params["required"] if k not in args]

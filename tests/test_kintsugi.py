@@ -43,6 +43,25 @@ def test_validate_repairs_and_explains():
     assert "must match" in tools.validate("calendar_create", '{"title": "x", "start": "tomorrow", "duration_min": 9}')[1]
     assert "not valid JSON" in tools.validate("note_add", "{text: oops")[1]
     assert "Unknown tool" in tools.validate("teleport", "{}")[1]
+    assert "email address" in tools.validate("outbox_draft", '{"to": ["Dan"], "subject": "s", "body": "b"}')[1]
+
+
+def test_made_up_event_id_is_fed_back_where_raw_loop_ends_the_turn(run, monkeypatch):
+    run(db.events.insert_one({"world": "m", "title": "Dentist", "start": "2026-10-16T10:00", "duration_min": 30}))
+    listed = Reply("", [ToolCall("c1", "calendar_list", '{"date": "2026-10-16"}')])
+    guess = Reply("", [ToolCall("c2", "calendar_move", '{"event_id": "dentist-1", "start": "2026-10-19T09:00"}')])
+    real = lambda msgs: Reply("", [ToolCall("c3", "calendar_move", json.dumps(  # id copied from the error-fed retry
+        {"event_id": json.loads(next(m["content"] for m in msgs if m["role"] == "tool"))[0]["id"], "start": "2026-10-19T09:00"}))])
+    monkeypatch.setattr(models, "chat", models.scripted([listed, guess, real, Reply("Moved.")]))
+    g = run(genome.current())
+    ep = run(agent.run(g, [{"role": "user", "content": "move the dentist"}], "m", "owner", "2026-10-15T08:00"))
+    assert ep["error"] is None and ep["counters"]["repairs"] == 1
+    assert run(db.events.count_documents({"world": "m", "start": "2026-10-19T09:00"})) == 1
+
+    run(db.events.insert_one({"world": "m2", "title": "Dentist", "start": "2026-10-16T10:00", "duration_min": 30}))
+    monkeypatch.setattr(models, "chat", models.scripted([listed, guess, Reply("Moved.")]))
+    ep = run(agent.run(g, [{"role": "user", "content": "move the dentist"}], "m2", "owner", "2026-10-15T08:00", sw=agent.RAW))
+    assert ep["error"] and run(db.events.count_documents({"world": "m2", "start": "2026-10-16T10:00"})) == 1
 
 
 def test_repair_recovers_where_raw_loop_fails(run, monkeypatch):

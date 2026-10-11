@@ -2,7 +2,7 @@
 
 - genome: learned rules/policies/guardrails in the prompt + tool_access enforced in code
 - retrieval: only the top-k relevant learned lessons ($vectorSearch), so a small model isn't drowned
-- repair: validate/coerce tool args, targeted errors, recover tool calls written as text
+- repair: validate/coerce tool args, targeted errors, tool errors fed back for a retry, recover tool calls written as text
 - fallback: next model in the chain when a provider fails
 """
 import json
@@ -75,9 +75,12 @@ async def execute(call: ToolCall, world: str, allowed: list[str], sw: Switches, 
             ep["counters"]["repairs"] += 1
             result = f"ERROR: {error}"
         else:
+            if args != json.loads(call.arguments or "{}"):  # coerced types or dropped unknown args
+                ep["counters"]["repairs"] += 1
             try:
                 result = await TOOLS[call.name]["fn"](world, **args)
-            except Exception as e:
+            except Exception as e:  # e.g. a made-up event id: fed back so the model can retry (raw loop: turn ends)
+                ep["counters"]["repairs"] += 1
                 result = f"ERROR: {e}"
     else:  # raw loop: trust the model; a malformed call ends the turn
         try:
