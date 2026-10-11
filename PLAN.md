@@ -278,7 +278,7 @@ Numbers come from Atlas only: Raindrop-flagged episodes → lessons shipped / re
 **Setup ([you])**: raindrop.ai Hobby signup → write key `RAINDROP_WRITE_KEY` · Query API key (Settings → API
 Keys) `RAINDROP_QUERY_API_KEY` · enable presets User Frustration, Attempted Prompt Injection, Repeated Tool Call Failures (dashboard only) · create the custom signal above. Done 12:50–12:55. There is no Task Failure or Jailbreaking preset.
 
-**Order:** ~~(1) events + tool spans + 👍/👎/correction signals, with a test · (2) outcome signals~~ (done 12:05) · ~~(3) poller, with a test~~ (12:33), signal latency measured 13:21: **no flag within 30 min** (MEMORY.md Numbers) → fallback · (4) README line + `raindrop` lineage node in the live view.
+**Order:** ~~(1) events + tool spans + 👍/👎/correction signals, with a test · (2) outcome signals~~ (done 12:05) · ~~(3) poller, with a test~~ (12:33), signal latency measured 13:32: **flag ≤ 32 s** on a real leak, flag → quarantine 22 s (MEMORY.md Numbers); a refused attack is never flagged → **live beat is possible** · (4) README line + `raindrop` lineage node in the live view.
 **Fallback:** if the Query API or preset signals aren't on Hobby, or the latency is over 5 min, keep 1–4 (observability
 and verification) and show one recorded Raindrop-sourced lesson.
 **BOOST:** send one held-out run (A, 12 events, `kind=eval`, `passed`) → "Raindrop's custom signal agreed with the
