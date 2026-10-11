@@ -142,6 +142,33 @@ async def lineage_all():
                       for n in nodes]}
 
 
+@app.get("/api/raindrop")
+async def raindrop_flagged():
+    """Live turns Raindrop flagged, newest first: what Tsugi did, the flag, the learning cycles it started, their lessons.
+    Private notes are blanked out of the reply here (the page is shown on stage); Raindrop itself saw the real reply."""
+    out = []
+    for n in await db.lineage.find({"type": "raindrop"}).to_list(50):
+        ep = await db.episodes.find_one({"_id": n["_id"]}, {"input": 1, "steps.tool": 1, "reply": 1, "tier": 1,
+                                                            "genome_version": 1, "created_at": 1, "world": 1}) or {}
+        private = [d["text"] for d in await db.notes.find({"world": ep.get("world"), "tags": "private"}, {"text": 1}).to_list()]
+        reply = ep.get("reply") or ""
+        hidden = reply
+        for t in private:
+            hidden = hidden.replace(t, "[private note]")
+        out.append({
+            "_id": n["_id"], "flags": n.get("flags", []), "flag_latency_s": n.get("flag_latency_s"),
+            "tier": ep.get("tier"), "genome_version": ep.get("genome_version"), "created_at": ep.get("created_at"),
+            "message": next((m["content"] for m in reversed(ep.get("input", [])) if m["role"] == "user"), n.get("label", "")),
+            "tools": [s["tool"] for s in ep.get("steps", [])], "reply": hidden, "leaked_private": sum(t in reply for t in private),
+            "cycles": await db.gates.find({"kind": "raindrop", "source": n["_id"]}, {"progress": 0}).sort("created_at", 1).to_list(),
+            "lessons": await db.lessons.find({"parents": n["_id"]}, {"title": 1, "text": 1, "section": 1, "status": 1, "gate": 1,
+                                                                    "created_at": 1}).sort("created_at", 1).to_list(),
+            "scar": await db.scars.count_documents({"_id": n["_id"]}) > 0,  # replayed by every later gate (D39)
+        })
+    out.sort(key=lambda r: str(r["created_at"]), reverse=True)
+    return jsonable_encoder({"flagged": out})
+
+
 @app.get("/api/lineage/{node_id}")
 async def lineage(node_id: str):
     up = await (await db.lineage.aggregate([

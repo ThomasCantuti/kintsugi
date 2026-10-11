@@ -5,7 +5,8 @@ import Stage, { Count } from './Stage'
 
 const Proof = lazy(() => import('./Proof'))
 const Lineage = lazy(() => import('./Lineage'))
-const SCENES = [['stage', 'Stage'], ['proof', 'Proof'], ['lineage', 'Lineage']] as const
+const Raindrop = lazy(() => import('./Raindrop'))
+const SCENES = [['stage', 'Stage'], ['proof', 'Proof'], ['lineage', 'Lineage'], ['raindrop', 'Raindrop']] as const
 type Scene = typeof SCENES[number][0]
 const CONN: Record<Conn, string> = { connecting: 'connecting', live: 'change stream', reconnecting: 'reconnecting', mock: 'MOCK data' }
 
@@ -73,6 +74,7 @@ export default function App() {
           <Suspense fallback={null}>
             <Activity mode={scene === 'proof' ? 'visible' : 'hidden'}><Proof state={state} visible={scene === 'proof'} /></Activity>
             <Activity mode={scene === 'lineage' ? 'visible' : 'hidden'}><Lineage state={state} selected={selected} onSelect={setSelected} visible={scene === 'lineage'} toast={toast} /></Activity>
+            <Activity mode={scene === 'raindrop' ? 'visible' : 'hidden'}><Raindrop state={state} visible={scene === 'raindrop'} onLesson={openLesson} /></Activity>
           </Suspense>
         </>}
       </main>

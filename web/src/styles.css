@@ -393,3 +393,42 @@ main { position: relative; min-height: 0 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important }
 }
+
+/* Raindrop scene: one flagged live turn told in five steps, left to right. Blue = Raindrop, vermilion = the failure, gold = shipped. */
+.raindrop { grid-template-rows: auto minmax(0, 1fr); gap: 1rem; padding-top: 1rem; overflow-y: auto }
+.rcases { display: grid; gap: 1.5rem; align-content: start }
+.rsteps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: 1.15fr .8fr 1.1fr 1.1fr .95fr; gap: 1rem; align-items: stretch }
+.rstep { position: relative; display: grid; gap: .55rem; align-content: start; background: var(--plate); border: 1px solid var(--hair); border-radius: var(--r-panel);
+  padding: .9rem 1rem; font-size: .95rem; min-width: 0; animation: tin .5s cubic-bezier(.2, .9, .25, 1) both; animation-delay: calc(var(--i) * 140ms) }
+.rstep p { margin: 0 }
+.rstep + .rstep::before { content: "→"; position: absolute; left: -.85rem; top: 1.1rem; color: var(--mute); font-size: .9rem }
+.rk { font: 600 .72rem var(--mono); letter-spacing: .05em; text-transform: uppercase; color: var(--mute) }
+.rstep.broke { border-color: color-mix(in srgb, var(--shu) 55%, transparent) }
+.rstep.broke .rk, .rstep .bad { color: var(--shu-ink) }
+.rstep.flag { border-color: var(--rain); background: linear-gradient(var(--rain-wash), var(--rain-wash)), var(--plate) }
+.rstep.flag .rk { color: var(--rain) }
+.rstep.ship { border-color: var(--gold); background: linear-gradient(var(--gold-wash), var(--gold-wash)), var(--plate) }
+.rstep.ship .rk { color: var(--gold-ink) }
+.rmeta, .rsmall { font-size: .78rem }
+.rreply { position: relative; max-height: 16rem; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere }
+.rreply mark { background: var(--shu-wash); color: var(--shu-ink); border-radius: 4px; padding: 0 .2rem }
+.raindrop .lhead .rsmall { max-width: none }
+.rflags { display: flex; flex-wrap: wrap; gap: .35rem }
+.rflags .rchip { font-size: .8rem; padding: .15rem .65rem }
+.rbig { display: grid; gap: .1rem }
+.rbig b { font: 700 2.2rem/1 var(--display) }
+.rstep.flag .rbig b { color: var(--rain) }
+.rstep.ship .rbig b { color: var(--gold-ink) }
+.rcands { margin: 0; padding: 0; list-style: none; display: grid; gap: .4rem }
+.rcands li { display: flex; flex-wrap: wrap; gap: .25rem .45rem; align-items: baseline }
+.rcands .tag { margin-left: auto }
+.rverdict { display: grid; gap: .2rem; padding: .5rem .6rem; border-radius: var(--r-inner); background: var(--plate-2); border-left: 3px solid var(--mute) }
+.rverdict.ok { border-left-color: var(--atlas) }
+.rverdict.no { border-left-color: var(--shu) }
+.rmark { font-weight: 700; margin-right: .35rem }
+.rverdict.ok .rmark { color: var(--atlas-ink) }
+.rverdict.no .rmark { color: var(--shu-ink) }
+@media (max-width: 1099px), (max-height: 600px) {
+  .rsteps { grid-template-columns: minmax(0, 1fr) }
+  .rstep + .rstep::before { content: "↓"; left: 1rem; top: -1rem }
+}

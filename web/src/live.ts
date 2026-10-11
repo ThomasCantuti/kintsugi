@@ -35,6 +35,12 @@ export type State = {
   runs: Run[]; curve: { version: number; pass_rate: number; n: number }[]
   gate_running: boolean; episodes: Episode[]; cycle: Cycle | null; versions: Record<string, number>
 }
+/** A live turn Raindrop flagged (GET /api/raindrop): what Tsugi did, the flag, the cycles it started, their lessons. */
+export type Flagged = {
+  _id: string; flags: string[]; flag_latency_s?: number; tier: string; genome_version: number | null; created_at: string
+  message: string; tools: string[]; reply: string; leaked_private: number; cycles: Cycle[]
+  lessons: Pick<Lesson, '_id' | 'title' | 'text' | 'section' | 'status' | 'gate' | 'created_at'>[]; scar: boolean
+}
 export type LiveEvent = { coll: string; op: string; id: string; note?: string; t: number }
 export type LNode = { _id: string; type: string; status: string; label: string; parents?: string[]; flags?: string[]; flag_latency_s?: number }
 export type Conn = 'connecting' | 'live' | 'reconnecting' | 'mock'
@@ -88,6 +94,12 @@ export const api = {
   quarantine: (id: string, d: 'approve' | 'reject') => post(`/api/quarantine/${encodeURIComponent(id)}/${d}`),
   chat: (text: string): Promise<{ reply: string }> => post('/api/chat', { text, tier: 'stranger' }),
   teach: (text: string) => post('/api/teach', { text }),
+  raindrop: async (): Promise<{ flagged: Flagged[] }> => {
+    if (snap.conn === 'mock') return { flagged: [] }
+    const r = await fetch('/api/raindrop')
+    if (!r.ok) throw new Error(`/api/raindrop ${r.status}`)
+    return r.json()
+  },
   lineage: async (): Promise<{ nodes: LNode[] }> => {
     if (snap.conn === 'mock') return (await import('./mock')).MOCK_LINEAGE
     const r = await fetch('/api/lineage')
