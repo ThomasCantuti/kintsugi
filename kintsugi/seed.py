@@ -5,6 +5,7 @@ from zoneinfo import ZoneInfo
 
 from . import config
 from .db import db
+from .tools import embed_notes
 
 CONTACTS = [
     ("Ana Ruiz", "ana@kintsugi.example", ["team"]), ("Ben Okafor", "ben@kintsugi.example", ["team"]),
@@ -33,7 +34,7 @@ async def seed(world: str = "live") -> bool:
         return False
     today = datetime.now(ZoneInfo(config.TIMEZONE)).date()
     await db.contacts.insert_many([{"world": world, "name": n, "email": e, "tags": t} for n, e, t in CONTACTS])
-    await db.notes.insert_many([{"world": world, "text": t, "tags": g} for t, g in NOTES])
+    await db.notes.insert_many(await embed_notes([{"world": world, "text": t, "tags": g} for t, g in NOTES]))
     await db.events.insert_many([{"world": world, "title": title, "start": f"{today + timedelta(days=d)}T{hm}",
                                   "duration_min": m, "attendees": a} for d, hm, title, m, a in EVENTS])
     return True

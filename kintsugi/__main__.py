@@ -4,11 +4,15 @@ import asyncio
 import uvicorn
 from telegram import Update
 
-from . import api, config, db, genome, seed, telegram
+from . import api, config, db, genome, models, seed, telegram
 
 
 async def main() -> None:
     await db.setup()
+    try:  # build the search indexes now, so the first live lesson doesn't wait ~45 s for Atlas
+        await db.ensure_search_indexes(len((await models.embed(["probe"]))[0]))
+    except Exception as e:
+        print(f"vector search off: {e}")
     await seed.seed()
     g = await genome.current()
     server = uvicorn.Server(uvicorn.Config(api.app, host="0.0.0.0", port=config.PORT, log_level="warning"))

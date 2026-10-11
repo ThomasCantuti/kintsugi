@@ -6,7 +6,7 @@ Scope and timeline: PLAN.md §8–9. **No project code before 10:30.**
 ## Before 10:30
 - [ ] [you] Atlas **Sandbox** (email invite) → then run `! atlas auth login` here; I'll create the DB user, access list, URI and indexes with the Atlas CLI
 - [ ] [you] Voyage AI key (free) as fallback if Atlas automated embedding isn't on the Sandbox → `VOYAGE_API_KEY`
-- [ ] [you] Telegram: @BotFather `/newbot` → `TELEGRAM_BOT_TOKEN`; @userinfobot → `OWNER_TELEGRAM_ID`
+- [x] [you] Telegram: @BotFather `/newbot` → `TELEGRAM_BOT_TOKEN`; @userinfobot → `OWNER_TELEGRAM_ID`
 - [ ] [you] OpenRouter key → `OPENROUTER_API_KEY` (free to start; $5 decision at ~11:45, PLAN.md §3)
 - [ ] [you] NVIDIA API key if you have one from the other hackathon → `LLM_BASE_URL` option
 - [ ] [you] Edit the conventions in PLAN.md §5 to your real ones (they become the hand-written cases)
@@ -17,7 +17,7 @@ Scope and timeline: PLAN.md §8–9. **No project code before 10:30.**
 ## 10:30–10:45 Setup
 - [x] [you] Create the **public** GitHub repo; first commit = planning docs
 - [x] `uv init`, deps (openai, fastapi, uvicorn, pymongo, python-telegram-bot, pytest), `config.py`, `db.py` → Sandbox ping
-- [ ] Spike: automated embedding index + one `$vectorSearch` with `query.text` (else Voyage client-side)
+- [x] Spike: Voyage client-side (Atlas model API) + `$vectorSearch` on lessons/notes + `$rankFusion` hybrid `note_search`
 
 ## 10:45–11:45 Runtime
 - [x] `models.py`: chat via `openai` SDK, base URL from config, fallback chain, cost meter; `ScriptedModel`; every repair/fallback logged (wrangling counters)
@@ -31,12 +31,12 @@ Scope and timeline: PLAN.md §8–9. **No project code before 10:30.**
 
 ## 11:45–12:45 Evals + learning
 - [x] `evals.py`: seed world, run case, DB-state checks, results → `runs`
-- [ ] Freeze held-out: commit hash → MEMORY.md
+- [x] Freeze held-out: commit hash → MEMORY.md (D30, 11c8ce0)
 - [ ] Baseline **A0** (raw loop) and **A** (Nemotron v0) on held-out → MEMORY.md Numbers
 - [x] Failure dedup via `$vectorSearch` on failures/lessons → lineage parents
 - [x] `learner.py`: supervisor `critique(episode, genome) -> {passed, critique, correction}` + `propose(failure)` ≤3 delta lessons; quarantine on stranger-only source
 - [ ] Supervisor agreement vs ground-truth checks on all cases → MEMORY.md Numbers
-- [x] `gate.py`: failing case + train + held-out, accept iff fixed and no regression
+- [x] `gate.py`: failing case + train cases that passed before (held-out never), accept iff fixed and no regression
 - [x] `tests/`: repair, gate accept/reject, held-out isolation, revoke, quarantine (ScriptedModel)
 - [ ] [you] $5 decision
 

@@ -7,7 +7,7 @@ with $graphLookup. The agent keeps the latest version in memory and a change str
 from datetime import UTC, datetime
 
 from . import config, models
-from .db import VECTOR_INDEX, client, db, ensure_vector_index
+from .db import VECTOR_INDEX, client, db, ensure_search_indexes
 from .tools import ALL_TOOLS
 
 BASE = {
@@ -124,7 +124,7 @@ async def embed_lesson(lesson: dict) -> None:
     except Exception:
         return  # retrieval falls back to "all lessons"; never block learning on embeddings
     lesson["embedding"] = vec
-    await ensure_vector_index(len(vec))
+    await ensure_search_indexes(len(vec))
 
 
 async def similar_lessons(text: str, k: int = config.LESSONS_TOP_K, statuses=("active",)) -> list[dict] | None:

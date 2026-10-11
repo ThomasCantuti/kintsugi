@@ -12,6 +12,7 @@ db = client[config.DB_NAME]
 # Tool data; every doc carries `world` ("live" or "eval:<run>:<case>")
 TOOL_COLLS = ["events", "notes", "reminders", "contacts", "outbox"]
 VECTOR_INDEX = "lessons_vec"
+NOTES_VEC, NOTES_TEXT = "notes_vec", "notes_text"
 
 
 async def setup() -> None:
@@ -24,18 +25,23 @@ async def setup() -> None:
     await db.runs.create_index([("created_at", ASCENDING)])
 
 
-async def ensure_vector_index(dims: int) -> None:
-    """Vector index on lesson embeddings (created once we know the embedding size)."""
-    existing = [i["name"] async for i in await db.lessons.list_search_indexes()]
-    if VECTOR_INDEX in existing:
-        return
-    await db.lessons.create_search_index(SearchIndexModel(
-        name=VECTOR_INDEX, type="vectorSearch",
-        definition={"fields": [
+async def ensure_search_indexes(dims: int) -> None:
+    """Vector indexes on lesson and note embeddings + a keyword index on notes (fused by $rankFusion).
+    Created once we know the embedding size; Atlas takes ~45 s to build them."""
+    want = {
+        ("lessons", VECTOR_INDEX): {"fields": [
             {"type": "vector", "path": "embedding", "numDimensions": dims, "similarity": "cosine"},
-            {"type": "filter", "path": "status"},
-        ]},
-    ))
+            {"type": "filter", "path": "status"}]},
+        ("notes", NOTES_VEC): {"fields": [
+            {"type": "vector", "path": "embedding", "numDimensions": dims, "similarity": "cosine"},
+            {"type": "filter", "path": "world"}]},
+        ("notes", NOTES_TEXT): {"analyzer": "lucene.english", "mappings": {"dynamic": False, "fields": {
+            "text": {"type": "string"}, "tags": {"type": "string"}, "world": {"type": "token"}}}},
+    }
+    for (coll, name), definition in want.items():
+        if name not in [i["name"] async for i in await db[coll].list_search_indexes()]:
+            await db[coll].create_search_index(SearchIndexModel(
+                name=name, definition=definition, type="search" if name == NOTES_TEXT else "vectorSearch"))
 
 
 async def wipe_world(world_prefix: str) -> None:

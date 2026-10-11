@@ -16,6 +16,7 @@ from pathlib import Path
 from . import agent, config, genome
 from .agent import RAW, Switches
 from .db import TOOL_COLLS, db, wipe_world
+from .tools import embed_notes
 
 CASES_FILE = Path(__file__).resolve().parent.parent / "evals" / "cases.json"
 CONCURRENCY = 4
@@ -40,7 +41,8 @@ async def run_case(g: dict, case: dict, model: str | None = None, sw: Switches =
     world = f"eval:{run_id}:{case['id']}:{uuid.uuid4().hex[:4]}"
     for coll in TOOL_COLLS:
         if docs := case.get("fixtures", {}).get(coll):
-            await db[coll].insert_many([{**{k: v for k, v in d.items() if k != "_id"}, "world": world} for d in docs])
+            docs = [{**{k: v for k, v in d.items() if k != "_id"}, "world": world} for d in docs]
+            await db[coll].insert_many(await embed_notes(docs) if coll == "notes" else docs)
     history, eps = [], []
     for text in case["messages"]:
         history.append({"role": "user", "content": text})

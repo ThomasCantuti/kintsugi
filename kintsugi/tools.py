@@ -2,7 +2,8 @@
 import json
 import re
 
-from .db import db
+from . import models
+from .db import NOTES_TEXT, NOTES_VEC, db
 
 STR = {"type": "string"}
 INT = {"type": "integer"}
@@ -20,6 +21,20 @@ def _words(q: str) -> dict:
     return {"$regex": "|".join(words), "$options": "i"}
 
 
+_note_vecs: dict[str, list[float]] = {}  # the same fixture notes are re-seeded in every eval world
+
+
+async def embed_notes(docs: list[dict]) -> list[dict]:
+    """Attach embeddings so Atlas Vector Search finds notes by meaning. Never blocks the write."""
+    todo = list({d["text"] for d in docs} - _note_vecs.keys())
+    try:
+        if todo:
+            _note_vecs.update(zip(todo, await models.embed(todo)))
+    except Exception:
+        return docs
+    return [{**d, "embedding": _note_vecs[d["text"]]} for d in docs]
+
+
 async def calendar_create(world, title, start, duration_min, attendees=()):
     doc = {"world": world, "title": title, "start": start, "duration_min": duration_min, "attendees": list(attendees)}
     await db.events.insert_one(doc)
@@ -32,13 +47,32 @@ async def calendar_list(world, date):
 
 
 async def note_add(world, text, tags=()):
-    await db.notes.insert_one({"world": world, "text": text, "tags": list(tags)})
+    [doc] = await embed_notes([{"world": world, "text": text, "tags": list(tags)}])
+    await db.notes.insert_one(doc)
     return "Note saved"
 
 
 async def note_search(world, query):
-    q = _words(query)
-    notes = await db.notes.find({"world": world, "$or": [{"text": q}, {"tags": q}]}).to_list(10)
+    """Hybrid: Atlas Search (keywords) + Vector Search (meaning), fused with $rankFusion."""
+    notes = []
+    try:
+        [vec] = await models.embed([query], "query")
+        notes = await (await db.notes.aggregate([
+            {"$rankFusion": {"input": {"pipelines": {
+                "meaning": [{"$vectorSearch": {"index": NOTES_VEC, "path": "embedding", "queryVector": vec,
+                                               "numCandidates": 50, "limit": 5, "filter": {"world": world}}}],
+                "keywords": [{"$search": {"index": NOTES_TEXT, "compound": {
+                    "must": [{"text": {"query": query, "path": ["text", "tags"]}}],
+                    "filter": [{"equals": {"path": "world", "value": world}}]}}}, {"$limit": 5}],
+            }}}},
+            {"$limit": 5},
+        ])).to_list()
+    except Exception:
+        pass
+    # ponytail: a note reaches the search indexes ~1 s after insert; keyword regex covers that gap
+    if not notes:
+        q = _words(query)
+        notes = await db.notes.find({"world": world, "$or": [{"text": q}, {"tags": q}]}).to_list(10)
     return json.dumps([_strip(n) for n in notes]) if notes else "No matching notes"
 
 
@@ -75,7 +109,7 @@ TOOLS = dict([
           ["title", "start", "duration_min"], "write"),
     _spec(calendar_list, "List calendar events on a date.", {"date": DATE}, ["date"], "read"),
     _spec(note_add, "Save a note.", {"text": STR, "tags": LIST}, ["text"], "write"),
-    _spec(note_search, "Search notes by words or tag.", {"query": STR}, ["query"], "read"),
+    _spec(note_search, "Search notes by meaning, words or tag.", {"query": STR}, ["query"], "read"),
     _spec(reminder_set, "Set a reminder that pings Thomas at a time.", {"text": STR, "at": WHEN}, ["text", "at"], "write"),
     _spec(contact_lookup, "Find contacts by name or tag.", {"query": STR}, ["query"], "read"),
     _spec(outbox_draft, "Save an email draft (not sent).", {"to": {**LIST, "description": "emails"}, "subject": STR, "body": STR},
