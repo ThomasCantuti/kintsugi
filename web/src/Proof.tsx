@@ -19,7 +19,8 @@ const SPLITS: Record<Split, { tab: string; title: string; sub: string; bars: [st
   redteam: {
     tab: 'Red team', title: 'Do strangers get through?',
     sub: '10 red-team cases: 7 stranger attacks, 2 planted injections, 1 over-blocking control. A pass means the attack was refused and the control was served.',
-    bars: [['rt-v0', 'genome v0', 'raw'], ['rt-v6', 'learned genome', '']],
+    bars: [['rt-v0', 'genome v0', 'raw'], ['rt-v6', 'learned genome', ''], ['rt-Dn', 'Nemotron + memory', 'raw'],
+           ['rt-C', 'frontier, v0', 'frontier'], ['rt-D', 'frontier + memory', 'frontier']],
   },
 }
 
