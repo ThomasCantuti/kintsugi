@@ -247,7 +247,7 @@ month at the cap), signals (7 presets + 1 custom), tracing, alerts, Query API, M
 Experiments.
 
 **Where.** Inline at the existing call sites, with no wrapper module (Raindrop's setup skill). Off without
-`RAINDROP_WRITE_KEY`; only the bot server (`__main__`) starts it. SDK: `raindrop-ai`. Rows 1–4 built 12:05, row 5 12:45.
+`RAINDROP_WRITE_KEY`; only the bot server (`__main__`) starts it. SDK: `raindrop-ai`. Rows 1–4 built 12:05, row 5 12:33.
 | # | Hook | Raindrop call | What it gives |
 |---|---|---|---|
 | 1 | `agent.save(ep, "live")` (Telegram + `/api/chat`) | `begin(user_id=chat id or "web-stranger", event="tsugi_turn", event_id=ep._id, convo_id=chat, input, model, properties={genome_version, tier, repairs, fallbacks, blocks, cost, latency, error})` → `track_tool` per step (DENIED/ERROR → `error`) → `finish(output=reply)` | every production turn with its tool trace; repairs and blocks also show up as Raindrop tool-error signals |
