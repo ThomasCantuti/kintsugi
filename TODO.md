@@ -104,8 +104,17 @@ blocks 0 until v7 (rt-v7: 2). Spend $3.79 of the $10 key at 13:15 ($5 BUDGET_USD
 (his rule), own hunks only (temporary index via `GIT_INDEX_FILE`; never `-a`/`add -A`), no push unless asked. Announce pytest
 before running it and send "pytest done" (shared `kintsugi_test` DB). Wrap up at ~30% context: commit, hand off here, tell the others.
 
+## Session 20 (13:15–14:05): tools + stage speed
+Done: web_search (Exa, live only, D38) · reminders ping on Telegram · scars (D39) · gate runs its past cases at once ·
+`reasoning` switch (default on; off is faster but broke past cases) · README results from stored runs (v7, D, Dn, red team, poisoning).
+- [ ] [you] **Stage teach takes ~3 min** (MEMORY Numbers): recommended = send the 👎 + correction at ~0:40, do the stranger and
+      revoke beats on the live view while the gate ring ticks, return for v8; record a real teach (labelled "sped up") as the backup.
+- [ ] [you] OK to delete the leftover "Call with Maya" (2026-10-12 15:00) in the live world before the stage.
+- [ ] Record the backup teach video (needs the live world cleared first).
+
 ## 15:15–15:45 BOOST (only if everything above is green)
-- [ ] RSI improver playbook · genome transfer to another model · Exa search · reminder heartbeat · `red-team` agent pass
+- [ ] RSI improver playbook · genome transfer to another model · `red-team` agent pass
+- [x] Exa web search (D38, live only) · reminders ping on Telegram (8ea3b1e) · every scar becomes a test (D39) · gate runs past cases at once (teach 301 → 139 s)
 
 ## 15:45–17:00 Ship
 - [ ] Freeze numbers → MEMORY.md "Numbers"

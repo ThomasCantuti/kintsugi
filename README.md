@@ -36,6 +36,13 @@ Telegram (owner / stranger) ─► agent.run(genome vN, messages, world, tier)
   come only from strangers are quarantined until the owner approves them.
 - **Genome**: one versioned document with four sections: `rules`, `context_policies`, `guardrails`,
   `tool_access{owner, stranger}`. Lessons are deltas on top of a fixed base, never rewrites.
+- **Every scar becomes a test**: when the gate ships a lesson from a live mistake (a Telegram correction, or a
+  Raindrop flag the owner approved), that turn is saved in `scars` and replayed against every later lesson while
+  its lesson stays active. Hand-written train cases guard the conventions we wrote down; scars guard the ones Tsugi
+  learned live. Pasting corrections into a prompt never checks a new one against the old ones.
+- **Tools**: calendar (create, list, move, cancel), notes (hybrid search), reminders (they ping the owner on
+  Telegram when due), contacts, an email outbox (draft or send, simulated), and web search (Exa). Web search is
+  offered only in live chats, so eval prompts stay as measured, and its results are marked as untrusted text.
 - **Model wrangling**: harness mechanisms around a cheap model (Nemotron). Tool-call repair validates and
   coerces arguments against the JSON schema, sends a targeted error back, and recovers tool calls the model
   wrote as plain text. A fallback chain switches models when one fails. `tool_access` is enforced in code.
