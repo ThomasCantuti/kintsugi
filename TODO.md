@@ -100,7 +100,8 @@ anything but these re-runs). Genome **v10**: v8 L-f71154 (strangers lose calenda
 (first Raindrop-sourced lesson), v10 L-bbaaac "Say degrees, not F" = a bad lesson that passed the gate vacuously (replay had no
 web_search; fixed in 9fbbf79). **Thomas keeps L-bbaaac for the stage revoke beat**; after revoking, re-teach on Telegram "Give
 temperatures in Celsius (°C), not Fahrenheit."
-1. **In flight at 14:26, may die with the old session:** v10 held-out `B`, red-team `rt-v10` (11 cases), hard `hard-B`, 3 trials each.
+1. **rt-v10 stored: 30/33** (R-c43055, MEMORY Numbers; Proof bar switched to rt-v10 in 42afb64). **In flight at 14:26, may die with
+   the old session:** v10 held-out `B` and hard `hard-B`, 3 trials each.
    Check `runs` for those labels with genome_version 10. If missing, re-run (no evals during rehearsals; tell 20/37 first, "evals done" after):
    `uv run python -m kintsugi.evals --trials 3 --version 10 --label B --split heldout` (same with `--label rt-v10 --split redteam`,
    `--label hard-B --split hard`), ~$0.12 total. Then: MEMORY Numbers (compare with v7: held-out 30/36, red-team 27/33, hard 21/24),
