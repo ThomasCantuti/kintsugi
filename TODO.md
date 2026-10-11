@@ -155,7 +155,8 @@ Role: README, PLAN, docs, demo prep; small harness features when Thomas asks. Ev
 **Open decisions for Thomas:**
 1. **Reset the sandbox between judges?** One judge's lesson stays for the next. Reset = `DB_NAME=kintsugi_sandbox uv run python -m
    kintsugi.sandbox`, then restart the service (Railway dashboard → tsugi → Restart, or GraphQL `serviceInstanceRedeploy`, below).
-2. **Stage revoke** (judge-panel finding, verified in gate.py): `genome.revoke()` makes a version with no `baselines` doc, so the next
+2. ~~**Stage revoke**~~ **Fixed (Thomas chose the fix): 174a4aa** carries the passing past cases over on revoke (scratch copy:
+   v11 kept v10's 14). **Live only after a bot restart** (the 15:54 session holds restarts). Original finding (verified in gate.py): `genome.revoke()` makes a version with no `baselines` doc, so the next
    gate first runs all 19 train cases → a much slower teach. Options: drop the revoke from the stage, or make revoke carry the
    baseline over (minus cases whose lessons were revoked) and time one teach. Other judge-panel notes: cut the Leo ask at 2:30, Proof
    ≤ 3 numbers, say "one transaction, $graphLookup, change stream" while revoking; unbacked claims: "everything built on it" (0 live
