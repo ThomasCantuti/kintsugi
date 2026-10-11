@@ -12,7 +12,7 @@ Scope and timeline: PLAN.md §8–9. **No project code before 10:30.**
 - [ ] [you] Edit the conventions in PLAN.md §5 to your real ones (they become the hand-written cases)
 - [ ] [you] Second Telegram account for the stranger, if you can get one
 - [ ] [you] Discord #rules
-- [ ] [you] Ask the Modelence team: Python process with a custom start command? external Atlas URI? what do the $50 credits cover?
+- [x] ~~[you] Ask the Modelence team~~: docs say Node.js only, no Python (MEMORY D31). Not needed.
 
 ## 10:30–10:45 Setup
 - [x] [you] Create the **public** GitHub repo; first commit = planning docs
@@ -103,7 +103,7 @@ field in Atlas (the live view skips them).
 before running it and send "pytest done" (shared `kintsugi_test` DB). Wrap up at ~30% context: commit, hand off here, tell the others.
 
 ## 15:15–15:45 BOOST (only if everything above is green)
-- [ ] RSI improver playbook · genome transfer to another model · deploy on Modelence (if Python works) · Exa search · reminder heartbeat · `red-team` agent pass
+- [ ] RSI improver playbook · genome transfer to another model · Exa search · reminder heartbeat · `red-team` agent pass
 
 ## 15:45–17:00 Ship
 - [ ] Freeze numbers → MEMORY.md "Numbers"

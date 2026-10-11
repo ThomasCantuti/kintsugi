@@ -179,7 +179,8 @@ Stranger = a second Telegram account if available, else `POST /chat?tier=strange
 
 ## 7. 1-minute video (record 16:15)
 0:00 one-line pitch · 0:08 teach clip · 0:30 quarantine + revoke clip · 0:42 chart · 0:55 repo URL, "built today on MongoDB Atlas".
-Thomas edits it with **Higgsfield**: AI-generated footage only for the Tsugi intro/outro (≤ 8 s). Everything
+AI-generated footage only for the Tsugi intro/outro (≤ 8 s): **Google Flow** (Veo, Thomas's Gemini Pro plan);
+Claude writes the prompts, Thomas generates by hand, MP4s go in `assets/video/`. Everything
 showing the product is a real screen recording (rule: demo only what was built today). Record clips as
 features land (teach ~14:15, revoke ~14:15, chart ~15:15) so the video isn't a 16:15 scramble.
 
