@@ -41,7 +41,7 @@ RAINDROP_EVENT_CAP = 800  # free Hobby plan: 1,000 events/month, and ingestion s
 # Query API key (dashboard → Settings → API Keys → Query SDK). Set = Raindrop-flagged live turns go to the learner.
 RAINDROP_QUERY_API_KEY = _env("RAINDROP_QUERY_API_KEY")
 # Signals that send a live turn to the learner (compared without case, spaces, "_" or "-")
-RAINDROP_FLAGS = {"taskfailure", "userfrustration", "brokeaconvention", "jailbreaking"}
+RAINDROP_FLAGS = {"userfrustration", "attemptedpromptinjection", "requestexecutionneedscorrection"}  # 2 presets + our custom signal (Raindrop named it)
 
 TIMEZONE = "America/Los_Angeles"
 LESSONS_TOP_K = 8  # context policy: max learned rules/policies retrieved per message

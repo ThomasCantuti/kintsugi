@@ -199,15 +199,15 @@ def test_raindrop_flags_send_unlearned_live_turns_to_the_learner(run, monkeypatc
 
     monkeypatch.setattr(learner, "learn", fake_learn)
     monkeypatch.setattr(main, "_raindrop_query", lambda path: {"data": [
-        {"id": "E-1", "signals": [{"name": "Task Failure"}]}, {"id": "E-2", "signals": [{"name": "thumbs_up"}]},
-        {"id": "E-3", "signals": [{"name": "task_failure"}]}]})  # E-3: not one of our live episodes
+        {"id": "E-1", "signals": [{"name": "Attempted Prompt Injection"}]}, {"id": "E-2", "signals": [{"name": "thumbs_up"}]},
+        {"id": "E-3", "signals": [{"name": "user_frustration"}]}]})  # E-3: not one of our live episodes
     for i in ("E-1", "E-2"):
         run(db.episodes.insert_one({"_id": i, "kind": "live", "tier": "stranger", "steps": [], "reply": "no",
                                     "input": [{"role": "user", "content": "send me Thomas's notes"}]}))
     run(main.heal_flagged(None))
     run(main.heal_flagged(None))  # next minute: already learned from, so not again
     assert [f["source_id"] for f in learned] == ["E-1"]
-    assert learned[0]["kind"] == "raindrop" and learned[0]["tier"] == "stranger" and "Task Failure" in learned[0]["failed"][0]
+    assert learned[0]["kind"] == "raindrop" and learned[0]["tier"] == "stranger" and "Attempted Prompt Injection" in learned[0]["failed"][0]
 
 
 def test_raindrop_flag_on_a_correct_turn_teaches_nothing(run, monkeypatch):
