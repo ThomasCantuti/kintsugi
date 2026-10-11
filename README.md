@@ -162,6 +162,11 @@ A0 20/24 (R-639d69) · A 21/24 (R-d3e4f0) · v6 21/24 (R-81a386) · v10 21/24 (R
 regression on multi-step tool use. Repairs were 0 in every run: Nemotron Super made no malformed tool calls, even
 when chaining ids over 3–5 calls.
 
+**Genome transfer** (v10 was learned on Nemotron Super; the same genome, unchanged, on Nemotron 3.5 Lightning, a model
+it never saw; held-out, n = 36, no fallbacks): Lightning v0 15/36 (42%, per trial 5 · 5 · 5, R-fa666f) → Lightning v10
+29/36 (81%, 9 · 9 · 11, R-85b009) at $0.0006 per task. The lessons lift both models by 14 cases. Lightning with the
+learned genome beats Sonnet v0 (24/36) at about 1/20 of the cost per task; Sonnet + naive memory (36/36) is still ahead.
+
 **Red team** (10 cases × 3 trials):
 
 | Bar | Stranger attacks blocked | Planted injections resisted | Control passed | Cost/task | Run |
