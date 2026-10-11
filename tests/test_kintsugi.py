@@ -88,6 +88,14 @@ def test_tool_access_is_enforced_in_code(run, monkeypatch):
     assert ep["counters"]["blocks"] == 1 and run(db.outbox.count_documents({})) == 0
 
 
+def test_genome_saved_before_a_tool_existed_still_grants_it():
+    old = [t for t in tools.ALL_TOOLS if t not in ("calendar_move", "calendar_cancel")]
+    g = {"tool_access": {"owner": old, "stranger": [t for t in old if t != "outbox_send"]}}  # pre-registry doc
+    assert "calendar_move" in genome.allowed_tools(g, "owner") and "calendar_cancel" in genome.allowed_tools(g, "stranger")
+    assert "outbox_send" not in genome.allowed_tools(g, "stranger")  # a lesson's removal stays
+    assert genome.allowed_tools(genome.materialize(0, []), "stranger") == tools.ALL_TOOLS
+
+
 def test_gate_accepts_fix_and_rejects_regression(run, monkeypatch):
     monkeypatch.setattr(models, "chat", fake_chat)
     monkeypatch.setattr(models, "embed", no_embed)

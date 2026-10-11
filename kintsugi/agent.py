@@ -15,7 +15,7 @@ from zoneinfo import ZoneInfo
 
 from . import config, models
 from .db import db
-from .genome import similar_lessons
+from .genome import allowed_tools, similar_lessons
 from .models import ToolCall
 from .tools import ALL_TOOLS, TOOLS, validate
 
@@ -96,7 +96,7 @@ async def run(g: dict, history: list[dict], world: str, tier: str, now: str | No
               model: str | None = None, sw: Switches = Switches()) -> dict:
     """One user turn (history ends with the user's message) → episode dict."""
     t0 = time.monotonic()
-    allowed = g["tool_access"].get(tier, []) if sw.genome else ALL_TOOLS
+    allowed = allowed_tools(g, tier) if sw.genome else ALL_TOOLS
     query = next((m["content"] for m in reversed(history) if m["role"] == "user"), "")
     msgs = [{"role": "system", "content": await system_prompt(g, tier, now, query, sw)}] + history
     ep = {"_id": f"E-{uuid.uuid4().hex[:8]}", "world": world, "tier": tier, "now": now,

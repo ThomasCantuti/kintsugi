@@ -31,6 +31,7 @@ def materialize(version: int, lessons: list[dict], cause: dict | None = None) ->
         "guardrails": [{"text": t, "lesson": None} for t in BASE["guardrails"]],
         "tool_access": {tier: list(tools) for tier, tools in BASE["tool_access"].items()},
         "lessons": [l["_id"] for l in lessons],
+        "tools_known": list(ALL_TOOLS),
         "cause": cause or {"op": "init"},
         "created_at": datetime.now(UTC),
     }
@@ -45,6 +46,14 @@ def materialize(version: int, lessons: list[dict], cause: dict | None = None) ->
         else:
             g[l["section"]].append({"text": l["text"], "lesson": l["_id"]})
     return g
+
+
+def allowed_tools(g: dict, tier: str) -> list[str]:
+    """Tools genome g lets `tier` use. Tools added to the registry after g was built get BASE access
+    (stored versions snapshot their tool lists); tools a lesson removed stay removed."""
+    known = set(g.get("tools_known") or [t for tools in g["tool_access"].values() for t in tools])
+    return [t for t in ALL_TOOLS if t in g["tool_access"].get(tier, [])
+            or (t not in known and t in BASE["tool_access"].get(tier, []))]
 
 
 _current: dict | None = None
