@@ -5,6 +5,7 @@ import logging
 import re
 import urllib.request
 from datetime import UTC, datetime, timedelta
+from zoneinfo import ZoneInfo
 
 import raindrop.analytics as raindrop
 import uvicorn
@@ -43,6 +44,25 @@ async def raindrop_flags(bot) -> None:
             print(f"raindrop flags: {e!r}", flush=True)
 
 
+async def ring_due(bot, now: datetime) -> None:
+    """Ping the owner for live reminders due in the last 10 min (older ones fell due while the bot was down)."""
+    fmt = "%Y-%m-%dT%H:%M"  # reminder_set stores Pacific wall-clock strings in this format
+    due = {"world": "live", "sent": {"$exists": False},
+           "at": {"$lte": now.strftime(fmt), "$gt": (now - timedelta(minutes=10)).strftime(fmt)}}
+    async for r in db.db.reminders.find(due):
+        await bot.send_message(config.OWNER_TELEGRAM_ID, f"⏰ {telegram.escape(r['text'])}")
+        await db.db.reminders.update_one({"_id": r["_id"]}, {"$set": {"sent": now}})
+
+
+async def reminders(bot) -> None:
+    while True:
+        try:
+            await ring_due(bot, datetime.now(ZoneInfo(config.TIMEZONE)))
+        except Exception as e:  # Telegram or Atlas hiccup: try again next tick
+            print(f"reminders: {e!r}", flush=True)
+        await asyncio.sleep(20)
+
+
 async def main() -> None:
     if config.RAINDROP_WRITE_KEY:  # live turns only; tool spans sent directly, no auto-instrumentation of eval/gate calls
         raindrop.init(config.RAINDROP_WRITE_KEY, tracing_enabled=True, auto_instrument=False, bypass_otel_for_tools=True)
@@ -67,6 +87,8 @@ async def main() -> None:
     tasks = [asyncio.create_task(server.serve()), asyncio.create_task(api.watch())]
     if config.RAINDROP_QUERY_API_KEY:
         tasks.append(asyncio.create_task(raindrop_flags(bot.bot if bot else None)))
+    if bot and config.OWNER_TELEGRAM_ID:
+        tasks.append(asyncio.create_task(reminders(bot.bot)))
     try:  # uvicorn handles SIGINT/SIGTERM (and a busy port) by returning: then everything stops
         await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
     finally:

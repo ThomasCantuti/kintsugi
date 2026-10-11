@@ -101,6 +101,21 @@ def test_web_search_is_offered_only_in_the_live_world(run, monkeypatch):
     assert "web_search" in offered[0] and "web_search" not in offered[1]
 
 
+def test_due_reminders_ping_the_owner_once(run):
+    from kintsugi import __main__ as bot_main
+    sent = []
+
+    class Bot:
+        async def send_message(self, chat, text):
+            sent.append(text)
+    run(db.reminders.insert_many([{"world": w, "text": t, "at": at} for w, t, at in [
+        ("live", "due", "2026-10-11T13:58"), ("live", "later", "2026-10-11T14:30"),
+        ("live", "stale", "2026-10-11T09:00"), ("eval-x", "other world", "2026-10-11T13:59")]]))
+    for _ in range(2):
+        run(bot_main.ring_due(Bot(), datetime(2026, 10, 11, 14, 0)))
+    assert sent == ["⏰ due"]
+
+
 def test_genome_saved_before_a_tool_existed_still_grants_it():
     old = [t for t in tools.ALL_TOOLS if t not in ("calendar_move", "calendar_cancel")]
     g = {"tool_access": {"owner": old, "stranger": [t for t in old if t != "outbox_send"]}}  # pre-registry doc
