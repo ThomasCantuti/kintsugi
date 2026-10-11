@@ -103,6 +103,16 @@ Living facts and decisions. Append; don't rewrite history. Date every entry.
   re-teach "Give temperatures in Celsius (°C), not Fahrenheit." Genome at 14:20: v8 L-f71154 (strangers lose calendar_move/cancel,
   note_search, contact_lookup), v9 L-f857d8 (first Raindrop-sourced lesson), v10 L-bbaaac. The allowlist L-c7e955 was not picked.
 
+- 2026-10-11 D42 **Judges' sandbox, deployed on Railway** (Thomas ~14:55: judges must try it themselves in round 1; Modelence
+  rejected again: Node.js only, D31). https://tsugi-production.up.railway.app = `SANDBOX=1` (web visitors are the owner:
+  chat + 👎 correction → gate; stranger chat/teach → quarantine; revoke), own DB `kintsugi_sandbox` (copy of live via
+  `python -m kintsugi.sandbox`, restart after a reset: the genome is cached), no Telegram/Raindrop keys, caps 400 turns /
+  40 cycles per process. Railway project `kintsugi-sandbox`, service `tsugi`, region us-west2, Railpack + `railway.json`
+  (needs `RAILPACK_START_CMD`). The workspace token in `.env` (`RAILWAY_API_KEY`) works on the GraphQL API but the CLI
+  rejects it: project/service/vars/domain made via GraphQL, deploy = `railway up --service tsugi` with a project token.
+  Atlas access list opened to 0.0.0.0/0 ("Railway sandbox (hackathon)", Thomas OK'd): remove after judging. The real
+  server now binds 127.0.0.1 (approve/revoke no longer reachable from the venue network; judge-panel finding).
+
 ## Open questions
 - ~~Modelence: Python / custom start command?~~ Answered: Node.js only (D31).
 - ~~**Live teach convention**~~ Answered: investor calls (D36). Still open: learning cycle 66–95 s vs ~55 s teach beat (the v7 cycle

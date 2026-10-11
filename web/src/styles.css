@@ -37,6 +37,7 @@
 html { font-size: clamp(13px, .62vw + 6px, 18px); height: 100% }
 body { height: 100%; margin: 0; background: var(--bg); color: var(--ink); font: 400 1rem/1.45 var(--sans); overflow: hidden }
 #root { height: 100%; display: grid; grid-template-rows: auto minmax(0, 1fr) }
+#root:has(> .sandbox-note) { grid-template-rows: auto auto minmax(0, 1fr) }
 body::after { content: ""; position: fixed; inset: 0; pointer-events: none; z-index: var(--z-grain); opacity: var(--grain-op);
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .5 0 0 0 0 .45 0 0 0 0 .4 0 0 0 1 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E") }
 button, input { font: inherit; color: inherit }

@@ -68,7 +68,7 @@ export default function App() {
             {theme === 'dark' ? 'Lacquer' : 'Porcelain'}</button>
         </div>
       </header>
-      {state?.sandbox && <p className="sandbox-note">Judges' sandbox: a copy of Tsugi where you are Thomas, the owner. Chat in the Telegram panel, 👎 a reply and correct it, then watch the gate test your lesson. Thomas's own Tsugi isn't affected.</p>}
+      {state?.sandbox && <p className="sandbox-note">Judges' sandbox: a copy of Tsugi where you are Thomas, the owner. Chat in the Telegram panel (Thomas tab), 👎 a reply and correct it, then watch the gate test your lesson. Thomas's own Tsugi isn't affected.</p>}
       <main>
         {!state ? <div className="scene"><p className="empty">Connecting to Atlas…</p></div> : <>
           <Activity mode={scene === 'stage' ? 'visible' : 'hidden'}><Stage state={state} events={events} onLesson={openLesson} /></Activity>

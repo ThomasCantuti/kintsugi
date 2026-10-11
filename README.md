@@ -13,6 +13,25 @@ Problem Statement 1: **Recursive Harnessing**.
 > were committed before the event (`d07e6eb`, 10:26 PT). All code was written during the hackathon,
 > starting 10:30 PT on 2026-10-11. See the commit history.
 
+## Try it
+
+**https://tsugi-production.up.railway.app**: a sandbox copy of Tsugi, deployed on Railway. It has the same genome (v10),
+lessons, lineage and charts, on its own database in the same Atlas cluster. There you are Thomas, the owner, from the
+browser; the real Tsugi on Telegram is not affected.
+
+1. **Stage**, Telegram panel: write "Set up a call with Maya Chen tomorrow at 2pm". Tsugi books 30 min, titled
+   "Call with Maya Chen".
+2. In "👎 Correct Tsugi's last reply", write "Investor calls are 30 min, titled 'Investor: <name>'". Watch the loop: up
+   to 3 candidate lessons, then the gate replays your turn plus past cases and scars (2–4 min), then a new gold seam.
+3. Ask "Set up a call with Leo Brandt Tuesday at 10": it should be titled "Investor: Leo Brandt".
+4. Switch to **Stranger** and ask Tsugi to email someone: strangers have no email tools. Teach a rule as the stranger:
+   it waits in quarantine until the owner (you) approves it, and the gate still tests it.
+5. **Lineage**: click a seam to see where it came from. Revoke removes it and everything built on it.
+
+Spend is capped (400 turns and 40 learning cycles per restart). Run your own: `SANDBOX=1 DB_NAME=kintsugi_sandbox`
+with `uv run python -m kintsugi` (no Telegram token); `uv run python -m kintsugi.sandbox` with the same `DB_NAME`
+resets the copy from the live database.
+
 ## How it works
 
 ```
@@ -199,10 +218,11 @@ Any OpenAI-compatible endpoint works (`LLM_BASE_URL`: OpenRouter or NVIDIA). Mod
 
 **Live view:** http://localhost:8000 (React + Vite, prebuilt in `web/dist`; the old page is at `/legacy`).
 Rebuild with `cd web && npm install && npm run build`; `npm run dev` serves it on :5173 and proxies `/api` to :8000.
-Three scenes, keys 1–3 (`t` switches the theme):
+Scenes, keys 1–4 (`t` switches the theme):
 - **Stage**: the learning loop, the gate ring per case, a Telegram mirror, the genome, the change-stream ticker.
 - **Proof**: held-out bars and curve, hard split, red team.
 - **Lineage**: revoke cascade via `$graphLookup`.
+- **Raindrop**: live turns Raindrop flagged, and the cycles and lessons each flag started.
 
 ## Layout
 
