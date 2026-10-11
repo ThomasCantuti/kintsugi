@@ -18,9 +18,10 @@ const SPLITS: Record<Split, { tab: string; title: string; sub: string; bars: [st
   },
   redteam: {
     tab: 'Red team', title: 'Do strangers get through?',
-    sub: '7 stranger attacks, 2 planted injections, 1 harmless control. Pass = attack refused, control served.',
-    bars: [['rt-v0', 'genome v0', 'raw'], ['rt-v6', 'learned genome', ''], ['rt-Dn', 'Nemotron + memory', 'raw'],
-           ['rt-C', 'frontier, v0', 'frontier'], ['rt-D', 'frontier + memory', 'frontier']],
+    sub: '7 stranger attacks, 2 planted injections, 1 harmless control. Pass = attack refused, control served. Poisoned = memory plus one line a stranger planted.',
+    bars: [['rt-v0', 'genome v0', 'raw'], ['rt-v7', 'learned genome', ''], ['rt-Dn', 'Nemotron + memory', 'raw'],
+           ['rt-C', 'frontier, v0', 'frontier'], ['rt-D', 'frontier + memory', 'frontier'],
+           ['rt-Dnp', 'Nemotron +\npoisoned memory', 'raw'], ['rt-Dp', 'frontier +\npoisoned memory', 'frontier']],
   },
 }
 
@@ -33,7 +34,7 @@ function latest(runs: Run[], split: Split, label: string) {
 function Bars({ split, runs, play }: { split: Split; runs: Run[]; play: number }) {
   const ref = useRef<SVGSVGElement>(null)
   const cfg = SPLITS[split].bars
-  const W = 640, H = 340, L = 44, R = 10, T = 70, B = 54, ih = H - T - B, colW = (W - L - R) / cfg.length, bw = Math.min(70, colW * .5)
+  const W = Math.max(640, 54 + cfg.length * 96), H = 340, L = 44, R = 10, T = 70, B = 54, ih = H - T - B, colW = (W - L - R) / cfg.length, bw = Math.min(70, colW * .5)
   const y = (p: number) => T + ih * (1 - p)
   useEffect(() => {
     if (RM || !ref.current) return
@@ -51,7 +52,7 @@ function Bars({ split, runs, play }: { split: Split; runs: Run[]; play: number }
       {[0, .25, .5, .75, 1].map(p => <g key={p}><line className="ax" x1={L} x2={W - R} y1={y(p)} y2={y(p)} /><text className="axt" x={L - 8} y={y(p) + 4} textAnchor="end">{p * 100}%</text></g>)}
       {cfg.map(([label, desc, cls], i) => {
         const r = latest(runs, split, label), cx = L + colW * (i + .5)
-        const tail = <><text className="barl" x={cx} y={H - B + 22} textAnchor="middle">{label}</text><text className="bard" x={cx} y={H - B + 38} textAnchor="middle">{desc}</text></>
+        const tail = <><text className="barl" x={cx} y={H - B + 22} textAnchor="middle">{label}</text><text className="bard" x={cx} y={H - B + 38} textAnchor="middle">{desc.split('\n').map((t, k) => <tspan key={k} x={cx} dy={k ? 13 : 0}>{t}</tspan>)}</text></>
         if (!r) return <g key={label}><rect className="slot" x={cx - bw / 2} y={y(0) - 34} width={bw} height={34} rx={6} /><text className="barn" x={cx} y={y(0) - 44} textAnchor="middle">not run yet</text>{tail}</g>
         const p = r.pass_rate, top = y(p), per = r.trials ? r.n / r.trials : r.n, tp = r.trial_passed ?? []
         const above = Math.min(top, ...tp.map(t => y(t / per) - 6))  // labels sit above the bar and its highest trial dot
