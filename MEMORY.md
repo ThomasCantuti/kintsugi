@@ -218,6 +218,11 @@ Living facts and decisions. Append; don't rewrite history. Date every entry.
   propose 12 s, gate 127 s (8 cases at once, 21–62 s each) → learn 139 s, #1 accepted 8/8. Nemotron Super per call: 2.5–10 s with
   reasoning, 1.2 s without (n=2 each); 8 parallel calls all went to DekaLLM, max 6–14 s; provider sort didn't change it.
   So the stage teach takes ~3 min end to end, not the 55 s beat.
+- **Gate speed, 16:10 PT** (e899a41, scratch copy of live v10, same investor teach, Nemotron Super, n=1 each): old gate 266 s
+  rejected 10/11 (team-03) · Super `:nitro` 372 s rejected · Lightning `:nitro` 103 s rejected 9/11 · **new gate (past cases run
+  alongside the fix check, immediate retry) 81 s, accepted 11/11**. Sandbox teach 15:46 (old gate): cycle 121 s = propose ~10 s +
+  fix check ~54 s + past cases 50 s + commit ~7 s. Cause: DekaLLM serves all our Super calls at ~20–30 tok/s (5.6–21 s/call, n=8);
+  DeepInfra 429'd 7/8 forced parallel calls. Model kept (Lightning gate rejects good lessons; chart numbers are on Super). $0.20.
 
 ## Learnings
 - 2026-10-11 The live world has a leftover "Call with Maya" event on 2026-10-12 at 15:00 (earlier testing): the investor teach
