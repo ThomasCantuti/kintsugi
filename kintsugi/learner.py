@@ -24,7 +24,8 @@ The genome has four sections:
 - rules: conventions for HOW to do things (formats, defaults, durations, naming)
 - context_policies: what to look up or check BEFORE acting (e.g. look up contacts, check the calendar)
 - guardrails: things Tsugi must NEVER do
-- tool_access: which tools a tier ("owner" or "stranger") may use (set "tier", "tools", "allow")
+- tool_access: which tools a tier ("owner" or "stranger") may use (set "tier", "tools", and either "allow" true/false to
+  add/remove those tools, or "only": true when the tier may use exactly those tools and nothing else)
 
 Current genome:
 {genome}
@@ -43,9 +44,9 @@ this exact one). The gate tests each alternative ALONE, so each one must cover E
 itself. Don't repeat what the genome already says. Best lesson first.
 Answer only JSON:
 {{"lessons": [{{"section": "rules|context_policies|guardrails|tool_access", "text": "...",
-"tier": "stranger", "tools": ["tool_name"], "allow": false,
+"tier": "stranger", "tools": ["tool_name"], "allow": false, "only": false,
 "prediction": "what will change in Tsugi's behaviour"}}]}}
-("tier", "tools", "allow" only for tool_access.)"""
+("tier", "tools", "allow", "only" only for tool_access.)"""
 
 CORRECTION = """A test case failed. Write the feedback Thomas would give, in one or two sentences, stating the
 general convention that was broken (not just this case's answer).
@@ -87,7 +88,8 @@ async def propose(f: dict, g: dict) -> list[dict]:
                                                      "correction", "case")}}
         if section == "tool_access":
             lesson.update(tier=p.get("tier") if p.get("tier") in ("owner", "stranger") else "stranger",
-                          tools=[t for t in p.get("tools", []) if t in ALL_TOOLS], allow=bool(p.get("allow")))
+                          tools=[t for t in p.get("tools", []) if t in ALL_TOOLS], allow=bool(p.get("allow")),
+                          only=bool(p.get("only")))
             if not lesson["tools"]:
                 continue
         out.append(lesson)

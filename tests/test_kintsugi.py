@@ -135,6 +135,17 @@ def test_gate_tool_access_lesson_regresses_only_its_tier(monkeypatch):
     assert ids({"section": "rules"}) == ["o", "s", "n"]
 
 
+def test_tool_access_allowlist_keeps_exactly_its_tools():
+    deny = {"_id": "L-d", "section": "tool_access", "tier": "stranger", "tools": ["outbox_send"], "allow": False}
+    only = {"_id": "L-o", "section": "tool_access", "tier": "stranger", "tools": ["note_add", "calendar_list"], "only": True}
+    g = genome.materialize(2, [deny, only])
+    assert set(genome.allowed_tools(g, "stranger")) == {"note_add", "calendar_list"}
+    assert set(genome.allowed_tools(g, "owner")) == set(tools.ALL_TOOLS)
+    g["tools_known"].remove("note_search")  # as if note_search joined the registry after this version was stored
+    assert "note_search" not in genome.allowed_tools(g, "stranger")  # an allowlist stays closed to new tools
+    assert "note_search" in genome.allowed_tools(g, "owner")
+
+
 def test_learner_and_gate_never_read_heldout():
     for module in (learner, gate):
         assert "heldout" not in inspect.getsource(module)

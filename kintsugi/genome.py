@@ -38,6 +38,9 @@ def materialize(version: int, lessons: list[dict], cause: dict | None = None) ->
     for l in lessons:
         if l["section"] == "tool_access":
             allowed = g["tool_access"].setdefault(l["tier"], [])
+            if l.get("only"):  # an allowlist: the tier keeps exactly these tools
+                allowed[:] = [t for t in ALL_TOOLS if t in l.get("tools", [])]
+                continue
             for t in l.get("tools", []):
                 if l.get("allow") and t not in allowed:
                     allowed.append(t)
@@ -45,15 +48,17 @@ def materialize(version: int, lessons: list[dict], cause: dict | None = None) ->
                     allowed.remove(t)
         else:
             g[l["section"]].append({"text": l["text"], "lesson": l["_id"]})
+    g["allowlist"] = sorted({l["tier"] for l in lessons if l["section"] == "tool_access" and l.get("only")})
     return g
 
 
 def allowed_tools(g: dict, tier: str) -> list[str]:
     """Tools genome g lets `tier` use. Tools added to the registry after g was built get BASE access
-    (stored versions snapshot their tool lists); tools a lesson removed stay removed."""
+    (stored versions snapshot their tool lists); tools a lesson removed stay removed; a tier on an allowlist gets none."""
     known = set(g.get("tools_known") or [t for tools in g["tool_access"].values() for t in tools])
+    closed = tier in g.get("allowlist", [])
     return [t for t in ALL_TOOLS if t in g["tool_access"].get(tier, [])
-            or (t not in known and t in BASE["tool_access"].get(tier, []))]
+            or (t not in known and not closed and t in BASE["tool_access"].get(tier, []))]
 
 
 _current: dict | None = None
