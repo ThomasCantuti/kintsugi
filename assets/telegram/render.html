@@ -1,0 +1,125 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<link rel="stylesheet" href="fonts/shippori-mincho-b1/latin-700.css">
+<link rel="stylesheet" href="fonts/ibm-plex-sans/latin-500.css">
+<style>
+  /* the live view's lacquer theme */
+  :root { --bg: #0e0c0a; --plate: #16130f; --gold: #dcae52; --gold-hi: #f3d58b; --ink: #efe6d4; --ink-2: #c3b7a1 }
+  html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background: var(--bg) }
+  svg { display: block; width: 100%; height: 100% }
+  .leaf { fill: #00ED64; stroke: #049a43; stroke-width: 1.2 } .vein { stroke: #b9ffd6; stroke-width: 1; opacity: .8 }
+  .stem { fill: none; stroke: #0a9c45; stroke-width: 3.2; stroke-linecap: round }
+  .seam { fill: none; stroke: url(#goldGrad); stroke-width: 3.2; stroke-linecap: round; stroke-linejoin: round; filter: url(#glow) }
+  .crack { fill: none; stroke-linecap: round; stroke-linejoin: round }
+  .title { font: 700 76px "Shippori Mincho B1", serif; fill: var(--gold-hi); letter-spacing: 1px }
+  .kanji { font: 700 30px "Hiragino Mincho ProN", serif; fill: var(--gold) }
+  .tag { font: 500 22px "IBM Plex Sans", sans-serif; fill: var(--ink-2) }
+</style></head>
+<body><svg id="out" xmlns="http://www.w3.org/2000/svg"></svg>
+<script>
+// Tsugi as drawn in web/src/Tsugi.tsx; seams come from the live genome's lesson ids (same deterministic paths).
+const LESSONS = ['L-950b70', 'L-68ad11', 'L-a6c9c5', 'L-dc48d7', 'L-d780c6', 'L-0ff4a9', 'L-608890']
+function hash(s) { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) } return h >>> 0 }
+function rng(seed) { return () => { seed = (seed + 0x6D2B79F5) | 0; let t = Math.imul(seed ^ (seed >>> 15), 1 | seed); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296 } }
+function seamPath(id, jag = 1.2) {
+  const r = rng(hash(id)), cx = 150, cy = 180, rx = 100, ry = 117
+  let a = -180 + r() * 300; if (a > 60) a += 60; a *= Math.PI / 180
+  let x = cx + Math.cos(a) * rx * 1.08, y = cy + Math.sin(a) * ry * 1.08
+  const pts = [[x, y]]
+  for (let i = 0; i < 7; i++) {
+    const dir = Math.atan2(cy - y, cx - x) + (r() - .5) * jag, st = 13 + r() * 9
+    x += Math.cos(dir) * st; y += Math.sin(dir) * st; pts.push([x, y])
+    if (Math.hypot((x - cx) / rx, (y - cy) / ry) < .56) break
+  }
+  let d = 'M' + pts.map(p => p.map(n => n.toFixed(1)).join(',')).join(' L')
+  if (r() < .6 && pts.length > 3) {
+    let [bx, by] = pts[2]; const base = Math.atan2(cy - by, cx - bx) + (r() < .5 ? -1 : 1) * (.7 + r() * .5)
+    d += ` M${bx.toFixed(1)},${by.toFixed(1)}`
+    for (let i = 0; i < 2; i++) { bx += Math.cos(base + (r() - .5) * .6) * (9 + r() * 6); by += Math.sin(base + (r() - .5) * .6) * (9 + r() * 6); d += ` L${bx.toFixed(1)},${by.toFixed(1)}` }
+  }
+  return d
+}
+const leaf = (x, y, a, s) => `<g transform="translate(${x} ${y}) rotate(${a})"><path class="leaf" d="M0,0 C${s * .25},${-s * .55} ${s * .75},${-s * .5} ${s},0 C${s * .75},${s * .5} ${s * .25},${s * .55} 0,0Z"/><path class="vein" d="M2,0 L${s * .78},0"/></g>`
+function sprout() {
+  const base = 266, h = 46, top = base - h
+  let s = `<path class="stem" d="M150,${base} Q145,${base - h / 2} 150,${top}"/>`
+  for (let i = 0; i < 4; i++) { const y = base - 10 - (i + 1) * (h - 16) / 5, l = i % 2 === 0; s += leaf(l ? 148 : 151, y, l ? -160 : -20, 12) }
+  return s + leaf(150, top, -148, 18) + leaf(150, top, -32, 18)
+}
+const DEFS = `
+  <radialGradient id="glaze" cx="38%" cy="28%" r="78%"><stop offset="0" stop-color="#ffffff"/><stop offset=".55" stop-color="#fbf6ea"/><stop offset="1" stop-color="#e6dbc4"/></radialGradient>
+  <linearGradient id="goldGrad" gradientUnits="userSpaceOnUse" x1="50" y1="60" x2="250" y2="300"><stop offset="0" stop-color="#f9de8a"/><stop offset=".5" stop-color="#dcaa42"/><stop offset="1" stop-color="#b08024"/></linearGradient>
+  <filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="2.2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  <clipPath id="bodyClip"><path d="M150,62 C210,62 248,110 250,180 C252,250 214,296 150,296 C86,296 48,250 50,180 C52,110 90,62 150,62 Z"/></clipPath>
+  <radialGradient id="halo"><stop offset="0" stop-color="rgb(220 174 82 / .30)"/><stop offset=".55" stop-color="rgb(220 174 82 / .08)"/><stop offset="1" stop-color="rgb(220 174 82 / 0)"/></radialGradient>
+  <radialGradient id="lacquer" cx="50%" cy="45%" r="75%"><stop offset="0" stop-color="#2a2118"/><stop offset=".6" stop-color="#15110d"/><stop offset="1" stop-color="#0b0908"/></radialGradient>
+  <linearGradient id="crackGold" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f9de8a"/><stop offset=".5" stop-color="#dcaa42"/><stop offset="1" stop-color="#b08024"/></linearGradient>
+  <filter id="soft" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  <filter id="grain"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" stitchTiles="stitch"/><feColorMatrix values="0 0 0 0 .86  0 0 0 0 .68  0 0 0 0 .32  0 0 0 .05 0"/></filter>`
+// Tsugi in its own 300x330 box (viewBox units of Tsugi.tsx), happy mouth, open eyes
+const TSUGI = `
+  <ellipse cx="150" cy="316" rx="84" ry="9" fill="rgb(0 0 0 / .45)"/>
+  <g fill="url(#glaze)" stroke="#d6c8ac" stroke-width="2">
+    <ellipse cx="50" cy="214" rx="13" ry="20" transform="rotate(28 50 214)"/><ellipse cx="250" cy="214" rx="13" ry="20" transform="rotate(-28 250 214)"/>
+    <ellipse cx="118" cy="294" rx="20" ry="10"/><ellipse cx="182" cy="294" rx="20" ry="10"/>
+    <path d="M150,62 C210,62 248,110 250,180 C252,250 214,296 150,296 C86,296 48,250 50,180 C52,110 90,62 150,62 Z"/>
+    <path d="M104,70 C108,46 192,46 196,70 Z"/><ellipse cx="150" cy="70" rx="47" ry="8" fill="#f8f1e2"/><circle cx="150" cy="42" r="9"/>
+  </g>
+  <path d="M116,62 C134,54 166,54 184,62" fill="none" stroke="#35548f" stroke-width="2" stroke-linecap="round"/>
+  <g clip-path="url(#bodyClip)">
+    <ellipse cx="100" cy="112" rx="15" ry="32" transform="rotate(28 100 112)" fill="#fff" opacity=".75"/>
+    <path d="M58,274 C110,296 190,296 242,274" fill="none" stroke="#35548f" stroke-width="1.6" opacity=".45"/>
+    ${LESSONS.map(id => `<path class="seam" d="${seamPath(id)}"/>`).join('')}
+  </g>
+  <ellipse cx="102" cy="172" rx="11" ry="6" fill="#f2a59c" opacity=".45"/><ellipse cx="198" cy="172" rx="11" ry="6" fill="#f2a59c" opacity=".45"/>
+  <g fill="#2a2420"><ellipse cx="122" cy="148" rx="12" ry="15"/><ellipse cx="178" cy="148" rx="12" ry="15"/>
+    <circle cx="126" cy="142" r="4.2" fill="#fff"/><circle cx="182" cy="142" r="4.2" fill="#fff"/><circle cx="118" cy="154" r="1.8" fill="#fff"/><circle cx="174" cy="154" r="1.8" fill="#fff"/></g>
+  <path d="M136,177 Q150,197 164,177 Z" fill="#7a3b33" stroke="#2a2420" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round"/>
+  <ellipse cx="150" cy="266" rx="25" ry="8.5" fill="#5b4631" stroke="#d6a640" stroke-width="2.4"/>
+  ${sprout()}`
+
+// gold kintsugi seams: short angular breaks that enter from the edges and stop well before the middle (deterministic)
+function cracks(W, H, starts, seed, op) {
+  const r = rng(seed), S = Math.min(W, H); let out = ''
+  const seg = (pts, w, o) => `<path class="crack" stroke="url(#crackGold)" stroke-width="${w.toFixed(2)}" opacity="${o}" filter="url(#soft)" d="M${pts.map(p => p.map(v => v.toFixed(1)).join(',')).join(' L')}"/>`
+  for (const [fx, fy] of starts) {
+    let x = fx * W, y = fy * H
+    const base = Math.atan2(H / 2 - y, W / 2 - x) + (r() - .5) * .9, len = S * (.32 + r() * .22), pts = [[x, y]], kids = []
+    let d = 0
+    while (d < len) {
+      const st = S * (.025 + r() * .04), dir = base + (r() - .5) * 1.5  // zigzag around a straight heading
+      x += Math.cos(dir) * st; y += Math.sin(dir) * st; d += st; pts.push([x, y])
+      if (r() < .22) kids.push([x, y, base + (r() < .5 ? -1 : 1) * (.7 + r() * .5)])
+    }
+    const w = S / 380 * (1 + r() * .8)
+    out += seg(pts, w, op)
+    for (let [bx, by, bd] of kids) {
+      const kp = [[bx, by]]
+      for (let k = 0; k < 3; k++) { const st = S * (.02 + r() * .03), dir = bd + (r() - .5) * 1.2; bx += Math.cos(dir) * st; by += Math.sin(dir) * st; kp.push([bx, by]) }
+      out += seg(kp, w * .55, op * .85)
+    }
+  }
+  return out
+}
+
+const W = innerWidth, H = innerHeight, svg = document.getElementById('out'), kind = location.hash.slice(1)
+svg.setAttribute('viewBox', `0 0 ${W} ${H}`)
+const bg = `<rect width="${W}" height="${H}" fill="url(#lacquer)"/><rect width="${W}" height="${H}" filter="url(#grain)"/>`
+let body = ''
+if (kind === 'icon') {  // circle-safe: Tsugi inside the middle ~80%
+  const s = H * .78 / 300, tx = W / 2 - 150 * s, ty = H * .53 - 182 * s
+  body = bg + `<circle cx="${W / 2}" cy="${H * .5}" r="${W * .46}" fill="url(#halo)"/>` +
+    `<g transform="translate(${tx} ${ty}) scale(${s})">${TSUGI}</g>`
+} else if (kind === 'desc') {  // 640x360 description picture: Tsugi left, wordmark right
+  const s = H * .86 / 300, tx = W * .25 - 150 * s, ty = H * .53 - 182 * s
+  body = bg + `<circle cx="${W * .25}" cy="${H * .5}" r="${H * .48}" fill="url(#halo)"/>` + cracks(W, H, [[1, .1], [.97, 1]], 11, .35) +
+    `<g transform="translate(${tx} ${ty}) scale(${s})">${TSUGI}</g>
+     <text class="title" x="${W * .49}" y="${H * .47}">Tsugi</text>
+     <text class="kanji" x="${W * .495}" y="${H * .6}">金継ぎ · Kintsugi</text>
+     <text class="tag" x="${W * .495}" y="${H * .74}">Gets stronger where it breaks.</text>`
+} else {  // chat wallpaper: quiet lacquer, faint gold seams, nothing behind the middle of the chat
+  body = bg + cracks(W, H, kind === 'wall-desktop' ? [[0, .12], [1, .2], [.08, 1], [1, .85], [.55, 0]] : [[0, .08], [1, .3], [0, .72], [.9, 1]], 23, .5)
+}
+svg.innerHTML = `<defs>${DEFS}</defs>${body}`
+document.fonts.ready.then(() => document.title = 'ready')
+</script></body></html>
