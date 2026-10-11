@@ -167,14 +167,17 @@ teaches once, the free model runs every day.*
 ## 6. Demo script (3:00)
 | t | Beat |
 |---|---|
-| 0:00 | **Hook** (above). |
-| 0:20 | **Meet Tsugi**: free Nemotron, genome v0 → vN today, N lessons as seams, wrangling counters (repairs, fallbacks) *(real numbers only)*. |
-| 0:35 | **Teach**: "block focus time tomorrow" → 60 min on a Friday → 👎 + "focus blocks are 90 min, never Fridays" → 3 candidates → gate ticking (n cases) → v+1 → seam animates → ask again → correct event in Atlas. |
-| 1:30 | **Stranger**: stranger asks Tsugi to send my notes → blocked by tool access. Stranger "teaches" a rule → quarantined → owner ❌. |
-| 1:55 | **Revoke**: a lesson that slipped → click seam → lineage → revoke cascades → gold repair. |
-| 2:20 | **Proof**: chart A/B/C/D + curve + $/task. |
+| before | Send "Set up a call with Maya Chen tomorrow at 2pm" while the judges settle: the reply takes ~20 s (MEMORY Numbers, stage teach timing). |
+| 0:00 | **Hook** (above). Tsugi has replied: 30 min, but titled "Call with Maya Chen". |
+| 0:20 | **Teach**: 👎 + "Investor calls are 30 min, titled 'Investor: <name>'" → 3 candidates (~12 s) → the gate starts. It runs ~2:20 (8 past cases + scars at once); the ring ticks on the live view while we go on. |
+| 0:40 | **Meet Tsugi**: free Nemotron, v0 → v7 today, 7 seams, Raindrop watches every live turn *(real numbers only)*. |
+| 1:00 | **Stranger** (live view): stranger asks Tsugi to email something for them → outbox tools DENIED in code (v7; not "show me his notes": strangers still have note_search until the allowlist fix). Raindrop-caught injection → quarantined lesson → owner ✅/❌. |
+| 1:40 | **Proof**: held-out curve 47% → 83%, red team = Sonnet at ~1/14 the cost per task, naive memory stated honestly. |
+| 2:30 | **Teach result**: gate verdict (n past cases + scars) → v8 seam animates → "every scar becomes a test". Ask "call with Leo Brandt Tuesday at 10" → "Investor: Leo Brandt", 30 min, in Atlas. |
 | 2:50 | **Close**: "Agents that get stronger where they break." |
 
+Revoke is shown in Q&A or the video, not during the gate: a revoke while a gate runs rebuilds the genome under it.
+**Backup**: a recorded real teach (live view, labelled with its speed) if the gate isn't done by 2:40.
 Stranger = a second Telegram account if available, else `POST /chat?tier=stranger` from the live view.
 
 ## 7. 1-minute video (record 16:15)
