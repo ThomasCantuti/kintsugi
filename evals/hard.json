@@ -1,0 +1,1948 @@
+[
+  {
+    "id": "hard-move",
+    "split": "hard",
+    "section": "tools",
+    "tier": "owner",
+    "now": "2026-10-15T08:00",
+    "fixtures": {
+      "events": [
+        {
+          "title": "Standup",
+          "start": "2026-10-15T09:00",
+          "duration_min": 15,
+          "attendees": [
+            "ana@kintsugi.example",
+            "ben@kintsugi.example",
+            "chloe@kintsugi.example"
+          ]
+        },
+        {
+          "title": "Lunch with Dan",
+          "start": "2026-10-15T12:30",
+          "duration_min": 60,
+          "attendees": [
+            "dan.weiss@mail.example"
+          ]
+        },
+        {
+          "title": "Gym",
+          "start": "2026-10-15T18:00",
+          "duration_min": 60,
+          "attendees": []
+        },
+        {
+          "title": "Dentist",
+          "start": "2026-10-16T10:30",
+          "duration_min": 60,
+          "attendees": []
+        },
+        {
+          "title": "1:1 with Ana",
+          "start": "2026-10-16T14:00",
+          "duration_min": 30,
+          "attendees": [
+            "ana@kintsugi.example"
+          ]
+        },
+        {
+          "title": "Investor update call",
+          "start": "2026-10-16T16:00",
+          "duration_min": 45,
+          "attendees": [
+            "maya@northwind.example",
+            "leo@hollow.example"
+          ]
+        },
+        {
+          "title": "Farmers market",
+          "start": "2026-10-17T11:00",
+          "duration_min": 90,
+          "attendees": []
+        },
+        {
+          "title": "Standup",
+          "start": "2026-10-19T09:00",
+          "duration_min": 15,
+          "attendees": [
+            "ana@kintsugi.example",
+            "ben@kintsugi.example",
+            "chloe@kintsugi.example"
+          ]
+        },
+        {
+          "title": "Design review",
+          "start": "2026-10-19T11:00",
+          "duration_min": 60,
+          "attendees": [
+            "chloe@kintsugi.example",
+            "ana@kintsugi.example"
+          ]
+        },
+        {
+          "title": "Call with Sam (taxes)",
+          "start": "2026-10-19T15:00",
+          "duration_min": 30,
+          "attendees": [
+            "sam@ortizcpa.example"
+          ]
+        },
+        {
+          "title": "Standup",
+          "start": "2026-10-20T09:00",
+          "duration_min": 15,
+          "attendees": [
+            "ana@kintsugi.example",
+            "ben@kintsugi.example",
+            "chloe@kintsugi.example"
+          ]
+        },
+        {
+          "title": "Interview: backend candidate",
+          "start": "2026-10-20T13:00",
+          "duration_min": 60,
+          "attendees": [
+            "ben@kintsugi.example",
+            "raj@kintsugi.example"
+          ]
+        },
+        {
+          "title": "Yoga",
+          "start": "2026-10-20T17:30",
+          "duration_min": 60,
+          "attendees": []
+        },
+        {
+          "title": "Standup",
+          "start": "2026-10-21T09:00",
+          "duration_min": 15,
+          "attendees": [
+            "ana@kintsugi.example",
+            "ben@kintsugi.example",
+            "chloe@kintsugi.example"
+          ]
+        },
+        {
+          "title": "Board meeting",
+          "start": "2026-10-21T10:00",
+          "duration_min": 120,
+          "attendees": []
+        },
+        {
+          "title": "1:1 with Ben",
+          "start": "2026-10-21T16:00",
+          "duration_min": 30,
+          "attendees": [
+            "ben@kintsugi.example"
+          ]
+        }
+      ],
+      "notes": [],
+      "contacts": [
+        {
+          "name": "Ana Ruiz",
+          "email": "ana@kintsugi.example",
+          "tags": [
+            "team"
+          ]
+        },
+        {
+          "name": "Ben Okafor",
+          "email": "ben@kintsugi.example",
+          "tags": [
+            "team"
+          ]
+        },
+        {
+          "name": "Chloe Park",
+          "email": "chloe@kintsugi.example",
+          "tags": [
+            "team",
+            "design"
+          ]
+        },
+        {
+          "name": "Raj Patel",
+          "email": "raj@kintsugi.example",
+          "tags": [
+            "contractor"
+          ]
+        },
+        {
+          "name": "Dan Weiss",
+          "email": "dan.weiss@mail.example",
+          "tags": [
+            "friend"
+          ]
+        },
+        {
+          "name": "Maya Chen",
+          "email": "maya@northwind.example",
+          "tags": [
+            "investor"
+          ]
+        },
+        {
+          "name": "Leo Brandt",
+          "email": "leo@hollow.example",
+          "tags": [
+            "investor"
+          ]
+        },
+        {
+          "name": "Sam Ortiz",
+          "email": "sam@ortizcpa.example",
+          "tags": [
+            "accountant"
+          ]
+        },
+        {
+          "name": "Priya Nair",
+          "email": "priya@acme-talent.example",
+          "tags": [
+            "recruiter"
+          ]
+        },
+        {
+          "name": "Helen Cantuti",
+          "email": "helen.c@mail.example",
+          "tags": [
+            "family"
+          ]
+        }
+      ],
+      "reminders": [],
+      "outbox": []
+    },
+    "messages": [
+      "Push my 1:1 with Ana tomorrow to 3:30pm"
+    ],
+    "checks": [
+      {
+        "coll": "events",
+        "filter": {
+          "title": "1:1 with Ana",
+          "start": "2026-10-16T15:30",
+          "attendees": "ana@kintsugi.example"
+        },
+        "count": 1
+      },
+      {
+        "coll": "events",
+        "filter": {
+          "title": "1:1 with Ana"
+        },
+        "count": 1
+      },
+      {
+        "coll": "events",
+        "filter": {},
+        "count": 16
+      }
+    ]
+  },
+  {
+    "id": "hard-standups",
+    "split": "hard",
+    "section": "tools",
+    "tier": "owner",
+    "now": "2026-10-15T08:00",
+    "fixtures": {
+      "events": [
+        {
+          "title": "Standup",
+          "start": "2026-10-15T09:00",
+          "duration_min": 15,
+          "attendees": [
+            "ana@kintsugi.example",
+            "ben@kintsugi.example",
+            "chloe@kintsugi.example"
+          ]
+        },
+        {
+          "title": "Lunch with Dan",
+          "start": "2026-10-15T12:30",
+          "duration_min": 60,
+          "attendees": [
+            "dan.weiss@mail.example"
+          ]
+        },
+        {
+          "title": "Gym",
+          "start": "2026-10-15T18:00",
+          "duration_min": 60,
+          "attendees": []
+        },
+        {
+          "title": "Dentist",
+          "start": "2026-10-16T10:30",
+          "duration_min": 60,
+          "attendees": []
+        },
+        {
+          "title": "1:1 with Ana",
+          "start": "2026-10-16T14:00",
+          "duration_min": 30,
+          "attendees": [
+            "ana@kintsugi.example"
+          ]
+        },
+        {
+          "title": "Investor update call",
+          "start": "2026-10-16T16:00",
+          "duration_min": 45,
+          "attendees": [
+            "maya@northwind.example",
+            "leo@hollow.example"
+          ]
+        },
+        {
+          "title": "Farmers market",
+          "start": "2026-10-17T11:00",
+          "duration_min": 90,
+          "attendees": []
+        },
+        {
+          "title": "Standup",
+          "start": "2026-10-19T09:00",
+          "duration_min": 15,
+          "attendees": [
+            "ana@kintsugi.example",
+            "ben@kintsugi.example",
+            "chloe@kintsugi.example"
+          ]
+        },
+        {
+          "title": "Design review",
+          "start": "2026-10-19T11:00",
+          "duration_min": 60,
+          "attendees": [
+            "chloe@kintsugi.example",
+            "ana@kintsugi.example"
+          ]
+        },
+        {
+          "title": "Call with Sam (taxes)",
+          "start": "2026-10-19T15:00",
+          "duration_min": 30,
+          "attendees": [
+            "sam@ortizcpa.example"
+          ]
+        },
+        {
+          "title": "Standup",
+          "start": "2026-10-20T09:00",
+          "duration_min": 15,
+          "attendees": [
+            "ana@kintsugi.example",
+            "ben@kintsugi.example",
+            "chloe@kintsugi.example"
+          ]
+        },
+        {
+          "title": "Interview: backend candidate",
+          "start": "2026-10-20T13:00",
+          "duration_min": 60,
+          "attendees": [
+            "ben@kintsugi.example",
+            "raj@kintsugi.example"
+          ]
+        },
+        {
+          "title": "Yoga",
+          "start": "2026-10-20T17:30",
+          "duration_min": 60,
+          "attendees": []
+        },
+        {
+          "title": "Standup",
+          "start": "2026-10-21T09:00",
+          "duration_min": 15,
+          "attendees": [
+            "ana@kintsugi.example",
+            "ben@kintsugi.example",
+            "chloe@kintsugi.example"
+          ]
+        },
+        {
+          "title": "Board meeting",
+          "start": "2026-10-21T10:00",
+          "duration_min": 120,
+          "attendees": []
+        },
+        {
+          "title": "1:1 with Ben",
+          "start": "2026-10-21T16:00",
+          "duration_min": 30,
+          "attendees": [
+            "ben@kintsugi.example"
+          ]
+        }
+      ],
+      "notes": [],
+      "contacts": [
+        {
+          "name": "Ana Ruiz",
+          "email": "ana@kintsugi.example",
+          "tags": [
+            "team"
+          ]
+        },
+        {
+          "name": "Ben Okafor",
+          "email": "ben@kintsugi.example",
+          "tags": [
+            "team"
+          ]
+        },
+        {
+          "name": "Chloe Park",
+          "email": "chloe@kintsugi.example",
+          "tags": [
+            "team",
+            "design"
+          ]
+        },
+        {
+          "name": "Raj Patel",
+          "email": "raj@kintsugi.example",
+          "tags": [
+            "contractor"
+          ]
+        },
+        {
+          "name": "Dan Weiss",
+          "email": "dan.weiss@mail.example",
+          "tags": [
+            "friend"
+          ]
+        },
+        {
+          "name": "Maya Chen",
+          "email": "maya@northwind.example",
+          "tags": [
+            "investor"
+          ]
+        },
+        {
+          "name": "Leo Brandt",
+          "email": "leo@hollow.example",
+          "tags": [
+            "investor"
+          ]
+        },
+        {
+          "name": "Sam Ortiz",
+          "email": "sam@ortizcpa.example",
+          "tags": [
+            "accountant"
+          ]
+        },
+        {
+          "name": "Priya Nair",
+          "email": "priya@acme-talent.example",
+          "tags": [
+            "recruiter"
+          ]
+        },
+        {
+          "name": "Helen Cantuti",
+          "email": "helen.c@mail.example",
+          "tags": [
+            "family"
+          ]
+        }
+      ],
+      "reminders": [],
+      "outbox": []
+    },
+    "messages": [
+      "I'm off Monday and Tuesday next week, cancel my standups on both days"
+    ],
+    "checks": [
+      {
+        "coll": "events",
+        "filter": {
+          "title": "Standup",
+          "start": {
+            "$regex": "^2026-10-(19|20)"
+          }
+        },
+        "count": 0
+      },
+      {
+        "coll": "events",
+        "filter": {
+          "title": "Standup"
+        },
+        "count": 2
+      },
+      {
+        "coll": "events",
+        "filter": {},
+        "count": 14
+      }
+    ]
+  },
+  {
+    "id": "hard-monday-2turn",
+    "split": "hard",
+    "section": "tools",
+    "tier": "owner",
+    "now": "2026-10-15T08:00",
+    "fixtures": {
+      "events": [
+        {
+          "title": "Standup",
+          "start": "2026-10-15T09:00",
+          "duration_min": 15,
+          "attendees": [
+            "ana@kintsugi.example",
+            "ben@kintsugi.example",
+            "chloe@kintsugi.example"
+          ]
+        },
+        {
+          "title": "Lunch with Dan",
+          "start": "2026-10-15T12:30",
+          "duration_min": 60,
+          "attendees": [
+            "dan.weiss@mail.example"
+          ]
+        },
+        {
+          "title": "Gym",
+          "start": "2026-10-15T18:00",
+          "duration_min": 60,
+          "attendees": []
+        },
+        {
+          "title": "Dentist",
+          "start": "2026-10-16T10:30",
+          "duration_min": 60,
+          "attendees": []
+        },
+        {
+          "title": "1:1 with Ana",
+          "start": "2026-10-16T14:00",
+          "duration_min": 30,
+          "attendees": [
+            "ana@kintsugi.example"
+          ]
+        },
+        {
+          "title": "Investor update call",
+          "start": "2026-10-16T16:00",
+          "duration_min": 45,
+          "attendees": [
+            "maya@northwind.example",
+            "leo@hollow.example"
+          ]
+        },
+        {
+          "title": "Farmers market",
+          "start": "2026-10-17T11:00",
+          "duration_min": 90,
+          "attendees": []
+        },
+        {
+          "title": "Standup",
+          "start": "2026-10-19T09:00",
+          "duration_min": 15,
+          "attendees": [
+            "ana@kintsugi.example",
+            "ben@kintsugi.example",
+            "chloe@kintsugi.example"
+          ]
+        },
+        {
+          "title": "Design review",
+          "start": "2026-10-19T11:00",
+          "duration_min": 60,
+          "attendees": [
+            "chloe@kintsugi.example",
+            "ana@kintsugi.example"
+          ]
+        },
+        {
+          "title": "Call with Sam (taxes)",
+          "start": "2026-10-19T15:00",
+          "duration_min": 30,
+          "attendees": [
+            "sam@ortizcpa.example"
+          ]
+        },
+        {
+          "title": "Standup",
+          "start": "2026-10-20T09:00",
+          "duration_min": 15,
+          "attendees": [
+            "ana@kintsugi.example",
+            "ben@kintsugi.example",
+            "chloe@kintsugi.example"
+          ]
+        },
+        {
+          "title": "Interview: backend candidate",
+          "start": "2026-10-20T13:00",
+          "duration_min": 60,
+          "attendees": [
+            "ben@kintsugi.example",
+            "raj@kintsugi.example"
+          ]
+        },
+        {
+          "title": "Yoga",
+          "start": "2026-10-20T17:30",
+          "duration_min": 60,
+          "attendees": []
+        },
+        {
+          "title": "Standup",
+          "start": "2026-10-21T09:00",
+          "duration_min": 15,
+          "attendees": [
+            "ana@kintsugi.example",
+            "ben@kintsugi.example",
+            "chloe@kintsugi.example"
+          ]
+        },
+        {
+          "title": "Board meeting",
+          "start": "2026-10-21T10:00",
+          "duration_min": 120,
+          "attendees": []
+        },
+        {
+          "title": "1:1 with Ben",
+          "start": "2026-10-21T16:00",
+          "duration_min": 30,
+          "attendees": [
+            "ben@kintsugi.example"
+          ]
+        }
+      ],
+      "notes": [],
+      "contacts": [
+        {
+          "name": "Ana Ruiz",
+          "email": "ana@kintsugi.example",
+          "tags": [
+            "team"
+          ]
+        },
+        {
+          "name": "Ben Okafor",
+          "email": "ben@kintsugi.example",
+          "tags": [
+            "team"
+          ]
+        },
+        {
+          "name": "Chloe Park",
+          "email": "chloe@kintsugi.example",
+          "tags": [
+            "team",
+            "design"
+          ]
+        },
+        {
+          "name": "Raj Patel",
+          "email": "raj@kintsugi.example",
+          "tags": [
+            "contractor"
+          ]
+        },
+        {
+          "name": "Dan Weiss",
+          "email": "dan.weiss@mail.example",
+          "tags": [
+            "friend"
+          ]
+        },
+        {
+          "name": "Maya Chen",
+          "email": "maya@northwind.example",
+          "tags": [
+            "investor"
+          ]
+        },
+        {
+          "name": "Leo Brandt",
+          "email": "leo@hollow.example",
+          "tags": [
+            "investor"
+          ]
+        },
+        {
+          "name": "Sam Ortiz",
+          "email": "sam@ortizcpa.example",
+          "tags": [
+            "accountant"
+          ]
+        },
+        {
+          "name": "Priya Nair",
+          "email": "priya@acme-talent.example",
+          "tags": [
+            "recruiter"
+          ]
+        },
+        {
+          "name": "Helen Cantuti",
+          "email": "helen.c@mail.example",
+          "tags": [
+            "family"
+          ]
+        }
+      ],
+      "reminders": [],
+      "outbox": []
+    },
+    "messages": [
+      "What do I have on Monday?",
+      "Move the design review to Tuesday, same time, and cancel the call with Sam."
+    ],
+    "checks": [
+      {
+        "coll": "events",
+        "filter": {
+          "title": "Design review",
+          "start": "2026-10-20T11:00"
+        },
+        "count": 1
+      },
+      {
+        "coll": "events",
+        "filter": {
+          "title": "Design review"
+        },
+        "count": 1
+      },
+      {
+        "coll": "events",
+        "filter": {
+          "title": {
+            "$regex": "Sam"
+          }
+        },
+        "count": 0
+      },
+      {
+        "coll": "events",
+        "filter": {},
+        "count": 15
+      }
+    ]
+  },
+  {
+    "id": "hard-invite-names",
+    "split": "hard",
+    "section": "tools",
+    "tier": "owner",
+    "now": "2026-10-15T08:00",
+    "fixtures": {
+      "events": [
+        {
+          "title": "Standup",
+          "start": "2026-10-15T09:00",
+          "duration_min": 15,
+          "attendees": [
+            "ana@kintsugi.example",
+            "ben@kintsugi.example",
+            "chloe@kintsugi.example"
+          ]
+        },
+        {
+          "title": "Lunch with Dan",
+          "start": "2026-10-15T12:30",
+          "duration_min": 60,
+          "attendees": [
+            "dan.weiss@mail.example"
+          ]
+        },
+        {
+          "title": "Gym",
+          "start": "2026-10-15T18:00",
+          "duration_min": 60,
+          "attendees": []
+        },
+        {
+          "title": "Dentist",
+          "start": "2026-10-16T10:30",
+          "duration_min": 60,
+          "attendees": []
+        },
+        {
+          "title": "1:1 with Ana",
+          "start": "2026-10-16T14:00",
+          "duration_min": 30,
+          "attendees": [
+            "ana@kintsugi.example"
+          ]
+        },
+        {
+          "title": "Investor update call",
+          "start": "2026-10-16T16:00",
+          "duration_min": 45,
+          "attendees": [
+            "maya@northwind.example",
+            "leo@hollow.example"
+          ]
+        },
+        {
+          "title": "Farmers market",
+          "start": "2026-10-17T11:00",
+          "duration_min": 90,
+          "attendees": []
+        },
+        {
+          "title": "Standup",
+          "start": "2026-10-19T09:00",
+          "duration_min": 15,
+          "attendees": [
+            "ana@kintsugi.example",
+            "ben@kintsugi.example",
+            "chloe@kintsugi.example"
+          ]
+        },
+        {
+          "title": "Design review",
+          "start": "2026-10-19T11:00",
+          "duration_min": 60,
+          "attendees": [
+            "chloe@kintsugi.example",
+            "ana@kintsugi.example"
+          ]
+        },
+        {
+          "title": "Call with Sam (taxes)",
+          "start": "2026-10-19T15:00",
+          "duration_min": 30,
+          "attendees": [
+            "sam@ortizcpa.example"
+          ]
+        },
+        {
+          "title": "Standup",
+          "start": "2026-10-20T09:00",
+          "duration_min": 15,
+          "attendees": [
+            "ana@kintsugi.example",
+            "ben@kintsugi.example",
+            "chloe@kintsugi.example"
+          ]
+        },
+        {
+          "title": "Interview: backend candidate",
+          "start": "2026-10-20T13:00",
+          "duration_min": 60,
+          "attendees": [
+            "ben@kintsugi.example",
+            "raj@kintsugi.example"
+          ]
+        },
+        {
+          "title": "Yoga",
+          "start": "2026-10-20T17:30",
+          "duration_min": 60,
+          "attendees": []
+        },
+        {
+          "title": "Standup",
+          "start": "2026-10-21T09:00",
+          "duration_min": 15,
+          "attendees": [
+            "ana@kintsugi.example",
+            "ben@kintsugi.example",
+            "chloe@kintsugi.example"
+          ]
+        },
+        {
+          "title": "Board meeting",
+          "start": "2026-10-21T10:00",
+          "duration_min": 120,
+          "attendees": []
+        },
+        {
+          "title": "1:1 with Ben",
+          "start": "2026-10-21T16:00",
+          "duration_min": 30,
+          "attendees": [
+            "ben@kintsugi.example"
+          ]
+        }
+      ],
+      "notes": [],
+      "contacts": [
+        {
+          "name": "Ana Ruiz",
+          "email": "ana@kintsugi.example",
+          "tags": [
+            "team"
+          ]
+        },
+        {
+          "name": "Ben Okafor",
+          "email": "ben@kintsugi.example",
+          "tags": [
+            "team"
+          ]
+        },
+        {
+          "name": "Chloe Park",
+          "email": "chloe@kintsugi.example",
+          "tags": [
+            "team",
+            "design"
+          ]
+        },
+        {
+          "name": "Raj Patel",
+          "email": "raj@kintsugi.example",
+          "tags": [
+            "contractor"
+          ]
+        },
+        {
+          "name": "Dan Weiss",
+          "email": "dan.weiss@mail.example",
+          "tags": [
+            "friend"
+          ]
+        },
+        {
+          "name": "Maya Chen",
+          "email": "maya@northwind.example",
+          "tags": [
+            "investor"
+          ]
+        },
+        {
+          "name": "Leo Brandt",
+          "email": "leo@hollow.example",
+          "tags": [
+            "investor"
+          ]
+        },
+        {
+          "name": "Sam Ortiz",
+          "email": "sam@ortizcpa.example",
+          "tags": [
+            "accountant"
+          ]
+        },
+        {
+          "name": "Priya Nair",
+          "email": "priya@acme-talent.example",
+          "tags": [
+            "recruiter"
+          ]
+        },
+        {
+          "name": "Helen Cantuti",
+          "email": "helen.c@mail.example",
+          "tags": [
+            "family"
+          ]
+        }
+      ],
+      "reminders": [],
+      "outbox": []
+    },
+    "messages": [
+      "Set up a 45 minute project kickoff on Monday at 2pm with Chloe, Raj and Ben"
+    ],
+    "checks": [
+      {
+        "coll": "events",
+        "filter": {
+          "title": {
+            "$regex": "kick.?off",
+            "$options": "i"
+          },
+          "start": "2026-10-19T14:00",
+          "duration_min": 45,
+          "attendees": {
+            "$all": [
+              "chloe@kintsugi.example",
+              "raj@kintsugi.example",
+              "ben@kintsugi.example"
+            ]
+          }
+        },
+        "count": 1
+      },
+      {
+        "coll": "events",
+        "filter": {},
+        "count": 17
+      }
+    ]
+  },
+  {
+    "id": "hard-move-and-email",
+    "split": "hard",
+    "section": "tools",
+    "tier": "owner",
+    "now": "2026-10-15T08:00",
+    "fixtures": {
+      "events": [
+        {
+          "title": "Standup",
+          "start": "2026-10-15T09:00",
+          "duration_min": 15,
+          "attendees": [
+            "ana@kintsugi.example",
+            "ben@kintsugi.example",
+            "chloe@kintsugi.example"
+          ]
+        },
+        {
+          "title": "Lunch with Dan",
+          "start": "2026-10-15T12:30",
+          "duration_min": 60,
+          "attendees": [
+            "dan.weiss@mail.example"
+          ]
+        },
+        {
+          "title": "Gym",
+          "start": "2026-10-15T18:00",
+          "duration_min": 60,
+          "attendees": []
+        },
+        {
+          "title": "Dentist",
+          "start": "2026-10-16T10:30",
+          "duration_min": 60,
+          "attendees": []
+        },
+        {
+          "title": "1:1 with Ana",
+          "start": "2026-10-16T14:00",
+          "duration_min": 30,
+          "attendees": [
+            "ana@kintsugi.example"
+          ]
+        },
+        {
+          "title": "Investor update call",
+          "start": "2026-10-16T16:00",
+          "duration_min": 45,
+          "attendees": [
+            "maya@northwind.example",
+            "leo@hollow.example"
+          ]
+        },
+        {
+          "title": "Farmers market",
+          "start": "2026-10-17T11:00",
+          "duration_min": 90,
+          "attendees": []
+        },
+        {
+          "title": "Standup",
+          "start": "2026-10-19T09:00",
+          "duration_min": 15,
+          "attendees": [
+            "ana@kintsugi.example",
+            "ben@kintsugi.example",
+            "chloe@kintsugi.example"
+          ]
+        },
+        {
+          "title": "Design review",
+          "start": "2026-10-19T11:00",
+          "duration_min": 60,
+          "attendees": [
+            "chloe@kintsugi.example",
+            "ana@kintsugi.example"
+          ]
+        },
+        {
+          "title": "Call with Sam (taxes)",
+          "start": "2026-10-19T15:00",
+          "duration_min": 30,
+          "attendees": [
+            "sam@ortizcpa.example"
+          ]
+        },
+        {
+          "title": "Standup",
+          "start": "2026-10-20T09:00",
+          "duration_min": 15,
+          "attendees": [
+            "ana@kintsugi.example",
+            "ben@kintsugi.example",
+            "chloe@kintsugi.example"
+          ]
+        },
+        {
+          "title": "Interview: backend candidate",
+          "start": "2026-10-20T13:00",
+          "duration_min": 60,
+          "attendees": [
+            "ben@kintsugi.example",
+            "raj@kintsugi.example"
+          ]
+        },
+        {
+          "title": "Yoga",
+          "start": "2026-10-20T17:30",
+          "duration_min": 60,
+          "attendees": []
+        },
+        {
+          "title": "Standup",
+          "start": "2026-10-21T09:00",
+          "duration_min": 15,
+          "attendees": [
+            "ana@kintsugi.example",
+            "ben@kintsugi.example",
+            "chloe@kintsugi.example"
+          ]
+        },
+        {
+          "title": "Board meeting",
+          "start": "2026-10-21T10:00",
+          "duration_min": 120,
+          "attendees": []
+        },
+        {
+          "title": "1:1 with Ben",
+          "start": "2026-10-21T16:00",
+          "duration_min": 30,
+          "attendees": [
+            "ben@kintsugi.example"
+          ]
+        }
+      ],
+      "notes": [],
+      "contacts": [
+        {
+          "name": "Ana Ruiz",
+          "email": "ana@kintsugi.example",
+          "tags": [
+            "team"
+          ]
+        },
+        {
+          "name": "Ben Okafor",
+          "email": "ben@kintsugi.example",
+          "tags": [
+            "team"
+          ]
+        },
+        {
+          "name": "Chloe Park",
+          "email": "chloe@kintsugi.example",
+          "tags": [
+            "team",
+            "design"
+          ]
+        },
+        {
+          "name": "Raj Patel",
+          "email": "raj@kintsugi.example",
+          "tags": [
+            "contractor"
+          ]
+        },
+        {
+          "name": "Dan Weiss",
+          "email": "dan.weiss@mail.example",
+          "tags": [
+            "friend"
+          ]
+        },
+        {
+          "name": "Maya Chen",
+          "email": "maya@northwind.example",
+          "tags": [
+            "investor"
+          ]
+        },
+        {
+          "name": "Leo Brandt",
+          "email": "leo@hollow.example",
+          "tags": [
+            "investor"
+          ]
+        },
+        {
+          "name": "Sam Ortiz",
+          "email": "sam@ortizcpa.example",
+          "tags": [
+            "accountant"
+          ]
+        },
+        {
+          "name": "Priya Nair",
+          "email": "priya@acme-talent.example",
+          "tags": [
+            "recruiter"
+          ]
+        },
+        {
+          "name": "Helen Cantuti",
+          "email": "helen.c@mail.example",
+          "tags": [
+            "family"
+          ]
+        }
+      ],
+      "reminders": [],
+      "outbox": []
+    },
+    "messages": [
+      "Move the investor update call to Friday the 23rd, same time, and email Maya and Leo about the change."
+    ],
+    "checks": [
+      {
+        "coll": "events",
+        "filter": {
+          "title": "Investor update call",
+          "start": "2026-10-23T16:00"
+        },
+        "count": 1
+      },
+      {
+        "coll": "events",
+        "filter": {
+          "title": "Investor update call"
+        },
+        "count": 1
+      },
+      {
+        "coll": "outbox",
+        "filter": {
+          "to": "maya@northwind.example"
+        },
+        "count": 1
+      },
+      {
+        "coll": "outbox",
+        "filter": {
+          "to": "leo@hollow.example"
+        },
+        "count": 1
+      }
+    ]
+  },
+  {
+    "id": "hard-find-board",
+    "split": "hard",
+    "section": "tools",
+    "tier": "owner",
+    "now": "2026-10-15T08:00",
+    "fixtures": {
+      "events": [
+        {
+          "title": "Standup",
+          "start": "2026-10-15T09:00",
+          "duration_min": 15,
+          "attendees": [
+            "ana@kintsugi.example",
+            "ben@kintsugi.example",
+            "chloe@kintsugi.example"
+          ]
+        },
+        {
+          "title": "Lunch with Dan",
+          "start": "2026-10-15T12:30",
+          "duration_min": 60,
+          "attendees": [
+            "dan.weiss@mail.example"
+          ]
+        },
+        {
+          "title": "Gym",
+          "start": "2026-10-15T18:00",
+          "duration_min": 60,
+          "attendees": []
+        },
+        {
+          "title": "Dentist",
+          "start": "2026-10-16T10:30",
+          "duration_min": 60,
+          "attendees": []
+        },
+        {
+          "title": "1:1 with Ana",
+          "start": "2026-10-16T14:00",
+          "duration_min": 30,
+          "attendees": [
+            "ana@kintsugi.example"
+          ]
+        },
+        {
+          "title": "Investor update call",
+          "start": "2026-10-16T16:00",
+          "duration_min": 45,
+          "attendees": [
+            "maya@northwind.example",
+            "leo@hollow.example"
+          ]
+        },
+        {
+          "title": "Farmers market",
+          "start": "2026-10-17T11:00",
+          "duration_min": 90,
+          "attendees": []
+        },
+        {
+          "title": "Standup",
+          "start": "2026-10-19T09:00",
+          "duration_min": 15,
+          "attendees": [
+            "ana@kintsugi.example",
+            "ben@kintsugi.example",
+            "chloe@kintsugi.example"
+          ]
+        },
+        {
+          "title": "Design review",
+          "start": "2026-10-19T11:00",
+          "duration_min": 60,
+          "attendees": [
+            "chloe@kintsugi.example",
+            "ana@kintsugi.example"
+          ]
+        },
+        {
+          "title": "Call with Sam (taxes)",
+          "start": "2026-10-19T15:00",
+          "duration_min": 30,
+          "attendees": [
+            "sam@ortizcpa.example"
+          ]
+        },
+        {
+          "title": "Standup",
+          "start": "2026-10-20T09:00",
+          "duration_min": 15,
+          "attendees": [
+            "ana@kintsugi.example",
+            "ben@kintsugi.example",
+            "chloe@kintsugi.example"
+          ]
+        },
+        {
+          "title": "Interview: backend candidate",
+          "start": "2026-10-20T13:00",
+          "duration_min": 60,
+          "attendees": [
+            "ben@kintsugi.example",
+            "raj@kintsugi.example"
+          ]
+        },
+        {
+          "title": "Yoga",
+          "start": "2026-10-20T17:30",
+          "duration_min": 60,
+          "attendees": []
+        },
+        {
+          "title": "Standup",
+          "start": "2026-10-21T09:00",
+          "duration_min": 15,
+          "attendees": [
+            "ana@kintsugi.example",
+            "ben@kintsugi.example",
+            "chloe@kintsugi.example"
+          ]
+        },
+        {
+          "title": "Board meeting",
+          "start": "2026-10-21T10:00",
+          "duration_min": 120,
+          "attendees": []
+        },
+        {
+          "title": "1:1 with Ben",
+          "start": "2026-10-21T16:00",
+          "duration_min": 30,
+          "attendees": [
+            "ben@kintsugi.example"
+          ]
+        }
+      ],
+      "notes": [],
+      "contacts": [
+        {
+          "name": "Ana Ruiz",
+          "email": "ana@kintsugi.example",
+          "tags": [
+            "team"
+          ]
+        },
+        {
+          "name": "Ben Okafor",
+          "email": "ben@kintsugi.example",
+          "tags": [
+            "team"
+          ]
+        },
+        {
+          "name": "Chloe Park",
+          "email": "chloe@kintsugi.example",
+          "tags": [
+            "team",
+            "design"
+          ]
+        },
+        {
+          "name": "Raj Patel",
+          "email": "raj@kintsugi.example",
+          "tags": [
+            "contractor"
+          ]
+        },
+        {
+          "name": "Dan Weiss",
+          "email": "dan.weiss@mail.example",
+          "tags": [
+            "friend"
+          ]
+        },
+        {
+          "name": "Maya Chen",
+          "email": "maya@northwind.example",
+          "tags": [
+            "investor"
+          ]
+        },
+        {
+          "name": "Leo Brandt",
+          "email": "leo@hollow.example",
+          "tags": [
+            "investor"
+          ]
+        },
+        {
+          "name": "Sam Ortiz",
+          "email": "sam@ortizcpa.example",
+          "tags": [
+            "accountant"
+          ]
+        },
+        {
+          "name": "Priya Nair",
+          "email": "priya@acme-talent.example",
+          "tags": [
+            "recruiter"
+          ]
+        },
+        {
+          "name": "Helen Cantuti",
+          "email": "helen.c@mail.example",
+          "tags": [
+            "family"
+          ]
+        }
+      ],
+      "reminders": [],
+      "outbox": []
+    },
+    "messages": [
+      "Remind me at 8am on the day of my board meeting to print the deck"
+    ],
+    "checks": [
+      {
+        "coll": "reminders",
+        "filter": {
+          "at": "2026-10-21T08:00",
+          "text": {
+            "$regex": "deck",
+            "$options": "i"
+          }
+        },
+        "count": 1
+      },
+      {
+        "coll": "reminders",
+        "filter": {},
+        "count": 1
+      }
+    ]
+  },
+  {
+    "id": "hard-dinner-2turn",
+    "split": "hard",
+    "section": "tools",
+    "tier": "owner",
+    "now": "2026-10-15T08:00",
+    "fixtures": {
+      "events": [
+        {
+          "title": "Standup",
+          "start": "2026-10-15T09:00",
+          "duration_min": 15,
+          "attendees": [
+            "ana@kintsugi.example",
+            "ben@kintsugi.example",
+            "chloe@kintsugi.example"
+          ]
+        },
+        {
+          "title": "Lunch with Dan",
+          "start": "2026-10-15T12:30",
+          "duration_min": 60,
+          "attendees": [
+            "dan.weiss@mail.example"
+          ]
+        },
+        {
+          "title": "Gym",
+          "start": "2026-10-15T18:00",
+          "duration_min": 60,
+          "attendees": []
+        },
+        {
+          "title": "Dentist",
+          "start": "2026-10-16T10:30",
+          "duration_min": 60,
+          "attendees": []
+        },
+        {
+          "title": "1:1 with Ana",
+          "start": "2026-10-16T14:00",
+          "duration_min": 30,
+          "attendees": [
+            "ana@kintsugi.example"
+          ]
+        },
+        {
+          "title": "Investor update call",
+          "start": "2026-10-16T16:00",
+          "duration_min": 45,
+          "attendees": [
+            "maya@northwind.example",
+            "leo@hollow.example"
+          ]
+        },
+        {
+          "title": "Farmers market",
+          "start": "2026-10-17T11:00",
+          "duration_min": 90,
+          "attendees": []
+        },
+        {
+          "title": "Standup",
+          "start": "2026-10-19T09:00",
+          "duration_min": 15,
+          "attendees": [
+            "ana@kintsugi.example",
+            "ben@kintsugi.example",
+            "chloe@kintsugi.example"
+          ]
+        },
+        {
+          "title": "Design review",
+          "start": "2026-10-19T11:00",
+          "duration_min": 60,
+          "attendees": [
+            "chloe@kintsugi.example",
+            "ana@kintsugi.example"
+          ]
+        },
+        {
+          "title": "Call with Sam (taxes)",
+          "start": "2026-10-19T15:00",
+          "duration_min": 30,
+          "attendees": [
+            "sam@ortizcpa.example"
+          ]
+        },
+        {
+          "title": "Standup",
+          "start": "2026-10-20T09:00",
+          "duration_min": 15,
+          "attendees": [
+            "ana@kintsugi.example",
+            "ben@kintsugi.example",
+            "chloe@kintsugi.example"
+          ]
+        },
+        {
+          "title": "Interview: backend candidate",
+          "start": "2026-10-20T13:00",
+          "duration_min": 60,
+          "attendees": [
+            "ben@kintsugi.example",
+            "raj@kintsugi.example"
+          ]
+        },
+        {
+          "title": "Yoga",
+          "start": "2026-10-20T17:30",
+          "duration_min": 60,
+          "attendees": []
+        },
+        {
+          "title": "Standup",
+          "start": "2026-10-21T09:00",
+          "duration_min": 15,
+          "attendees": [
+            "ana@kintsugi.example",
+            "ben@kintsugi.example",
+            "chloe@kintsugi.example"
+          ]
+        },
+        {
+          "title": "Board meeting",
+          "start": "2026-10-21T10:00",
+          "duration_min": 120,
+          "attendees": []
+        },
+        {
+          "title": "1:1 with Ben",
+          "start": "2026-10-21T16:00",
+          "duration_min": 30,
+          "attendees": [
+            "ben@kintsugi.example"
+          ]
+        }
+      ],
+      "notes": [],
+      "contacts": [
+        {
+          "name": "Ana Ruiz",
+          "email": "ana@kintsugi.example",
+          "tags": [
+            "team"
+          ]
+        },
+        {
+          "name": "Ben Okafor",
+          "email": "ben@kintsugi.example",
+          "tags": [
+            "team"
+          ]
+        },
+        {
+          "name": "Chloe Park",
+          "email": "chloe@kintsugi.example",
+          "tags": [
+            "team",
+            "design"
+          ]
+        },
+        {
+          "name": "Raj Patel",
+          "email": "raj@kintsugi.example",
+          "tags": [
+            "contractor"
+          ]
+        },
+        {
+          "name": "Dan Weiss",
+          "email": "dan.weiss@mail.example",
+          "tags": [
+            "friend"
+          ]
+        },
+        {
+          "name": "Maya Chen",
+          "email": "maya@northwind.example",
+          "tags": [
+            "investor"
+          ]
+        },
+        {
+          "name": "Leo Brandt",
+          "email": "leo@hollow.example",
+          "tags": [
+            "investor"
+          ]
+        },
+        {
+          "name": "Sam Ortiz",
+          "email": "sam@ortizcpa.example",
+          "tags": [
+            "accountant"
+          ]
+        },
+        {
+          "name": "Priya Nair",
+          "email": "priya@acme-talent.example",
+          "tags": [
+            "recruiter"
+          ]
+        },
+        {
+          "name": "Helen Cantuti",
+          "email": "helen.c@mail.example",
+          "tags": [
+            "family"
+          ]
+        }
+      ],
+      "reminders": [],
+      "outbox": []
+    },
+    "messages": [
+      "What's on my calendar Saturday?",
+      "Add a dinner at 7pm that day, 2 hours, and invite Ana, Ben, Chloe and Dan."
+    ],
+    "checks": [
+      {
+        "coll": "events",
+        "filter": {
+          "start": "2026-10-17T19:00",
+          "duration_min": 120,
+          "attendees": {
+            "$all": [
+              "ana@kintsugi.example",
+              "ben@kintsugi.example",
+              "chloe@kintsugi.example",
+              "dan.weiss@mail.example"
+            ]
+          }
+        },
+        "count": 1
+      },
+      {
+        "coll": "events",
+        "filter": {},
+        "count": 17
+      }
+    ]
+  },
+  {
+    "id": "hard-email-attendees",
+    "split": "hard",
+    "section": "tools",
+    "tier": "owner",
+    "now": "2026-10-15T08:00",
+    "fixtures": {
+      "events": [
+        {
+          "title": "Standup",
+          "start": "2026-10-15T09:00",
+          "duration_min": 15,
+          "attendees": [
+            "ana@kintsugi.example",
+            "ben@kintsugi.example",
+            "chloe@kintsugi.example"
+          ]
+        },
+        {
+          "title": "Lunch with Dan",
+          "start": "2026-10-15T12:30",
+          "duration_min": 60,
+          "attendees": [
+            "dan.weiss@mail.example"
+          ]
+        },
+        {
+          "title": "Gym",
+          "start": "2026-10-15T18:00",
+          "duration_min": 60,
+          "attendees": []
+        },
+        {
+          "title": "Dentist",
+          "start": "2026-10-16T10:30",
+          "duration_min": 60,
+          "attendees": []
+        },
+        {
+          "title": "1:1 with Ana",
+          "start": "2026-10-16T14:00",
+          "duration_min": 30,
+          "attendees": [
+            "ana@kintsugi.example"
+          ]
+        },
+        {
+          "title": "Investor update call",
+          "start": "2026-10-16T16:00",
+          "duration_min": 45,
+          "attendees": [
+            "maya@northwind.example",
+            "leo@hollow.example"
+          ]
+        },
+        {
+          "title": "Farmers market",
+          "start": "2026-10-17T11:00",
+          "duration_min": 90,
+          "attendees": []
+        },
+        {
+          "title": "Standup",
+          "start": "2026-10-19T09:00",
+          "duration_min": 15,
+          "attendees": [
+            "ana@kintsugi.example",
+            "ben@kintsugi.example",
+            "chloe@kintsugi.example"
+          ]
+        },
+        {
+          "title": "Design review",
+          "start": "2026-10-19T11:00",
+          "duration_min": 60,
+          "attendees": [
+            "chloe@kintsugi.example",
+            "ana@kintsugi.example"
+          ]
+        },
+        {
+          "title": "Call with Sam (taxes)",
+          "start": "2026-10-19T15:00",
+          "duration_min": 30,
+          "attendees": [
+            "sam@ortizcpa.example"
+          ]
+        },
+        {
+          "title": "Standup",
+          "start": "2026-10-20T09:00",
+          "duration_min": 15,
+          "attendees": [
+            "ana@kintsugi.example",
+            "ben@kintsugi.example",
+            "chloe@kintsugi.example"
+          ]
+        },
+        {
+          "title": "Interview: backend candidate",
+          "start": "2026-10-20T13:00",
+          "duration_min": 60,
+          "attendees": [
+            "ben@kintsugi.example",
+            "raj@kintsugi.example"
+          ]
+        },
+        {
+          "title": "Yoga",
+          "start": "2026-10-20T17:30",
+          "duration_min": 60,
+          "attendees": []
+        },
+        {
+          "title": "Standup",
+          "start": "2026-10-21T09:00",
+          "duration_min": 15,
+          "attendees": [
+            "ana@kintsugi.example",
+            "ben@kintsugi.example",
+            "chloe@kintsugi.example"
+          ]
+        },
+        {
+          "title": "Board meeting",
+          "start": "2026-10-21T10:00",
+          "duration_min": 120,
+          "attendees": []
+        },
+        {
+          "title": "1:1 with Ben",
+          "start": "2026-10-21T16:00",
+          "duration_min": 30,
+          "attendees": [
+            "ben@kintsugi.example"
+          ]
+        }
+      ],
+      "notes": [],
+      "contacts": [
+        {
+          "name": "Ana Ruiz",
+          "email": "ana@kintsugi.example",
+          "tags": [
+            "team"
+          ]
+        },
+        {
+          "name": "Ben Okafor",
+          "email": "ben@kintsugi.example",
+          "tags": [
+            "team"
+          ]
+        },
+        {
+          "name": "Chloe Park",
+          "email": "chloe@kintsugi.example",
+          "tags": [
+            "team",
+            "design"
+          ]
+        },
+        {
+          "name": "Raj Patel",
+          "email": "raj@kintsugi.example",
+          "tags": [
+            "contractor"
+          ]
+        },
+        {
+          "name": "Dan Weiss",
+          "email": "dan.weiss@mail.example",
+          "tags": [
+            "friend"
+          ]
+        },
+        {
+          "name": "Maya Chen",
+          "email": "maya@northwind.example",
+          "tags": [
+            "investor"
+          ]
+        },
+        {
+          "name": "Leo Brandt",
+          "email": "leo@hollow.example",
+          "tags": [
+            "investor"
+          ]
+        },
+        {
+          "name": "Sam Ortiz",
+          "email": "sam@ortizcpa.example",
+          "tags": [
+            "accountant"
+          ]
+        },
+        {
+          "name": "Priya Nair",
+          "email": "priya@acme-talent.example",
+          "tags": [
+            "recruiter"
+          ]
+        },
+        {
+          "name": "Helen Cantuti",
+          "email": "helen.c@mail.example",
+          "tags": [
+            "family"
+          ]
+        }
+      ],
+      "reminders": [],
+      "outbox": []
+    },
+    "messages": [
+      "Email everyone in Tuesday's interview a reminder to read the candidate's resume before it starts"
+    ],
+    "checks": [
+      {
+        "coll": "outbox",
+        "filter": {
+          "to": "ben@kintsugi.example"
+        },
+        "count": 1
+      },
+      {
+        "coll": "outbox",
+        "filter": {
+          "to": "raj@kintsugi.example"
+        },
+        "count": 1
+      }
+    ]
+  }
+]
