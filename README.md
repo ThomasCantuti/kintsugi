@@ -87,7 +87,7 @@ Filled only from stored runs (`runs` collection, 2026-10-11). Held-out: 12 cases
 | B | Nemotron Super | v6 (6 learned lessons) | 27/36 (75%) | 9 · 9 · 9 | $0.0015 | R-4efb73 |
 | C | Claude Sonnet 5.5 | v0 | 24/36 (67%) | 8 · 8 · 8 | $0.0128 | R-f7bdc0 |
 | Dn | Nemotron Super | v0 + naive memory | running | | | |
-| D | Claude Sonnet 5.5 | v0 + naive memory (every train correction pasted into the prompt) | running | | | |
+| D | Claude Sonnet 5.5 | v0 + naive memory (every train correction pasted into the prompt) | **36/36 (100%)** | 12 · 12 · 12 | $0.0171 | R-a7ebca |
 
 - **A → B is the self-edited harness:** 17 → 27 of 36. The 6 lessons came from train failures only; held-out
   never influenced which lesson shipped.
@@ -95,8 +95,11 @@ Filled only from stored runs (`runs` collection, 2026-10-11). Held-out: 12 cases
   task. With 12 cases that is one case per trial. Sonnet also taught the lessons as the supervisor (a one-time cost).
 - **A0 vs A is noise, not a harness effect:** 18 vs 17. At v0 the prompt is the same, and no repair, fallback
   or block fired.
-- **Naive memory: no claim yet.** A first D run scored 34/36 but is invalid: Sonnet hit OpenRouter's
-  20 requests/min cap and 78 calls fell back to Nemotron (R-fdb27d). Clean D and Dn runs are in progress.
+- **Naive memory on a frontier model beats Kintsugi on held-out:** D 36/36 vs B 27/36, at about 11× B's cost
+  per task. Held-out tests the same conventions the train corrections state, so pasting all of them into
+  Sonnet's prompt solves it. What memory doesn't do is test a correction before it goes live, trace it, revoke it,
+  quarantine one from a stranger, or change tool access in code; the red-team runs for C and D will measure that.
+  (An earlier D run, R-fdb27d, is invalid: rate limits sent 78 calls to Nemotron.)
 
 **Curve** (held-out pass rate per genome version, Nemotron Super, n = 36 each):
 
