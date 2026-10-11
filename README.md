@@ -106,12 +106,19 @@ uv run pytest -q
 
 Any OpenAI-compatible endpoint works (`LLM_BASE_URL`: OpenRouter or NVIDIA). Model ids live in `.env`.
 
+**Live view:** http://localhost:8000 (React + Vite, prebuilt in `web/dist`; the old page is at `/legacy`).
+Rebuild with `cd web && npm install && npm run build`; `npm run dev` serves it on :5173 and proxies `/api` to :8000.
+Three scenes, keys 1–3 (`t` switches the theme):
+- **Stage**: the learning loop, the gate ring per case, a Telegram mirror, the genome, the change-stream ticker.
+- **Proof**: held-out bars and curve, hard split, red team.
+- **Lineage**: revoke cascade via `$graphLookup`.
+
 ## Layout
 
 ```
 kintsugi/   config · db · models · tools · genome · agent · evals · learner · gate · evolve · seed · telegram · api · __main__
 evals/      cases.json (train + frozen held-out) · redteam.json
-web/        index.html (live view: Tsugi, lineage, chart)
+web/        live view: React + Vite source in src/, prebuilt dist/ served by api.py, legacy.html
 tests/      scripted-model tests
 ```
 
