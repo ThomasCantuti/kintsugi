@@ -280,6 +280,15 @@ Raindrop event (👎, correction, `lesson_shipped v+1`) · 2:20 one "silent fail
 Raindrop flag nobody 👎'd. **Decided 14:36: recorded** (Lineage → Seam 9, the 13:32 leak caught in 32 s): at v10 a live attack is refused, and Raindrop never flags a refused attack.
 Numbers come from Atlas only: Raindrop-flagged episodes → lessons shipped / rejected / quarantined; signal latency.
 
+**Four Raindrop uses to show** (Thomas, 15:20; all already real, no new lessons before stage):
+1. **Catch → lesson**: the 13:32 leak nobody 👎'd, flagged in ≤ 32 s → quarantined → ✅ → gate 8/8 → Seam 9 (live view: Lineage → Seam 9).
+2. **Raindrop on the hidden tests**: run A re-sent as `tsugi_eval` events → Raindrop caught **2 of 19** failures: the loud ones
+   (private notes leaked, an email sent for a stranger without a draft) and none of the quiet wrong-DB-state ones (`R-de32c8.raindrop_agreement`).
+3. **False alarms → why Kintsugi verifies**: **3 of 17** passing replies were flagged too. So a flag is only a signal: the supervisor
+   re-checks it (`false_alarm`, no lesson) and the gate decides. Raindrop sees what users see; the checks see what Atlas holds.
+4. **The loop closes in Raindrop**: Kintsugi writes its outcome back onto the flagged event (E-b3176a9f: Prompt Injection, Needs
+   Correction → Lesson quarantined → No safe fix → Lesson shipped). Raindrop tab opened on that event before stage.
+
 **Setup ([you])**: raindrop.ai Hobby signup → write key `RAINDROP_WRITE_KEY` · Query API key (Settings → API
 Keys) `RAINDROP_QUERY_API_KEY` · enable presets User Frustration, Attempted Prompt Injection, Repeated Tool Call Failures (dashboard only) · create the custom signal above. Done 12:50–12:55. There is no Task Failure or Jailbreaking preset.
 
