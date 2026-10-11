@@ -24,8 +24,11 @@ async def heal_flagged(bot) -> None:
     """Raindrop → Kintsugi: live turns from the last 2 h that Raindrop flagged and nobody learned from yet → learner."""
     since = (datetime.now(UTC) - timedelta(hours=2)).strftime("%Y-%m-%dT%H:%M:%SZ")
     events = (await asyncio.to_thread(_raindrop_query, f"/v1/events?limit=100&timestamp[gte]={since}"))["data"]
+    # classifier signals come back on events as {"id": uuid, "name": uuid}: the real names live in /v1/signals
+    names = {s["id"]: s["name"] for s in (await asyncio.to_thread(_raindrop_query, "/v1/signals?limit=100"))["data"]}
     for e in events:
-        flags = [s["name"] for s in e.get("signals") or [] if re.sub(r"[\s_-]", "", s["name"].lower()) in config.RAINDROP_FLAGS]
+        flags = [names.get(s["id"], s["name"]) for s in e.get("signals") or []]
+        flags = [n for n in flags if re.sub(r"[\s_-]", "", n.lower()) in config.RAINDROP_FLAGS]
         ep = flags and await db.db.episodes.find_one({"_id": e["id"], "kind": "live"})
         if ep and not await db.db.lineage.find_one({"_id": e["id"]}):  # no 👎 correction or earlier flag learned from it
             await telegram.heal_flag(bot, ep, flags)

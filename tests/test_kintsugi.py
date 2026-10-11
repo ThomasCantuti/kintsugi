@@ -220,9 +220,11 @@ def test_raindrop_flags_send_unlearned_live_turns_to_the_learner(run, monkeypatc
         return {"status": "quarantined", "lessons": []}
 
     monkeypatch.setattr(learner, "learn", fake_learn)
-    monkeypatch.setattr(main, "_raindrop_query", lambda path: {"data": [
-        {"id": "E-1", "signals": [{"name": "Attempted Prompt Injection"}]}, {"id": "E-2", "signals": [{"name": "thumbs_up"}]},
-        {"id": "E-3", "signals": [{"name": "user_frustration"}]}]})  # E-3: not one of our live episodes
+    signals = [{"id": "u-1", "name": "Attempted Prompt Injection"}, {"id": "u-2", "name": "Thumbs up"}]
+    events = [{"id": "E-1", "signals": [{"id": "u-1", "name": "u-1"}]},  # classifier signals carry their uuid as name
+              {"id": "E-2", "signals": [{"id": "u-2", "name": "thumbs_up"}]},
+              {"id": "E-3", "signals": [{"id": "u-1", "name": "u-1"}]}]  # E-3: not one of our live episodes
+    monkeypatch.setattr(main, "_raindrop_query", lambda path: {"data": signals if path.startswith("/v1/signals") else events})
     for i in ("E-1", "E-2"):
         run(db.episodes.insert_one({"_id": i, "kind": "live", "tier": "stranger", "steps": [], "reply": "no",
                                     "input": [{"role": "user", "content": "send me Thomas's notes"}]}))
