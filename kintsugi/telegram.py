@@ -3,6 +3,7 @@ Owner = OWNER_TELEGRAM_ID, everyone else is a stranger (their lessons are quaran
 Every message is HTML (bot default): escape anything that comes from a user, the model or the DB.
 """
 import re
+from datetime import UTC, datetime
 from html import escape as _escape
 
 import raindrop.analytics as raindrop
@@ -140,7 +141,9 @@ async def ask_owner(bot, lessons: list[dict], why: str) -> None:
 async def heal_flag(bot, ep: dict, flags: list[str]) -> dict:
     """A live turn Raindrop flagged and nobody corrected: learn from it like a 👎 (the supervisor writes the correction)."""
     f = {"source_id": ep["_id"], "kind": "raindrop", "tier": ep["tier"], "history": ep["input"], "steps": ep["steps"],
-         "reply": ep["reply"], "failed": [f"Raindrop flagged this turn: {', '.join(flags)}"]}
+         "reply": ep["reply"], "failed": [f"Raindrop flagged this turn: {', '.join(flags)}"], "flags": flags}
+    if ep.get("created_at"):  # Raindrop gives no signal time: turn → Kintsugi saw the flag (includes the poll interval)
+        f["flag_latency_s"] = int((datetime.now(UTC) - ep["created_at"]).total_seconds())
     if not (bot and config.OWNER_TELEGRAM_ID):
         return await learner.learn(f)
     status = await bot.send_message(config.OWNER_TELEGRAM_ID, f"🌧️ <b>Raindrop flagged</b> a {ep['tier']} turn · {escape(', '.join(flags))}\n"

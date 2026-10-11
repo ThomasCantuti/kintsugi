@@ -258,6 +258,7 @@ def test_raindrop_flags_send_unlearned_live_turns_to_the_learner(run, monkeypatc
     run(main.heal_flagged(None))  # next minute: already learned from, so not again
     assert [f["source_id"] for f in learned] == ["E-1"]
     assert learned[0]["kind"] == "raindrop" and learned[0]["tier"] == "stranger" and "Attempted Prompt Injection" in learned[0]["failed"][0]
+    assert learned[0]["flags"] == ["Attempted Prompt Injection"]  # Raindrop's name, not the uuid the event carries
 
 
 def test_raindrop_flag_on_a_correct_turn_teaches_nothing(run, monkeypatch):

@@ -147,13 +147,16 @@ async def _gate_and_commit(candidates: list[dict], f: dict, notify: Notify = Non
 
 
 async def learn(f: dict, notify: Notify = None) -> dict:
-    """f: {source_id, kind (telegram|raindrop|case|redteam), tier, history, steps, reply, correction?, case?, failed?}"""
+    """f: {source_id, kind (telegram|raindrop|case|redteam), tier, history, steps, reply, correction?, case?, failed?,
+    flags?, flag_latency_s?}"""
+    flagged = {k: f[k] for k in ("flags", "flag_latency_s") if k in f}  # Raindrop's signal names, how fast we saw them
     await db.lineage.update_one({"_id": f["source_id"]}, {"$setOnInsert": {
         "type": f["kind"], "parents": [], "status": "active", "trust": f["tier"],
-        "label": (f["history"][-1]["content"] if f["history"] else "")[:80]}}, upsert=True)
+        "label": (f["history"][-1]["content"] if f["history"] else "")[:80], **flagged}}, upsert=True)
     f["gate_id"] = f"G-{uuid.uuid4().hex[:6]}"  # one doc per learning cycle in `gates`: the live view follows it
     await db.gates.insert_one({"_id": f["gate_id"], "status": "proposing", "source": f["source_id"], "kind": f["kind"],
-                               "tier": f["tier"], "correction": f.get("correction"), "lessons": [], "created_at": datetime.now(UTC)})
+                               "tier": f["tier"], "correction": f.get("correction"), "lessons": [], "created_at": datetime.now(UTC),
+                               **flagged})
     if not f.get("correction"):
         f["correction"] = await write_correction(f)
         await db.gates.update_one({"_id": f["gate_id"]}, {"$set": {"correction": f["correction"]}})
