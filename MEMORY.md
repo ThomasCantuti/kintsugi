@@ -183,6 +183,12 @@ Living facts and decisions. Append; don't rewrite history. Date every entry.
   1 repair, 1 fallback** (v7 held-out R-bb02a7), **3 blocks** (= tool-access DENIED in the rt-v7 runs; "blocks" counts denied tool calls,
   guardrails are prompt text), **50 "max steps" (4.1%)**, 0 other errors, avg latency 34.5 s (max 345 s), $1.139 = $0.0009/episode.
   Sonnet 204 episodes ($2.48), Nano 20, Lightning 17: 0 repairs. Same story as 12:41: Nemotron Super's failures are reasoning, not call format.
+- **Genome transfer** (BOOST, Thomas OK'd ~14:45; held-out 12 × 3 trials = 36, `nvidia/nemotron-3.5-lightning` paid, fallback off,
+  0 fallbacks, every episode on Lightning, ~14:50–15:02 PT): **Lightning v0 15/36 42%** (R-fa666f, 5/5/5, $0.0135, 1 repair) → **Lightning
+  v10 29/36 81%** (R-85b009, 9/9/11, $0.0219 = $0.0006/task, blocks 1, 3 max steps all focus-h1). The genome was learned on Nemotron
+  Super (17 → 31/36) and carries over to a model it never saw: +14 cases on both. Lightning v10 fails focus-h1 (max steps 3/3), team-h1
+  2/3, conflict-h1 1/3, tz-h1 1/3. vs Sonnet v0 (C) 24/36 at $0.0128/task; Sonnet + naive memory (D) is still 36/36. v10 includes
+  L-bbaaac (the vacuous "degrees" lesson), which no held-out case touches.
 - **Live, 14:42 PT:** 12 live episodes (6 owner, 6 stranger) · genome **v10**, 10 active lessons covering all 4 sections (rules 4,
   context_policies 1, guardrails 3, tool_access 2): 7 from train cases (evolve + the v7 cycle), 3 from live failures (L-f857d8 Raindrop,
   L-f71154 and L-bbaaac Telegram) · 13 lessons rejected by the gate, 16 untested alternatives skipped · learning cycles with a `gates`

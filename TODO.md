@@ -140,7 +140,8 @@ Role: README, PLAN, docs, demo prep; small harness features when Thomas asks. Ev
    render labels with system python3 + Pillow, then `overlay`. Live calendar: the leftover Maya event is deleted (Thomas OK'd).
 
 ## 15:15–15:45 BOOST (only if everything above is green)
-- [ ] RSI improver playbook · genome transfer to another model · `red-team` agent pass
+- [x] Genome transfer: v10 (learned on Nemotron Super) on Lightning, held-out 15/36 → 29/36 (R-fa666f → R-85b009, MEMORY Numbers)
+- [ ] RSI improver playbook · `red-team` agent pass
 - [x] Exa web search (D38, live only) · reminders ping on Telegram (8ea3b1e) · every scar becomes a test (D39) · gate runs past cases at once (teach 301 → 139 s)
 
 ## 15:45–17:00 Ship
