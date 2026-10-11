@@ -1,0 +1,129 @@
+"""Telegram channel. 👍/👎 under every reply; 👎 asks for a correction, which goes to the learner.
+Owner = OWNER_TELEGRAM_ID, everyone else is a stranger (their lessons are quarantined for the owner).
+"""
+from telegram import ForceReply, InlineKeyboardButton, InlineKeyboardMarkup, Update
+from telegram.constants import ChatAction
+from telegram.ext import Application, CallbackQueryHandler, CommandHandler, ContextTypes, MessageHandler, filters
+
+from . import agent, config, genome, learner
+
+HISTORY_TURNS = 8
+history: dict[int, list[dict]] = {}  # chat id → recent messages
+episodes: dict[str, dict] = {}       # episode id → {ep, history, tier}
+awaiting: dict[int, str] = {}        # chat id → episode id waiting for a correction
+
+
+def tier_of(update: Update) -> str:
+    return "owner" if update.effective_user and update.effective_user.id == config.OWNER_TELEGRAM_ID else "stranger"
+
+
+def feedback_buttons(ep_id: str) -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup([[InlineKeyboardButton("👍", callback_data=f"up:{ep_id}"),
+                                  InlineKeyboardButton("👎", callback_data=f"down:{ep_id}")]])
+
+
+def describe(result: dict) -> str:
+    s = result["status"]
+    if s == "accepted":
+        l, v = result["lesson"], result["lesson"]["gate"]
+        return (f"✨ Learned (genome v{result['version']}), new gold seam:\n[{l['section']}] {l['text']}\n"
+                f"Gate: fixed the failure · {v['regression_passed']}/{v['regression_total']} past cases still pass")
+    if s == "quarantined":
+        return "🔒 Thanks! Your suggestion is waiting for my owner's approval."
+    if s == "duplicate":
+        return "I already know this one. 🌱"
+    lessons = result.get("lessons", [])
+    return f"I couldn't find a safe fix ({len(lessons)} candidate{'s' if len(lessons) != 1 else ''} failed the gate)."
+
+
+async def on_start(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    g = await genome.current()
+    await update.message.reply_text(f"Hi, I'm Tsugi 🌱 (genome v{g['version']}, {len(g['lessons'])} lessons). "
+                                    "Ask me to plan, note, remind or email. 👎 my mistakes and I'll learn.")
+
+
+async def on_genome(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    g = await genome.current()
+    lines = [f"Genome v{g['version']}"]
+    for s in ("rules", "context_policies", "guardrails"):
+        lines += [f"\n{s}:"] + [f"{'✨' if i['lesson'] else '·'} {i['text']}" for i in g[s]]
+    lines += [f"\ntool_access: {g['tool_access']}"]
+    await update.message.reply_text("\n".join(lines)[:4000])
+
+
+async def on_message(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    chat, text, tier = update.effective_chat.id, update.message.text, tier_of(update)
+    if chat in awaiting:  # this message is the correction for a 👎
+        await learn_from(update, ctx, awaiting.pop(chat), text)
+        return
+    turns = history.setdefault(chat, [])
+    turns.append({"role": "user", "content": text})
+    await ctx.bot.send_chat_action(chat, ChatAction.TYPING)
+    ep = await agent.run(await genome.current(), turns[-HISTORY_TURNS:], "live", tier)
+    await agent.save(ep, "live", chat=chat)
+    reply = ep["reply"] or (f"⚠️ {ep['error']}" if ep["error"] else "…")
+    turns.append({"role": "assistant", "content": ep["reply"]})
+    episodes[ep["_id"]] = {"ep": ep, "history": list(turns[-HISTORY_TURNS - 1:-1]), "tier": tier}
+    await update.message.reply_text(reply[:4000], reply_markup=feedback_buttons(ep["_id"]))
+
+
+async def learn_from(update: Update, ctx: ContextTypes.DEFAULT_TYPE, ep_id: str, correction: str):
+    item = episodes.get(ep_id)
+    if not item:
+        await update.message.reply_text("I lost that conversation, sorry. Try again?")
+        return
+    ep = item["ep"]
+    await update.message.reply_text("🌱 Learning… proposing lessons and testing them before they go live.")
+    f = {"source_id": ep_id, "kind": "telegram", "tier": item["tier"], "history": item["history"],
+         "steps": ep["steps"], "reply": ep["reply"], "correction": correction}
+
+    async def job():
+        result = await learner.learn(f)
+        await update.message.reply_text(describe(result))
+        if result["status"] == "quarantined" and config.OWNER_TELEGRAM_ID:
+            for l in result["lessons"]:
+                await ctx.bot.send_message(
+                    config.OWNER_TELEGRAM_ID,
+                    f"🔒 A stranger taught me:\n[{l['section']}] {l['text']}\nAllow it? (it still has to pass the gate)",
+                    reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("✅ Approve", callback_data=f"ok:{l['_id']}"),
+                                                        InlineKeyboardButton("❌ Reject", callback_data=f"no:{l['_id']}")]]))
+
+    ctx.application.create_task(job())
+
+
+async def on_button(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    q = update.callback_query
+    action, ref = q.data.split(":", 1)
+    if action == "up":
+        await q.answer("Thanks! 🌱")
+    elif action == "down":
+        await q.answer()
+        awaiting[q.message.chat.id] = ref
+        await q.message.reply_text("What should I have done?", reply_markup=ForceReply(selective=True))
+    elif action in ("ok", "no"):
+        if update.effective_user.id != config.OWNER_TELEGRAM_ID:
+            await q.answer("Only my owner can decide.")
+            return
+        await q.answer()
+        await q.edit_message_reply_markup(None)
+        if action == "no":
+            await learner.reject(ref)
+            await q.message.reply_text("❌ Rejected. Nothing changed.")
+            return
+        await q.message.reply_text("✅ Approved. Running the gate…")
+        ctx.application.create_task(_approve(q, ref))
+
+
+async def _approve(q, lesson_id: str):
+    await q.message.reply_text(describe(await learner.approve(lesson_id)))
+
+
+def build() -> Application | None:
+    if not config.TELEGRAM_BOT_TOKEN:
+        return None
+    app = Application.builder().token(config.TELEGRAM_BOT_TOKEN).concurrent_updates(True).build()
+    app.add_handler(CommandHandler("start", on_start))
+    app.add_handler(CommandHandler("genome", on_genome))
+    app.add_handler(CallbackQueryHandler(on_button))
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, on_message))
+    return app

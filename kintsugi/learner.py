@@ -1,0 +1,147 @@
+"""Kintsugi learner: failure → supervisor proposes ≤3 delta lessons → dedup → trust → gate → commit.
+
+Never touches held-out cases (only `evals.cases("train")`, via the gate).
+"""
+import json
+import uuid
+from datetime import UTC, datetime
+
+from . import config, gate, genome, models
+from .db import db
+from .genome import SECTIONS
+from .tools import ALL_TOOLS
+
+MAX_CANDIDATES = 3
+
+PROPOSE = """You improve the harness ("genome") of Tsugi, a personal-assistant agent for its owner Thomas.
+The genome has four sections:
+- rules: conventions for HOW to do things (formats, defaults, durations, naming)
+- context_policies: what to look up or check BEFORE acting (e.g. look up contacts, check the calendar)
+- guardrails: things Tsugi must NEVER do
+- tool_access: which tools a tier ("owner" or "stranger") may use (set "tier", "tools", "allow")
+
+Current genome:
+{genome}
+
+Tools: {tools}
+
+A failure happened.
+Conversation: {history}
+Tool calls Tsugi made: {steps}
+Tsugi's reply: {reply}
+Feedback: {correction}
+
+Propose up to {n} ALTERNATIVE lessons that would fix this kind of failure. Each lesson is a small delta to ONE
+section, written as one general imperative sentence that also helps with similar future requests (not only
+this exact one). Don't repeat what the genome already says. Best lesson first.
+Answer only JSON:
+{{"lessons": [{{"section": "rules|context_policies|guardrails|tool_access", "text": "...",
+"tier": "stranger", "tools": ["tool_name"], "allow": false,
+"prediction": "what will change in Tsugi's behaviour"}}]}}
+("tier", "tools", "allow" only for tool_access.)"""
+
+CORRECTION = """A test case failed. Write the feedback Thomas would give, in one or two sentences, stating the
+general convention that was broken (not just this case's answer).
+Request: {history}
+Tool calls: {steps}
+Reply: {reply}
+Failed checks (MongoDB filters on the resulting data, or reply checks): {failed}
+Answer only JSON: {{"correction": "..."}}"""
+
+
+def _genome_text(g: dict) -> str:
+    return json.dumps({s: g[s] if s == "tool_access" else [i["text"] for i in g[s]] for s in SECTIONS}, indent=1)
+
+
+async def write_correction(f: dict) -> str:
+    """Supervisor as teacher: feedback for a failed case that has no hand-written correction."""
+    r = await models.chat_json([{"role": "user", "content": CORRECTION.format(
+        history=json.dumps(f["history"]), steps=json.dumps(f["steps"])[-3000:], reply=f["reply"],
+        failed=json.dumps(f.get("failed", [])))}], model=config.SUPERVISOR_MODEL)
+    return r.get("correction", "")
+
+
+async def propose(f: dict, g: dict) -> list[dict]:
+    r = await models.chat_json([{"role": "user", "content": PROPOSE.format(
+        genome=_genome_text(g), tools=", ".join(ALL_TOOLS), history=json.dumps(f["history"]),
+        steps=json.dumps(f["steps"])[-3000:], reply=f["reply"], correction=f["correction"], n=MAX_CANDIDATES)}],
+        model=config.SUPERVISOR_MODEL)
+    now = datetime.now(UTC)
+    out = []
+    for p in r.get("lessons", [])[:MAX_CANDIDATES]:
+        section, text = p.get("section"), (p.get("text") or "").strip()
+        if section not in SECTIONS or not text:
+            continue
+        lesson = {"_id": f"L-{uuid.uuid4().hex[:6]}", "section": section, "text": text,
+                  "prediction": p.get("prediction", ""), "status": "candidate", "created_at": now,
+                  "parents": [f["source_id"]], "gate": None,
+                  "source": {"kind": f["kind"], "tier": f["tier"], "ref": f["source_id"]},
+                  "failure": {k: f.get(k) for k in ("source_id", "kind", "tier", "history", "steps", "reply",
+                                                     "correction", "case")}}
+        if section == "tool_access":
+            lesson.update(tier=p.get("tier") if p.get("tier") in ("owner", "stranger") else "stranger",
+                          tools=[t for t in p.get("tools", []) if t in ALL_TOOLS], allow=bool(p.get("allow")))
+            if not lesson["tools"]:
+                continue
+        out.append(lesson)
+    return out
+
+
+async def _gate_and_commit(candidates: list[dict], f: dict) -> dict:
+    g = await genome.current()
+    gate_id = f"G-{uuid.uuid4().hex[:6]}"
+    await db.gates.insert_one({"_id": gate_id, "status": "running", "lessons": [l["_id"] for l in candidates],
+                               "source": f["source_id"], "created_at": datetime.now(UTC)})
+    result = {"status": "rejected", "lessons": candidates}
+    for lesson in candidates:
+        v = await gate.judge(lesson, f, g)
+        await db.lessons.update_one({"_id": lesson["_id"]}, {"$set": {"gate": v}})
+        if v["accepted"]:
+            new = await genome.commit({**lesson, "gate": v}, lesson["parents"])
+            await gate.carry_baseline(g, new["version"], v, (f.get("case") or {}).get("id"))
+            result = {"status": "accepted", "lesson": {**lesson, "gate": v}, "version": new["version"]}
+            break
+        await db.lessons.update_one({"_id": lesson["_id"]}, {"$set": {"status": "rejected"}})
+    await db.gates.update_one({"_id": gate_id}, {"$set": {"status": result["status"], "ended_at": datetime.now(UTC)}})
+    return result
+
+
+async def learn(f: dict) -> dict:
+    """f: {source_id, kind (telegram|case|redteam), tier, history, steps, reply, correction?, case?, failed?}"""
+    await db.lineage.update_one({"_id": f["source_id"]}, {"$setOnInsert": {
+        "type": f["kind"], "parents": [], "status": "active", "trust": f["tier"],
+        "label": (f["history"][-1]["content"] if f["history"] else "")[:80]}}, upsert=True)
+    if not f.get("correction"):
+        f["correction"] = await write_correction(f)
+    g = await genome.current()
+    candidates = []
+    for lesson in await propose(f, g):
+        await genome.embed_lesson(lesson)
+        similar = await genome.similar_lessons(lesson["text"], k=3) or []
+        if similar and similar[0]["score"] >= 0.95:  # Vector Search dedup: we already know this
+            lesson.update(status="duplicate", duplicate_of=similar[0]["_id"])
+        lesson["parents"] += [s["_id"] for s in similar if s["score"] >= 0.85 and s["_id"] not in lesson["parents"]]
+        candidates.append(lesson)
+    if candidates:
+        await db.lessons.insert_many(candidates)
+    live = [l for l in candidates if l["status"] == "candidate"]
+    if not live:
+        return {"status": "no_candidates" if not candidates else "duplicate", "lessons": candidates}
+    if f["tier"] != "owner":  # every source untrusted → owner decides
+        await db.lessons.update_many({"_id": {"$in": [l["_id"] for l in live]}}, {"$set": {"status": "quarantined"}})
+        return {"status": "quarantined", "lessons": live}
+    return await _gate_and_commit(live, f)
+
+
+async def approve(lesson_id: str) -> dict:
+    """Owner approved a quarantined lesson: it still has to pass the gate."""
+    lesson = await db.lessons.find_one({"_id": lesson_id, "status": "quarantined"})
+    if not lesson:
+        return {"status": "not_found"}
+    await db.lessons.update_one({"_id": lesson_id}, {"$set": {"status": "candidate", "approved_by": "owner"}})
+    return await _gate_and_commit([lesson], lesson["failure"])
+
+
+async def reject(lesson_id: str) -> dict:
+    await db.lessons.update_one({"_id": lesson_id, "status": "quarantined"}, {"$set": {"status": "rejected"}})
+    return {"status": "rejected"}

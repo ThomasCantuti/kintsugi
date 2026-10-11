@@ -1,0 +1,21 @@
+[project]
+name = "kintsugi"
+version = "0.1.0"
+description = "Kintsugi: a harness that rewrites itself when the agent fails (gated, traceable, revocable lessons on MongoDB Atlas)"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.143.0",
+    "openai>=3.28.0",
+    "pymongo>=4.18.3",
+    "python-dotenv>=1.2.4",
+    "python-telegram-bot>=22.8",
+    "uvicorn>=0.54.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
