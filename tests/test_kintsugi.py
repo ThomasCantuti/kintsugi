@@ -88,6 +88,19 @@ def test_tool_access_is_enforced_in_code(run, monkeypatch):
     assert ep["counters"]["blocks"] == 1 and run(db.outbox.count_documents({})) == 0
 
 
+def test_web_search_is_offered_only_in_the_live_world(run, monkeypatch):
+    offered = []
+
+    async def chat(messages, tools=None, **kw):
+        offered.append({t["function"]["name"] for t in tools})
+        return Reply("ok")
+    monkeypatch.setattr(models, "chat", chat)
+    g = run(genome.current())
+    for world in ("live", "eval-x"):
+        run(agent.run(g, [{"role": "user", "content": "hi"}], world, "owner"))
+    assert "web_search" in offered[0] and "web_search" not in offered[1]
+
+
 def test_genome_saved_before_a_tool_existed_still_grants_it():
     old = [t for t in tools.ALL_TOOLS if t not in ("calendar_move", "calendar_cancel")]
     g = {"tool_access": {"owner": old, "stranger": [t for t in old if t != "outbox_send"]}}  # pre-registry doc

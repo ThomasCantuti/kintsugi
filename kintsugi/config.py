@@ -40,6 +40,7 @@ RAINDROP_WRITE_KEY = _env("RAINDROP_WRITE_KEY")
 RAINDROP_EVENT_CAP = 800  # free Hobby plan: 1,000 events/month, and ingestion stops for the month at the cap
 # Query API key (dashboard → Settings → API Keys → Query SDK). Set = Raindrop-flagged live turns go to the learner.
 RAINDROP_QUERY_API_KEY = _env("RAINDROP_QUERY_API_KEY")
+EXA_API_KEY = _env("EXA_API_KEY")
 # Signals that send a live turn to the learner (compared without case, spaces, "_" or "-")
 RAINDROP_FLAGS = {"userfrustration", "attemptedpromptinjection", "requestexecutionneedscorrection"}  # 2 presets + our custom signal (Raindrop named it)
 
