@@ -108,7 +108,7 @@ export default function Lineage({ state, selected, onSelect, visible, toast }:
           <div className="ihead"><span className={'tag ' + status(node)}>{status(node)}</span><span className="mono mute">{sel}</span></div>
           <p className="itext">{l?.text ?? node.label}</p>
           <dl className="meta">
-            {l && <div><dt>Section</dt><dd>{SEC[l.section]}{l.section === 'tool_access' && l.tools ? `: ${l.allow ? 'allow' : 'remove'} ${l.tools.join(', ')} for ${l.tier}` : ''}</dd></div>}
+            {l && <div><dt>Section</dt><dd>{SEC[l.section]}{l.section === 'tool_access' && l.tools ? `: ${l.only ? 'only' : l.allow ? 'allow' : 'remove'} ${l.tools.join(', ')} for ${l.tier}` : ''}</dd></div>}
             <div><dt>Came from</dt><dd>{sourceOf(sel) || (l ? `${l.source.tier}, ${l.source.kind}` : 'unknown')}</dd></div>
             {l?.gate && <div><dt>Gate</dt><dd>{l.gate.fixed ? 'fixed' : 'not fixed'}, {l.gate.regression_passed}/{l.gate.regression_total} past cases pass</dd></div>}
             <div><dt>Shipped in</dt><dd>{state.versions[sel] != null ? `genome v${state.versions[sel]}` : 'not shipped'}</dd></div>

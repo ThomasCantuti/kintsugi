@@ -9,7 +9,7 @@ export type Lesson = {
   source: { kind: string; tier: string; ref: string }
   failure?: { correction?: string; tier?: string; kind?: string; source_id?: string }
   similar?: { _id: string; score: number }[]; duplicate_of?: string
-  tier?: string; tools?: string[]; allow?: boolean
+  tier?: string; tools?: string[]; allow?: boolean; only?: boolean
 }
 export type ToolStep = { tool: string; args: string; result: string }
 export type Episode = {
