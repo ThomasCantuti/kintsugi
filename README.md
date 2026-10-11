@@ -126,14 +126,16 @@ Filled only from stored runs (`runs` collection, 2026-10-11). Held-out: 12 cases
 
 **Curve** (held-out pass rate per genome version, Nemotron Super, n = 36 each):
 
-| v0 | v1 | v2 | v3 | v4 | v5 | v6 | v7 (B) |
-|---|---|---|---|---|---|---|---|
-| 17 (47%) | 16 (44%) | 22 (61%) | 22 (61%) | 24 (67%) | 29 (81%) | 27 (75%) | 30 (83%) |
+| v0 | v1 | v2 | v3 | v4 | v5 | v6 | v7 (B) | v10 |
+|---|---|---|---|---|---|---|---|---|
+| 17 (47%) | 16 (44%) | 22 (61%) | 22 (61%) | 24 (67%) | 29 (81%) | 27 (75%) | 30 (83%) | 31 (86%) |
 
-Runs: R-de32c8 · R-98fcdb · R-9b8a53 · R-950a23 · R-b6d547 · R-eec8a3 · R-4efb73 · R-bb02a7. B is the genome at
-measurement time, not the best one: picking a version by its held-out score would let held-out decide. Live
-teaching has since moved the genome to v10 (Raindrop's guardrail, stranger calendar access, one owner rule); v8–v10 are
-not measured on held-out.
+Runs: R-de32c8 · R-98fcdb · R-9b8a53 · R-950a23 · R-b6d547 · R-eec8a3 · R-4efb73 · R-bb02a7 · R-826f1e. B is the
+genome at measurement time, not the best one: picking a version by its held-out score would let held-out decide.
+v1–v7 came from train failures; v8–v10 came from live teaching (v8: strangers lose calendar changes, note search and
+contacts; v9: Raindrop's guardrail; v10: an owner rule, "Say degrees, not F", which passed the gate vacuously and is
+kept to show a revoke). v8 and v9 were not measured on their own. v10 vs v7 is 31 vs 30, per trial 10 · 11 · 10:
+within noise (owner cases 22 vs 21, stranger cases 9 vs 9).
 
 **Hard split** (`evals/hard.json`, frozen at `748d9c7`: 8 multi-step tool cases × 3 trials = 24):
 A0 20/24 (R-639d69) · A 21/24 (R-d3e4f0) · v6 21/24 (R-81a386) · v10 21/24 (R-4af572). Ten lessons later, no
