@@ -63,10 +63,31 @@ Living facts and decisions. Append; don't rewrite history. Date every entry.
 
 ## Open questions
 - Modelence: Python / custom start command? External Atlas URI? Do credits cover anything besides hosting? (ask at the venue)
+- **Live teach convention** (Thomas): v6 already knows the focus rule, so the demo teach needs an unlearned convention. Recommended:
+  a fresh personal one (e.g. "investor calls are 30 min, titled 'Investor: …'", "never book over lunch 12–1"); alternative: revoke the
+  focus lesson before stage and re-teach. Also: learning cycle 66–95 s vs ~55 s teach beat → time and speed up the gate.
+- **Wrangling framing** (Thomas): data says Nemotron Super makes 0 malformed tool calls (held-out, hard split); weaker models fail on
+  reasoning, not call format; provider 429s are real (Lightning). Recommended pitch: lead with recursive harnessing (A → B → curve),
+  state the wrangling finding honestly, report counters only where non-zero.
+
 
 ## Numbers (fill only with measured values, with date + n)
 - Held-out (n=12 cases × 2 trials = 24, model `nvidia/nemotron-3-super-120b-a12b` paid, 2026-10-11 ~11:40 PT): **A0 raw loop 8/24 (33%)** $0.0153 · **A v0 11/24 (46%)** $0.0152 · B vN — · C frontier v0 — · D frontier + naive memory —. Per trial: A0 (R-ef7a04) 4/12 + 4/12 · A (R-de79ec) 4/12 + 7/12; same 4 cases pass in every trial (draft-h2, private-h2, stranger-h2, generic-h1), A trial 2 adds tz-h1, remind-h1, team-h1. **A0 vs A: no measurable harness effect at v0; the difference is one trial (4/12 vs 7/12).** At v0 the prompt is identical in both modes (base items stay with genome=False, no lessons, strangers have all tools) and repairs/fallbacks/blocks are 0 in both. Trials vary even at temperature 0 → B vs A needs ≥2 trials (ideally 3), reported per trial.
-- Curve: held-out pass rate per genome version —
+- Held-out, **current tools** (10 tools, after a76ec33/4d44a85), 12 cases × 3 trials = 36, paid Nemotron Super, 2026-10-11 ~12:00–12:15 PT:
+  **A0 18/36** (R-ecb0c9, per trial 6/5/7) · **A v0 17/36** (R-de32c8, 6/6/5). No harness effect at v0; repairs/fallbacks/blocks 0.
+  (R-a0f9e8 A 18/36 ran with the stale v0 tool list; superseded by R-de32c8.)
+- Hard split (D33, 8 cases × 3 trials = 24, v0, paid Nemotron Super): **A0 20/24** (R-639d69, per trial 6/7/7) · **A 21/24**
+  (R-d3e4f0, 7/7/7). Repairs 0 in both: Nemotron Super makes no malformed tool calls even chaining ids over 3–5 calls.
+  **R-25c209 (hard-A 9/24) is INVALID**: stale genome tool list hid calendar_move/cancel (bug fixed in 4d44a85).
+- Weaker models on hard (1 trial each, n=8, v0): Nemotron Nano 30B A0 1/8 (R-461a5a) vs A 3/8 (R-c08570); Lightning A0 5/8 (R-50e0f9)
+  vs A 7/8 (R-113b12). Repairs 0 everywhere: failures are reasoning (wrong time, max steps), not malformed calls; gaps are within noise.
+  Lightning A0 lost 2 cases to `429 rate-limited upstream` (no fallback in the raw loop); no 429 hit the A run, so no rescue measured.
+- Curve: evolution run (1 trial per version, old 8-tool registry, labels v1–v6 written by `evolve --measure`): v1 8/12 · v2 6/12 ·
+  v3 7/12 · v4 9/12 · v5 10/12 · v6 9/12. **Superseded by the 3-trial batch** (labels v1–v5 + B at v6) launched ~12:40.
+- Evolution (2 rounds on train, Sonnet supervisor, paid Nemotron): genome v0 → **v6**, 6 lessons accepted, 11 rejected by the gate,
+  10 untested alternatives marked `skipped`. Lessons: focus blocks (rules), reminders 15 min before (rules), check calendar for
+  conflicts (context_policies), draft unless "send it now" (guardrails), never reveal private notes (guardrails), strangers → take a
+  message (rules). Spend by ~12:40: $0.55 of $10.
 - Supervisor agreement with ground-truth checks: **19/19** (Sonnet 5.5 on train run R-762ceb, v0, n=19 cases with a hand-written correction, $0.041). Held-out has no `correction` field, so `--judge` on held-out gives 0/0.
 - Train v0 (n=19, 1 trial, paid Nemotron): 7/19 pass, $0.0082 (run R-762ceb, the gate's v0 baseline).
 - Costs measured: Nemotron Super paid ≈ $0.0002/request (~1.2k in / 200 out tokens); one learning cycle (Sonnet propose + gate) ≈ $0.015.
@@ -83,3 +104,7 @@ Living facts and decisions. Append; don't rewrite history. Date every entry.
 - 2026-10-11 **Gate bug fixed**: lesson retrieval filtered `$vectorSearch` by `status: active`, so a candidate under test (status `candidate`) was dropped from the prompt → the gate could never accept a rules/context_policies lesson (guardrails skip retrieval). Now retrieval filters by the running genome's lesson ids (`_id` added as a filter field on `lessons_vec`). Also correct for `--version N` runs.
 - 2026-10-11 Propose prompt: alternatives must each cover EVERY part of the feedback (the gate tests each alone). Before: focus-01's feedback (Deep work 90 min mornings + never Fridays) was split across 3 lessons, each fixing half → all rejected. After: first try accepted → v1 (7/7 regression).
 - 2026-10-11 Switched to paid models with $10 OpenRouter credits (key hard limit $10): agent `nemotron-3-super-120b-a12b` (paid; free super + lightning as fallbacks), supervisor `claude-sonnet-5.5`. Free tier = 50 req/day and 20/min, too tight for the gate (16–20 requests per burst).
+- 2026-10-11 **Stored genomes snapshot their tool lists**: v0–v3 denied tools added later (calendar_move/cancel) to every tier, so the harness scored 9/24 on hard vs the raw loop's 20/24. Fix (4d44a85): `genome.allowed_tools()` gives registry tools a genome never knew BASE access; new versions store `tools_known`. Rule: adding a tool must not need a genome migration.
+- 2026-10-11 Lightning (`nemotron-3.5-lightning`, paid) returned `429 temporarily rate-limited upstream` (CoreWeave shared pool) on 2 of 8 raw-loop cases ~12:16 PT.
+- 2026-10-11 Shell gotcha: zsh doesn't word-split `$E` (`E="uv run …"; $E args` → command not found). Use a bash script or a function for batches.
+- 2026-10-11 Several Claude sessions share this working tree and the `kintsugi_test` DB: concurrent pytest runs drop each other's DB mid-test (spurious failures). Announce pytest runs; stage only your own hunks.
