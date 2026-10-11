@@ -41,6 +41,10 @@ Telegram (owner / stranger) ─► agent.run(genome vN, messages, world, tier)
   wrote as plain text. A fallback chain switches models when one fails. `tool_access` is enforced in code.
   Every repair, fallback and block is counted in the episode trace. On the held-out baseline none of them
   fired (all counters 0): paid Nemotron Super made no malformed calls there.
+- **Raindrop** watches live traffic. Every live turn is a Raindrop event with its tool calls as spans,
+  and notes tagged `private` are hidden in those spans. 👍/👎 and corrections become Raindrop signals. The
+  learner then reports the outcome on the turn it learned from: `lesson_shipped`, `no_safe_fix` or
+  `lesson_quarantined`. Evals, the gate and evolution runs send nothing.
 - **Supervisor**: a stronger model reviews failed episodes and proposes lessons. Its critique is only a
   signal: the gate decides, and the chart is scored only by deterministic DB-state checks.
 
