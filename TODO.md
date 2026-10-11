@@ -110,10 +110,11 @@ before running it and send "pytest done" (shared `kintsugi_test` DB). Wrap up at
 ## Session 20 (13:15–14:05): tools + stage speed
 Done: web_search (Exa, live only, D38) · reminders ping on Telegram · scars (D39) · gate runs its past cases at once ·
 `reasoning` switch (default on; off is faster but broke past cases) · README results from stored runs (v7, D, Dn, red team, poisoning).
-- [ ] [you] **Stage teach takes ~3 min** (MEMORY Numbers): recommended = send the 👎 + correction at ~0:40, do the stranger and
+- [x] [you] **Stage teach takes ~3 min** (MEMORY Numbers): recommended = send the 👎 + correction at ~0:40, do the stranger and
       revoke beats on the live view while the gate ring ticks, return for v8; record a real teach (labelled "sped up") as the backup.
-- [ ] [you] OK to delete the leftover "Call with Maya" (2026-10-12 15:00) in the live world before the stage.
-- [ ] Record the backup teach video (needs the live world cleared first).
+- [x] [you] OK to delete the leftover "Call with Maya" (2026-10-12 15:00) in the live world before the stage.
+- [x] Backup teach video: `assets/video/backup-teach-4x.mp4` (e8232c2). Demo script in PLAN §6 updated (request before the hook).
+- [x] Gate replay fix (fc4dbde): a live failure replays from the world before that turn (the turn's own event spoiled the fix check).
 
 ## 15:15–15:45 BOOST (only if everything above is green)
 - [ ] RSI improver playbook · genome transfer to another model · `red-team` agent pass
