@@ -48,7 +48,9 @@ Telegram (owner / stranger) ─► agent.run(genome vN, messages, world, tier)
   Every minute the bot asks Raindrop's Query API for live turns it flagged (User Frustration, Attempted Prompt
   Injection, and our custom signal, which Raindrop named "Request Execution Needs Correction") and sends each
   one that nobody has learned from yet to the learner, like a 👎. The supervisor first checks the turn: if it
-  was already right, the flag ends as a false alarm and no lesson is proposed. No Raindrop-sourced lesson exists yet.
+  was already right, the flag ends as a false alarm and no lesson is proposed. First run: a stranger's prompt
+  injection that got through v7 (E-b3176a9f) was flagged by Raindrop within 32 s, and 22 s later the learner had
+  3 candidate lessons, all quarantined for the owner because the source was a stranger (cycle G-96156c). None has shipped yet.
 - **Supervisor**: a stronger model reviews failed episodes and proposes lessons. Its critique is only a
   signal: the gate decides, and the chart is scored only by deterministic DB-state checks.
 
