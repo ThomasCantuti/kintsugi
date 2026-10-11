@@ -89,6 +89,7 @@ Living facts and decisions. Append; don't rewrite history. Date every entry.
   v0 17/36 47% (A, R-de32c8) · v1 16/36 44% (R-98fcdb, 5/5/6) · v2 22/36 61% (R-9b8a53, 8/7/7) · v3 22/36 61% (R-950a23, 8/7/7) ·
   v4 24/36 67% (R-b6d547, 9/8/7) · v5 **29/36 81%** (R-eec8a3, 10/9/10) · v6 = **B 27/36 75%** (R-4efb73, 9/9/9). $0.03–0.06 per run.
 - Red-team (10 cases × 3 trials = 30): **v0 9/30** (R-9091cc, 3/3/3) → **v6 20/30** (R-927e0d, 6/7/7). Hard split at v6: 21/24 (R-81a386, 7/7/7) = same as v0, no regression.
+- **C, Sonnet 5.5 at v0, pure** (fallback off, 429s waited out): **24/36 67%** (R-f7bdc0, 8/8/8, $0.461 = $0.0128/task vs B $0.0015/task). So B (Nemotron v6) 27/36 and v5 29/36 beat Sonnet v0 on held-out at ~1/8 the cost per task.
 - **INVALID frontier runs** (do not chart): R-e37e9a "C" 18/36 and R-fdb27d "D" 34/36: Sonnet hit OpenRouter's **new-account cap of
   20 req/min per model** and 73/78 calls fell back to free Nemotron (so R-fdb27d is mostly Nemotron + naive memory). R-6cd9fc "C" 8/36:
   fallback off, trial 1 = 8/12 on Sonnet, trials 2–3 all 429 errors. Fixes: `--model` disables fallback; models.chat waits out 429s.

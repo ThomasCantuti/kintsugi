@@ -77,24 +77,30 @@ Prototype + plan: https://claude.ai/artifact/JMwZ6ocNfWh41j12H5VkLi
 - [ ] Red-team cases (stranger attacks) → quarantine/blocked counts · cases done: `evals/redteam.json` (10: 7 stranger attacks, 2 planted injections, 1 control; refuse-everything floor = 7/10) → run v0 vs vN `--split redteam`
 - [x] Live view: React + Vite rebuild (D34): loop rail on the real cycle doc, gate ring per case, Telegram mirror, genome ribbon, change-stream ticker, Proof (held-out / hard / red-team + curve), Lineage + revoke cascade
 
-## Next (handoff from the evals session, ~12:40)
-1. **Read the batch** launched ~12:40 (3 trials each, current code): Atlas `runs` labels `v1`–`v5` (curve), `B` (v6), `C` (Sonnet v0),
-   `D` (Sonnet + naive memory), `rt-v0` / `rt-v6` (split redteam), `hard-B` (split hard, v6). Write per-trial numbers to MEMORY.md
-   Numbers. Check `counters.fallbacks == 0` on C/D (a fallback would mean a Nemotron answer inside a frontier bar). Red-team: report
-   "attacks blocked x/9 + control pass", not a raw pass rate. Wrong numbers are worse than none: re-run rather than guess.
-2. **Demo teach needs an unlearned convention**: v6 already knows the focus-block rule, so "block focus time tomorrow" no longer fails.
-   Recommended: teach a fresh, personal convention live (e.g. "investor calls are 30 min, titled 'Investor: …'" or "never book over
-   lunch 12–1"); alternative: revoke the focus lesson before stage and re-teach it. **[you] pick.**
-3. **Gate speed for the stage**: a learning cycle took 66–95 s; the teach beat is ~55 s (PLAN §6). Time a live-style teach (Telegram
-   source = scratch-world replay + supervisor verdict + ≤8 regression cases), then speed up (test candidates in parallel, higher
-   concurrency, smaller regression slice). gate.py/learner.py are being edited by session c2 (React view): coordinate first.
-4. Wrangling counters from traces → MEMORY.md. Pitch framing (open question in MEMORY.md): 0 malformed tool calls so far; failures
-   are conventions/policies, which is what Kintsugi learns.
-5. Session c2 asked to mark untested batch alternatives `skipped` in `_gate_and_commit` (10 existing ones already set in Atlas).
+## Next (handoff from the evals session, 12:55)
+Measured and in MEMORY.md Numbers (3 trials, held-out n=36, run ids there): curve v0 47% → v5 81% → v6 (B) 75% · **C Sonnet v0
+24/36 67%** (R-f7bdc0, pure, $0.46) · red-team v0 9/30 → v6 20/30 · hard v0 21/24 = v6 21/24. Invalid runs carry an `invalid`
+field in Atlas (the live view skips them).
+1. **In flight at handoff** (bash script in the old session, may die with it): `D` = Sonnet + naive memory (run R-a7ebca) and `Dn` =
+   Nemotron + naive memory (R-ff6cfe), held-out, v0, 3 trials. Check `runs` for labels D / Dn without `invalid`. If missing, re-run
+   ONE AT A TIME (Sonnet is capped at 20 req/min on this account; models.chat waits out 429s, `--model` disables fallback):
+   `uv run python -m kintsugi.evals --label D --split heldout --version 0 --model anthropic/claude-sonnet-5.5 --naive --trials 3`
+   `uv run python -m kintsugi.evals --label Dn --split heldout --version 0 --naive --trials 3` (~$0.5 total).
+   Check `counters.fallbacks == 0` on any frontier run before using it.
+2. **Framing with D/Dn** (MEMORY.md open question): if naive memory matches Kintsugi on clean held-out, the pitch rests on what
+   memory can't do: lessons are tested before shipping (gate), revocable with lineage, stranger "lessons" quarantined, red-team
+   9 → 20/30. Next measurement that shows it: naive memory that also holds a stranger's planted "rule" vs Kintsugi on the red-team split.
+3. **[you] live-teach convention**: v6 already knows the focus rule. Pick a fresh one (e.g. "investor calls are 30 min, titled
+   'Investor: …'", "never book over lunch 12–1") or revoke the focus lesson before stage and re-teach.
+4. **Gate speed for the stage**: cycle took 66–95 s vs a ~55 s beat. c2's gate/learner changes landed (8c1cc59), so time a
+   live-style teach now. **Latency under load**: paid Nemotron episodes go from 3–8 s (quiet) to 40–60 s avg (max 311 s) while evals
+   run in parallel. Run no evals during the demo or rehearsals.
+5. Wrangling counters from traces → MEMORY.md (repairs 0 everywhere so far; Lightning 429s are the only provider failures seen).
 
-**Parallel sessions** (shared working tree): **20** = docs, cases, README (no model calls) · **37** = Raindrop · **c2** = React + Vite
-live view (`web/`, `api.py`, gate progress callback). Stage only your own hunks (never `git add -A`). Announce pytest before running
-it: the sessions share the `kintsugi_test` DB and concurrent runs break each other.
+**Parallel sessions** (shared working tree): **20** = docs, cases, README · **37** = Raindrop (bot runs detached, see its handoff) ·
+**c2** = React + Vite live view (`web/`, `api.py`, gate progress). Commit your own finished, tested work without asking Thomas
+(his rule), own hunks only (temporary index via `GIT_INDEX_FILE`; never `-a`/`add -A`), no push unless asked. Announce pytest
+before running it and send "pytest done" (shared `kintsugi_test` DB). Wrap up at ~30% context: commit, hand off here, tell the others.
 
 ## 15:15–15:45 BOOST (only if everything above is green)
 - [ ] RSI improver playbook · genome transfer to another model · deploy on Modelence (if Python works) · Exa search · reminder heartbeat · `red-team` agent pass
