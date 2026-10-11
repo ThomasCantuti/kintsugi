@@ -1,10 +1,14 @@
 """Telegram channel. 👍/👎 under every reply; 👎 asks for a correction, which goes to the learner.
 Owner = OWNER_TELEGRAM_ID, everyone else is a stranger (their lessons are quarantined for the owner).
+Every message is HTML (bot default): escape anything that comes from a user, the model or the DB.
 """
+import re
+from html import escape as _escape
+
 import raindrop.analytics as raindrop
 from telegram import ForceReply, InlineKeyboardButton, InlineKeyboardMarkup, Update
-from telegram.constants import ChatAction
-from telegram.ext import Application, CallbackQueryHandler, CommandHandler, ContextTypes, MessageHandler, filters
+from telegram.constants import ChatAction, ParseMode
+from telegram.ext import Application, CallbackQueryHandler, CommandHandler, ContextTypes, Defaults, MessageHandler, filters
 
 from . import agent, config, genome, learner
 
@@ -26,35 +30,50 @@ def feedback_buttons(ep_id: str) -> InlineKeyboardMarkup:
 LABEL = {"rules": "rule", "context_policies": "context policy", "guardrails": "guardrail", "tool_access": "tool access"}
 
 
+def escape(text: str) -> str:
+    return _escape(text, quote=False)  # Telegram HTML knows only &lt; &gt; &amp; (quotes stay literal)
+
+
+def quote(text: str) -> str:
+    return f"<blockquote>{escape(text)}</blockquote>"
+
+
 def describe(result: dict) -> str:
     s = result["status"]
     if s == "accepted":
         l, v = result["lesson"], result["lesson"]["gate"]
-        return (f"✨ New {LABEL[l['section']]} · genome v{result['version']}\n{l['text']}\n"
-                f"✓ fixed, {v['regression_passed']}/{v['regression_total']} past cases pass")
+        return (f"✨ <b>New {LABEL[l['section']]}</b> · genome v{result['version']}\n{quote(l['text'])}\n"
+                f"Gate: fixed, {v['regression_passed']}/{v['regression_total']} past cases pass")
     if s == "quarantined":
         return "🔒 Thanks! Waiting for my owner's OK."
     if s == "duplicate":
-        return "I already know this one. 🌱"
+        return "🌱 I already know this one."
     if s == "false_alarm":
-        return f"🌦️ False alarm: that turn was already right. {learner.clip(result['why'], 160)}"
+        return f"🌦️ <b>False alarm</b>: that turn was already right.\n<i>{escape(learner.clip(result['why'], 160))}</i>"
     n = len(result.get("lessons", []))
-    return f"No safe fix: {n} candidate{'s' if n != 1 else ''} failed the gate. Nothing changed."
+    return f"🚫 <b>No safe fix</b>: {n} candidate{'s' if n != 1 else ''} failed the gate. Nothing changed."
+
+
+def reply_html(text: str) -> str:
+    """The model writes markdown **bold**; Telegram shows it raw unless it becomes <b>."""
+    return re.sub(r"\*\*(.+?)\*\*", r"<b>\1</b>", escape(text))
 
 
 async def on_start(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     g = await genome.current()
-    await update.message.reply_text(f"Hi, I'm Tsugi 🌱 genome v{g['version']}, {len(g['lessons'])} lessons.\n"
+    await update.message.reply_text(f"Hi, I'm <b>Tsugi</b> 🌱\n<i>genome v{g['version']} · {len(g['lessons'])} lessons</i>\n\n"
                                     "I plan, note, remind and email. 👎 a mistake and I'll learn.")
 
 
 async def on_genome(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     g = await genome.current()
-    lines = [f"Genome v{g['version']} (✨ = learned)"]
+    lines = [f"🧬 <b>Genome v{g['version']}</b> · ✨ = learned"]
     for s, title in (("rules", "Rules"), ("context_policies", "Context policies"), ("guardrails", "Guardrails")):
-        lines += [f"\n{title}"] + [f"{'✨' if i['lesson'] else '·'} {learner.clip(i['text'], 120)}" for i in g[s]]
-    lines += ["\nTool access"] + [f"· {tier}: {', '.join(tools)}" for tier, tools in g["tool_access"].items()]
-    await update.message.reply_text("\n".join(lines)[:4000])
+        items = "\n".join(f"{'✨' if i['lesson'] else '·'} {escape(learner.clip(i['text'], 120))}" for i in g[s]) or "empty"
+        lines += [f"\n<b>{title}</b> ({len(g[s])})", f"<blockquote expandable>{items}</blockquote>"]
+    lines += ["\n<b>Tool access</b>"] + [f"<code>{tier}</code> {', '.join(tools)}" for tier, tools in g["tool_access"].items()]
+    # ponytail: no length cap (a cut would break the HTML); items are clipped, so this fits until ~30 lessons
+    await update.message.reply_text("\n".join(lines))
 
 
 async def on_message(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
@@ -67,7 +86,7 @@ async def on_message(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     await ctx.bot.send_chat_action(chat, ChatAction.TYPING)
     ep = await agent.run(await genome.current(), turns[-HISTORY_TURNS:], "live", tier)
     await agent.save(ep, "live", chat=chat)
-    reply = ep["reply"] or (f"⚠️ {ep['error']}" if ep["error"] else "…")
+    reply = reply_html(ep["reply"]) if ep["reply"] else f"⚠️ {escape(ep['error'])}" if ep["error"] else "…"
     turns.append({"role": "assistant", "content": ep["reply"]})
     episodes[ep["_id"]] = {"ep": ep, "history": list(turns[-HISTORY_TURNS - 1:-1]), "tier": tier}
     await update.message.reply_text(reply[:4000], reply_markup=feedback_buttons(ep["_id"]))
@@ -79,7 +98,7 @@ async def learn_from(update: Update, ctx: ContextTypes.DEFAULT_TYPE, ep_id: str,
         await update.message.reply_text("I lost that conversation, sorry. Try again?")
         return
     ep = item["ep"]
-    notify = progress(await update.message.reply_text("🌱 Learning…"))
+    notify = progress(await update.message.reply_text("🌱 <b>Learning</b> from your correction…"))
     f = {"source_id": ep_id, "kind": "telegram", "tier": item["tier"], "history": item["history"],
          "steps": ep["steps"], "reply": ep["reply"], "correction": correction}
     raindrop.track_signal(event_id=ep_id, name="correction", signal_type="edit", after=correction,
@@ -95,13 +114,15 @@ async def learn_from(update: Update, ctx: ContextTypes.DEFAULT_TYPE, ep_id: str,
 
 
 def progress(status):
-    """A learner `notify` that keeps one Telegram message updated as the gate works."""
-    lines = [status.text]
+    """A learner `notify` that keeps one Telegram message updated as the gate works (a result replaces its 'testing' line)."""
+    lines = [status.text_html]
 
     async def notify(text: str):
+        if lines[-1].startswith("🧪"):
+            lines.pop()
         lines.append(text)
         try:
-            await status.edit_text("\n".join(lines)[-4000:])
+            await status.edit_text("\n".join(lines))
         except Exception:
             pass
     return notify
@@ -111,7 +132,7 @@ async def ask_owner(bot, lessons: list[dict], why: str) -> None:
     """Quarantined lessons go to the owner for ✅/❌ (they still have to pass the gate)."""
     for l in lessons if config.OWNER_TELEGRAM_ID else []:
         await bot.send_message(
-            config.OWNER_TELEGRAM_ID, f"🔒 {why}:\n{l['text']}\nAllow it? The gate still tests it.",
+            config.OWNER_TELEGRAM_ID, f"🔒 <b>{why}</b>\n{quote(l['text'])}\nAllow it? The gate still tests it.",
             reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("✅ Approve", callback_data=f"ok:{l['_id']}"),
                                                 InlineKeyboardButton("❌ Reject", callback_data=f"no:{l['_id']}")]]))
 
@@ -122,8 +143,8 @@ async def heal_flag(bot, ep: dict, flags: list[str]) -> dict:
          "reply": ep["reply"], "failed": [f"Raindrop flagged this turn: {', '.join(flags)}"]}
     if not (bot and config.OWNER_TELEGRAM_ID):
         return await learner.learn(f)
-    status = await bot.send_message(config.OWNER_TELEGRAM_ID, f"🌧️ Raindrop flagged a {ep['tier']} turn ({', '.join(flags)}):\n"
-                                    f"“{learner.clip(ep['input'][-1]['content'], 120)}”\n🌱 Learning…")
+    status = await bot.send_message(config.OWNER_TELEGRAM_ID, f"🌧️ <b>Raindrop flagged</b> a {ep['tier']} turn · {escape(', '.join(flags))}\n"
+                                    f"{quote(learner.clip(ep['input'][-1]['content'], 120))}\n🌱 <b>Learning</b>…")
     result = await learner.learn(f, progress(status))
     if result["status"] == "quarantined":
         await ask_owner(bot, result["lessons"], "Raindrop flagged a stranger's turn. I'd learn")
@@ -138,9 +159,11 @@ async def on_button(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     if action == "up":
         raindrop.track_signal(event_id=ref, name="thumbs_up", signal_type="feedback", comment="👍", sentiment="POSITIVE")
         await q.answer("Thanks! 🌱")
+        await q.edit_message_reply_markup(None)  # one vote per reply, and the chat stays clean
     elif action == "down":
         raindrop.track_signal(event_id=ref, name="thumbs_down", signal_type="feedback", comment="👎", sentiment="NEGATIVE")
         await q.answer()
+        await q.edit_message_reply_markup(None)
         awaiting[q.message.chat.id] = ref
         await q.message.reply_text("What should I have done?", reply_markup=ForceReply(selective=True))
     elif action in ("ok", "no"):
@@ -148,12 +171,12 @@ async def on_button(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
             await q.answer("Only my owner can decide.")
             return
         await q.answer()
-        await q.edit_message_reply_markup(None)
+        # the decision is written on the request itself (this also removes the buttons)
         if action == "no":
             await learner.reject(ref)
-            await q.message.reply_text("❌ Rejected. Nothing changed.")
+            await q.edit_message_text(f"{q.message.text_html}\n\n❌ <b>Rejected</b>. Nothing changed.")
             return
-        await q.message.reply_text("✅ Approved. Running the gate…")
+        await q.edit_message_text(f"{q.message.text_html}\n\n✅ <b>Approved</b>. Running the gate…")
         ctx.application.create_task(_approve(q, ref))
 
 
@@ -166,7 +189,7 @@ def build() -> Application | None:
         return None
     # 5 s defaults lost a reply to a venue Wi-Fi connect stall (12:10, httpcore.ConnectTimeout on sendMessage)
     app = (Application.builder().token(config.TELEGRAM_BOT_TOKEN).concurrent_updates(True)
-           .connect_timeout(20).read_timeout(20).write_timeout(20).build())
+           .connect_timeout(20).read_timeout(20).write_timeout(20).defaults(Defaults(parse_mode=ParseMode.HTML)).build())
     app.add_handler(CommandHandler("start", on_start))
     app.add_handler(CommandHandler("genome", on_genome))
     app.add_handler(CallbackQueryHandler(on_button))

@@ -7,6 +7,7 @@ import json
 import uuid
 from collections.abc import Awaitable, Callable
 from datetime import UTC, datetime
+from html import escape
 
 import raindrop.analytics as raindrop
 
@@ -97,7 +98,7 @@ def clip(text: str, n: int = 90) -> str:
     return text if len(text) <= n else text[:n - 1].rstrip() + "…"
 
 
-async def _say(notify: Notify, text: str) -> None:
+async def _say(notify: Notify, text: str) -> None:  # notify is a Telegram message: text is HTML
     if notify:
         await notify(text)
 
@@ -115,10 +116,10 @@ async def _gate_and_commit(candidates: list[dict], f: dict, notify: Notify = Non
     for n, lesson in enumerate(candidates, 1):
         await _say(notify, f"🧪 Gate: testing #{n}…")
         v = await gate.judge(lesson, f, g, progress)
-        await _say(notify, f"#{n} " + (
-            f"✓ fixed, {v['regression_passed']}/{v['regression_total']} past cases pass" if v["accepted"]
-            else f"✗ broke {v['regression_total'] - v['regression_passed']} past case(s)" if v["fixed"]
-            else "✗ not fixed"))
+        await _say(notify, (
+            f"✅ #{n} fixed, {v['regression_passed']}/{v['regression_total']} past cases pass" if v["accepted"]
+            else f"✗ #{n} broke {v['regression_total'] - v['regression_passed']} past case(s)" if v["fixed"]
+            else f"✗ #{n} not fixed"))
         await db.lessons.update_one({"_id": lesson["_id"]}, {"$set": {"gate": v}})
         if v["accepted"]:
             new = await genome.commit({**lesson, "gate": v}, lesson["parents"])
@@ -175,8 +176,8 @@ async def learn(f: dict, notify: Notify = None) -> dict:
         await asyncio.sleep(2)
     await db.gates.update_one({"_id": f["gate_id"]}, {"$set": {"lessons": [l["_id"] for l in candidates]}})
     live = [l for l in candidates if l["status"] == "candidate"]
-    await _say(notify, f"💡 {len(live)} candidate(s):\n" + "\n".join(
-        f"#{n} {clip(l['text'])}" for n, l in enumerate(live, 1)))
+    await _say(notify, f"💡 <b>{len(live)} candidate(s)</b>\n<blockquote expandable>" + "\n".join(
+        f"{n}. {escape(clip(l['text']), quote=False)}" for n, l in enumerate(live, 1)) + "</blockquote>")
     if not live:
         status = "no_candidates" if not candidates else "duplicate"
         await db.gates.update_one({"_id": f["gate_id"]}, {"$set": {"status": status, "ended_at": datetime.now(UTC)}})
