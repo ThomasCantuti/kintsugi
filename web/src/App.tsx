@@ -2,7 +2,7 @@ import { Activity, lazy, Suspense, useCallback, useEffect, useLayoutEffect, useR
 import { AnimatePresence, motion } from 'motion/react'
 import { useLive, type Conn } from './live'
 import Stage, { Count } from './Stage'
-import Tour from './Tour'
+import Tour, { Prompts } from './Tour'
 
 const Proof = lazy(() => import('./Proof'))
 const Lineage = lazy(() => import('./Lineage'))
@@ -17,7 +17,7 @@ export default function App() {
   const [selected, setSelected] = useState<string | null>(null)
   const [theme, setTheme] = useState(() => document.documentElement.dataset.theme || 'dark')
   const [toastMsg, setToast] = useState('')
-  const [tour, setTour] = useState(false)
+  const [tour, setTour] = useState(false), [prompts, setPrompts] = useState(false)
   const [toured, setToured] = useState(() => { try { return !!localStorage.getItem('toured') } catch { return false } })
   const startTour = () => { setTour(true); setToured(true); try { localStorage.setItem('toured', '1') } catch { /* private mode */ } }
   const tabs = useRef<HTMLElement>(null), ind = useRef<HTMLSpanElement>(null)
@@ -74,6 +74,7 @@ export default function App() {
       </header>
       {state?.sandbox && <div className="sandbox-note">
         <button className={'tour-btn' + (toured ? '' : ' pulse')} onClick={startTour}>▶ Start the tour</button>
+        <button className="btn" onClick={() => setPrompts(p => !p)} aria-expanded={prompts}>Prompts</button>
         <p>Judges' sandbox: a copy of Tsugi where you are Thomas, the owner. Chat in the Telegram panel (Thomas tab), 👎 a reply and correct it, then watch the gate test your lesson. Thomas's own Tsugi isn't affected.</p>
       </div>}
       <main>
@@ -87,7 +88,11 @@ export default function App() {
         </>}
       </main>
       {toastMsg && <div className="toast" role="status">{toastMsg}</div>}
-      {tour && state && <Tour go={go} onClose={() => setTour(false)} />}
+      {tour && state && <Tour go={go} onClose={chat => { setTour(false); if (chat) setPrompts(true) }} />}
+      {prompts && !tour && <section className="prompts-panel" aria-label="Prompts to try">
+        <div className="prompts-head"><h2>Try these</h2><button className="btn" onClick={() => setPrompts(false)} aria-label="Close prompts">✕</button></div>
+        <Prompts />
+      </section>}
     </>
   )
 }

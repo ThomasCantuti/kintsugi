@@ -4,6 +4,7 @@ import { animate, AnimatePresence, motion } from 'motion/react'
 import { Fragment, memo, useEffect, useLayoutEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import { api, CAUGHT_TIP, lastUser, letter, parseT, RAINDROP_URL, raindropText, SEC, type Cycle, type Episode, type Lesson, type LiveEvent, type State, type ToolStep } from './live'
 import Tsugi, { type Mood, type Ring } from './Tsugi'
+import { PROMPTS } from './Tour'
 
 const RM = matchMedia('(prefers-reduced-motion: reduce)').matches
 const RECENT = 20_000
@@ -257,12 +258,12 @@ function Transcript({ state }: { state: State }) {
           {t === tab && (shown.length ? shown.slice(-14).map(ep => <Fragment key={ep._id}><Turn ep={ep} tab={t} correction={corrections[ep._id]} /></Fragment>)
             : <p className="empty">{t === 'owner' ? (state.sandbox ? 'Write to Tsugi as Thomas below.' : "Thomas's chats appear here live.") : 'Write as a stranger below.'}</p>)}
         </div>))}
-      {(tab === 'stranger' || state.sandbox) && <Composer key={tab} tier={tab} />}
+      {(tab === 'stranger' || state.sandbox) && <Composer key={tab} tier={tab} sandbox={!!state.sandbox} />}
     </section>
   )
 }
 
-function Composer({ tier }: { tier: 'owner' | 'stranger' }) {  // owner only in the judges' sandbox
+function Composer({ tier, sandbox }: { tier: 'owner' | 'stranger'; sandbox: boolean }) {  // owner only in the judges' sandbox
   const [text, setText] = useState(''), [rule, setRule] = useState(''), [note, setNote] = useState(''), [sending, setSending] = useState(false)
   const owner = tier === 'owner'
   async function go(e: FormEvent, kind: 'chat' | 'teach') {
@@ -277,6 +278,11 @@ function Composer({ tier }: { tier: 'owner' | 'stranger' }) {  // owner only in 
     <div className="composer">
       <form onSubmit={e => go(e, 'chat')}><input id={`${tier}-chat`} value={text} onChange={e => setText(e.target.value)} maxLength={500} placeholder={owner ? 'Write to Tsugi as Thomas' : 'Write to Tsugi as a stranger'} aria-label={`Message as ${owner ? 'Thomas' : 'stranger'}`} /><button className="btn primary" disabled={sending}>Send</button></form>
       <form onSubmit={e => go(e, 'teach')}><input id={`${tier}-teach`} value={rule} onChange={e => setRule(e.target.value)} maxLength={300} placeholder={owner ? '👎 Correct Tsugi’s last reply' : 'Teach a rule as the stranger'} aria-label={owner ? 'Correction to the last reply' : 'Rule taught by the stranger'} /><button className="btn danger" disabled={sending}>{owner ? '👎 Teach' : 'Teach'}</button></form>
+      {sandbox && <div className="try" aria-label="Prompts to try">
+        <span>Try:</span>
+        {PROMPTS.filter(p => p.tier === tier).map(p => <button key={p.text} type="button" className="btn" title={p.text}
+          onClick={() => { (p.box === 'chat' ? setText : setRule)(p.text); document.getElementById(`${tier}-${p.box}`)?.focus() }}>{p.label}</button>)}
+      </div>}
       <p className="note" aria-live="polite">{note}</p>
     </div>
   )

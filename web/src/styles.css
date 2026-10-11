@@ -467,3 +467,15 @@ main { position: relative; min-height: 0 }
 .rback li.in { background: var(--rain-wash); color: var(--rain) }
 .rback li + li::before { content: "→ "; color: var(--mute) }
 @media (max-width: 1099px), (max-height: 600px) { .ruses { grid-template-columns: minmax(0, 1fr) } }
+.tour-body .mute { color: var(--mute); font-size: .84rem }
+.prompts { list-style: none; margin: .2rem 0 .6rem; padding: 0; display: grid; gap: .55rem }
+.prompts li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: .2rem .5rem; align-items: center }
+.prompts .where { grid-column: 1 / -1; font: 600 .7rem/1.2 var(--mono); color: var(--mute); letter-spacing: .04em }
+.prompts code { font: .84rem/1.35 var(--mono); color: var(--gold-ink); background: var(--gold-wash); border-radius: 8px; padding: .32rem .55rem;
+  user-select: all; overflow-wrap: anywhere }
+.prompts-panel { position: fixed; left: 16px; bottom: 16px; width: min(460px, calc(100vw - 32px)); max-height: 70vh; overflow: auto; z-index: 55;
+  background: var(--plate); color: var(--ink); border: 1px solid var(--gold); border-radius: var(--r-panel); padding: .75rem .9rem .3rem; box-shadow: var(--shadow) }
+.prompts-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: .4rem }
+.prompts-head h2 { margin: 0; font: 600 1.15rem/1.2 var(--display); color: var(--gold-hi) }
+.try { display: flex; flex-wrap: wrap; align-items: center; gap: .3rem; font-size: .78rem; color: var(--mute) }
+.try .btn { padding: .2rem .6rem; font-size: .76rem; border-color: color-mix(in srgb, var(--gold) 55%, transparent) }
