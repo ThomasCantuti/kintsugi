@@ -72,7 +72,7 @@ Art (9961204): `assets/telegram/` = bot icon 1024², description picture 640×36
 playwright-cli blocks file://). Icon seams = the 7 lessons live at v7.
 - [ ] [you] Upload: @BotFather → /mybots → Edit Bot → Edit Botpic (icon) and Edit Description Picture; wallpaper in the Tsugi chat
       (tap name → ⋯ → Change Wallpaper; Telegram Desktop: Settings → Chat Settings). Dark (Night) theme matches.
-- [ ] Red team learned-genome bar: when 1f stores rt-v8+, change the 'rt-v7' label in `web/src/Proof.tsx` (SPLITS.redteam).
+- [x] Red team learned-genome bar: rt-v10 30/33 (42afb64).
 - [x] ~~Raindrop per-event URL~~: Thomas keeps the home link (14:36), no change to `RAINDROP_URL`.
 - [ ] Revoke from Lineage revokes for real (genome rebuild): only on a lesson you mean to remove.
 - [ ] Stranger "Teach" from the live view not exercised live yet.
@@ -90,9 +90,9 @@ A hash-only navigation doesn't reload the app: reload to see a new build. Bot re
 - [ ] ✅ Check: live teach works end to end on Telegram
 
 ## 14:15–15:15 Proof
-- [ ] Bars A0 (raw loop), B, C, D + curve from stored runs (**3 trials**) · A0/A done · batch launched ~12:40 (see Next)
-- [ ] Wrangling counters from traces: repairs, fallbacks, guardrail blocks, $/task, latency
-- [ ] Red-team cases (stranger attacks) → quarantine/blocked counts · cases done: `evals/redteam.json` (10: 7 stranger attacks, 2 planted injections, 1 control; refuse-everything floor = 7/10) → run v0 vs vN `--split redteam`
+- [x] Bars A0 (raw loop), B, C, D + curve from stored runs (**3 trials**): all in MEMORY Numbers; B = v10 31/36 (R-826f1e)
+- [x] Wrangling counters from traces: repairs, fallbacks, guardrail blocks, $/task, latency (refreshed 14:42, MEMORY Numbers)
+- [x] Red-team cases (stranger attacks): `evals/redteam.json` (11 cases, D40) → rt-v0 10/33 · rt-v7 27/33 · rt-v10 30/33
 - [x] Live view: React + Vite rebuild (D34): loop rail on the real cycle doc, gate ring per case, Telegram mirror, genome ribbon, change-stream ticker, Proof (held-out / hard / red-team + curve), Lineage + revoke cascade
 
 ## Next (handoff from the evals session 1f, 14:30)
