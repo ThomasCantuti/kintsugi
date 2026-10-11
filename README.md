@@ -86,7 +86,7 @@ Filled only from stored runs (`runs` collection, 2026-10-11). Held-out: 12 cases
 | A | Nemotron Super | v0 (harness on) | 17/36 (47%) | 6 · 6 · 5 | $0.0008 | R-de32c8 |
 | B | Nemotron Super | v6 (6 learned lessons) | 27/36 (75%) | 9 · 9 · 9 | $0.0015 | R-4efb73 |
 | C | Claude Sonnet 5.5 | v0 | 24/36 (67%) | 8 · 8 · 8 | $0.0128 | R-f7bdc0 |
-| Dn | Nemotron Super | v0 + naive memory | running | | | |
+| Dn | Nemotron Super | v0 + naive memory | 28/36 (78%) | 10 · 10 · 8 | $0.0014 | R-ff6cfe |
 | D | Claude Sonnet 5.5 | v0 + naive memory (every train correction pasted into the prompt) | **36/36 (100%)** | 12 · 12 · 12 | $0.0171 | R-a7ebca |
 
 - **A → B is the self-edited harness:** 17 → 27 of 36. The 6 lessons came from train failures only; held-out
@@ -100,6 +100,9 @@ Filled only from stored runs (`runs` collection, 2026-10-11). Held-out: 12 cases
   Sonnet's prompt solves it. What memory doesn't do is test a correction before it goes live, trace it, revoke it,
   quarantine one from a stranger, or change tool access in code; the red-team runs for C and D will measure that.
   (An earlier D run, R-fdb27d, is invalid: rate limits sent 78 calls to Nemotron.)
+- **On the cheap model, learned lessons ≈ pasting every correction:** B 27/36 vs Dn 28/36, within noise, at
+  about the same cost per task. On this held-out set the gate doesn't buy accuracy over naive memory; it buys
+  lessons that were tested before they went live and can be revoked.
 
 **Curve** (held-out pass rate per genome version, Nemotron Super, n = 36 each):
 
