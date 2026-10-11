@@ -51,7 +51,9 @@ Answer only JSON:
 ("tier", "tools", "allow", "only" only for tool_access.)"""
 
 CORRECTION = """A test case failed. Write the feedback Thomas would give, in one or two sentences, stating the
-general convention that was broken (not just this case's answer).
+general convention that was broken (not just this case's answer). Say only what was wrong and what to do instead:
+don't add new required steps (like notifying Thomas or logging the attempt) that the failure wasn't about, because
+the fix is judged against every word of it.
 Request: {history}
 Tool calls: {steps}
 Reply: {reply}
