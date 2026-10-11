@@ -19,9 +19,12 @@ async def main() -> None:
         await bot.updater.start_polling(allowed_updates=Update.ALL_TYPES, drop_pending_updates=True)
     print(f"Tsugi up · http://localhost:{config.PORT} · telegram {'on' if bot else 'off (no token)'} · genome v{g['version']}",
           flush=True)
-    try:
-        await asyncio.gather(server.serve(), api.watch())
+    tasks = [asyncio.create_task(server.serve()), asyncio.create_task(api.watch())]
+    try:  # uvicorn handles SIGINT/SIGTERM (and a busy port) by returning: then everything stops
+        await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
     finally:
+        for t in tasks:
+            t.cancel()
         if bot:
             await bot.updater.stop()
             await bot.stop()
