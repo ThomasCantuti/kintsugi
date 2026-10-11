@@ -9,7 +9,7 @@ export type Lesson = {
   source: { kind: string; tier: string; ref: string }
   failure?: { correction?: string; tier?: string; kind?: string; source_id?: string }
   similar?: { _id: string; score: number }[]; duplicate_of?: string
-  tier?: string; tools?: string[]; allow?: boolean; only?: boolean
+  tier?: string; tools?: string[]; allow?: boolean; only?: boolean; title?: string
 }
 export type ToolStep = { tool: string; args: string; result: string }
 export type Episode = {
@@ -20,6 +20,7 @@ export type Progress = { lesson: string; cases?: string[]; case?: string; passed
 export type Cycle = {
   _id: string; status: string; source?: string; kind?: string; tier?: string; correction?: string | null
   lessons?: string[]; progress?: Progress[]; version?: number; why?: string; created_at: string; ended_at?: string
+  flags?: string[]; flag_latency_s?: number
 }
 export type Run = {
   _id: string; label: string; split: string; model: string; genome_version: number | null
@@ -35,7 +36,7 @@ export type State = {
   gate_running: boolean; episodes: Episode[]; cycle: Cycle | null; versions: Record<string, number>
 }
 export type LiveEvent = { coll: string; op: string; id: string; note?: string; t: number }
-export type LNode = { _id: string; type: string; status: string; label: string; parents?: string[] }
+export type LNode = { _id: string; type: string; status: string; label: string; parents?: string[]; flags?: string[]; flag_latency_s?: number }
 export type Conn = 'connecting' | 'live' | 'reconnecting' | 'mock'
 type Snap = { state: State | null; events: LiveEvent[]; conn: Conn }
 
@@ -96,5 +97,10 @@ export const api = {
 }
 
 export const SEC: Record<Section, string> = { rules: 'Rules', context_policies: 'Context policies', guardrails: 'Guardrails', tool_access: 'Tool access' }
+export const letter = (i: number) => String.fromCharCode(65 + i)  // candidates are A, B, C for people
+export const RAINDROP_URL = 'https://app.raindrop.ai'
+export const CAUGHT_TIP = "From the turn to Kintsugi seeing Raindrop's flag (includes Kintsugi's poll interval)"
+export const raindropText = (flags?: string[], s?: number) =>
+  ['🌧️ Raindrop', flags?.length ? flags.join(', ') : '', s != null ? `caught in ${s} s` : ''].filter(Boolean).join(' · ')
 export const parseT = (s?: string) => Date.parse(/[zZ]|[+-]\d\d:?\d\d$/.test(s || '') ? s! : (s || '') + 'Z')  // naive datetimes are UTC
 export const lastUser = (ep: Episode) => [...ep.input].reverse().find(m => m.role === 'user')?.content ?? ''

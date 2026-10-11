@@ -123,6 +123,8 @@ main { position: relative; min-height: 0 }
 .src.owner { background: var(--gold-wash); color: var(--gold-ink) }
 .src.stranger { background: var(--shu-wash); color: var(--shu-ink) }
 .src.raindrop { background: var(--rain-wash); color: var(--rain) }
+.rchip { display: inline-block; font: 600 .74rem/1.5 var(--sans); padding: .05rem .55rem; border-radius: 999px; background: var(--rain-wash); color: var(--rain); text-decoration: none }
+.rchip:hover { text-decoration: underline }
 .quote { color: var(--ink); font-style: italic }
 .hits { list-style: none; margin: 0; padding: 0; display: grid; gap: .2rem; font-size: .8rem }
 .hits li { display: grid; grid-template-columns: 2.6rem 4.4rem minmax(0, 1fr); gap: .45rem; align-items: baseline }
@@ -215,6 +217,9 @@ main { position: relative; min-height: 0 }
 .node.pass text { fill: var(--gold-ink) }
 .node.fail circle { fill: var(--shu); stroke: var(--shu) }
 .node.fail text { fill: var(--shu-ink) }
+/* scars: live mistakes that shipped a lesson, replayed by every later gate */
+.node.scar circle { stroke: var(--gold); stroke-dasharray: 3 2 }
+.node.scar text { fill: var(--gold-ink); font-style: italic }
 .comet { fill: var(--gold-hi) }
 
 /* chat */

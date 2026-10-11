@@ -2,7 +2,7 @@
  *  Everything here is derived from /api/state; the loop follows the latest learning-cycle doc in `gates`. */
 import { animate, AnimatePresence, motion } from 'motion/react'
 import { Fragment, memo, useEffect, useLayoutEffect, useMemo, useRef, useState, type FormEvent } from 'react'
-import { api, lastUser, parseT, SEC, type Cycle, type Episode, type Lesson, type LiveEvent, type State, type ToolStep } from './live'
+import { api, CAUGHT_TIP, lastUser, letter, parseT, RAINDROP_URL, raindropText, SEC, type Cycle, type Episode, type Lesson, type LiveEvent, type State, type ToolStep } from './live'
 import Tsugi, { type Mood, type Ring } from './Tsugi'
 
 const RM = matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -24,6 +24,11 @@ export function Count({ value, fmt = (v: number) => String(Math.round(v)) }: { v
     return () => c.stop()
   }, [value])  // eslint-disable-line react-hooks/exhaustive-deps
   return <span ref={el} className="num">{fmt(value)}</span>
+}
+
+/** Raindrop as the source of a cycle: its own signal names, how fast we caught the flag, a link to Raindrop. */
+export function RaindropChip({ flags, s }: { flags?: string[]; s?: number }) {
+  return <a className="rchip" href={RAINDROP_URL} target="_blank" rel="noreferrer" title={s != null ? CAUGHT_TIP : 'Open Raindrop'}>{raindropText(flags, s)}</a>
 }
 
 /* ---------- the learning cycle (latest `gates` doc + its lessons) ---------- */
@@ -82,7 +87,8 @@ function LoopRail({ view, state }: { view: View | null; state: State }) {
   const steps: { k: string; title: string; tag: string; state: StepState; open: boolean; sum: string; body?: React.ReactNode }[] = !view ? [] : [
     { k: 'signal', title: 'Signal', tag: c!.kind === 'raindrop' ? 'raindrop' : 'episodes', state: 'done', open: st === 'proposing' || st === 'false_alarm',
       sum: view.who,
-      body: <><p><span className={'src ' + (c!.kind === 'raindrop' ? 'raindrop' : view.tier)}>{c!.kind === 'raindrop' ? 'raindrop' : view.tier}</span> {c!.kind === 'telegram' ? (view.tier === 'owner' ? '👎 and replied:' : 'tried to teach:') : `flagged ${c!.source}:`}</p>
+      body: <><p>{c!.kind === 'raindrop' ? <RaindropChip flags={c!.flags} s={c!.flag_latency_s} />
+        : <><span className={'src ' + view.tier}>{view.tier}</span> {c!.kind === 'telegram' ? (view.tier === 'owner' ? '👎 and replied:' : 'tried to teach:') : `${view.who} failed:`}</>}</p>
         {st === 'false_alarm' ? <p className="mute">False alarm: already correct{c!.why ? ` (${c!.why})` : ''}.</p>
           : view.correction ? <p className="quote">"{view.correction}"</p> : <p className="mute">Supervisor is writing the correction…</p>}</> },
     { k: 'propose', title: 'Propose', tag: 'supervisor', state: st === 'proposing' ? 'active' : view.cands.length ? 'done' : st === 'false_alarm' ? 'skip' : 'bad', open: st === 'proposing' || live.length > 0,
@@ -93,8 +99,9 @@ function LoopRail({ view, state }: { view: View | null; state: State }) {
               {live.map((l, i) => (
                 <motion.div key={l._id} layout data-cand={l._id} className={'cand ' + (l._id === view.tested && st === 'running' ? 'testing' : l.status)}
                   initial={RM ? false : { opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * .12, type: 'spring', stiffness: 260, damping: 26 }}>
-                  <div className="ch"><span>#{i + 1} {SEC[l.section].toLowerCase()}</span><span className="st">{l._id === view.tested && st === 'running' ? 'testing' : CAND_LABEL[l.status] ?? l.status}</span></div>
-                  <p title={l.text}>{l.text}</p>
+                  <div className="ch"><span>{letter(i)} · {SEC[l.section].toLowerCase()}</span><span className="st">{l._id === view.tested && st === 'running' ? 'testing'
+                    : l.status === 'active' && state.versions[l._id] != null ? `seam ${state.versions[l._id]}` : CAND_LABEL[l.status] ?? l.status}</span></div>
+                  <p title={l.text}>{l.title || l.text}</p>
                 </motion.div>))}
             </AnimatePresence>
           </div> },
@@ -105,35 +112,36 @@ function LoopRail({ view, state }: { view: View | null; state: State }) {
       })() },
     st === 'quarantined' || live.some(l => l.status === 'quarantined')
       ? { k: 'gate', title: 'Quarantine', tag: 'owner decides', state: 'bad', open: true, sum: '',
-          body: <><p>From a stranger, so Thomas decides. Approved lessons still face the gate.</p>
-            {live.filter(l => l.status === 'quarantined').map(l => (
-              <div className="acts" key={l._id}>
-                <button className="btn primary" disabled={!!busy} onClick={() => decide(l._id, 'approve')}>Approve</button>
-                <button className="btn danger" disabled={!!busy} onClick={() => decide(l._id, 'reject')}>Reject</button>
-              </div>))}
+          body: <><p>From a stranger, so Thomas picks one fix or none. The gate still tests it.</p>
+            <div className="acts">
+              {live.filter(l => l.status === 'quarantined').map(l => (
+                <button key={l._id} className="btn primary" disabled={!!busy} onClick={() => decide(l._id)}>Approve {letter(live.indexOf(l))}</button>))}
+              <button className="btn danger" disabled={!!busy} onClick={() => decide(null)}>None</button>
+            </div>
             {err && <p className="verdict"><span className="no">{err}</span></p>}</> }
       : { k: 'gate', title: 'Gate', tag: 'train only', state: st === 'running' ? 'active' : st === 'accepted' ? 'done' : ['rejected', 'no_candidates'].includes(st) ? 'bad' : st === 'duplicate' ? 'skip' : '',
           open: st === 'running' || st === 'rejected',
           sum: st === 'accepted' && shipped?.gate ? `fixed, ${shipped.gate.regression_passed}/${shipped.gate.regression_total} past cases pass` : st === 'duplicate' ? 'nothing new' : st === 'rejected' ? 'no candidate passed' : '',
           body: <>
-            {ring && <div className="gl"><b>{testedIdx >= 0 ? `Candidate ${testedIdx + 1}` : 'Candidate'}</b><span className="num">{ring.results[ring.labels[0]] === undefined ? 'replaying' : `${gatePass}/${ring.labels.length - 1}`}</span></div>}
+            {ring && <div className="gl"><b>{testedIdx >= 0 ? `Candidate ${letter(testedIdx)}` : 'Candidate'}</b><span className="num">{ring.results[ring.labels[0]] === undefined ? 'replaying' : `${gatePass}/${ring.labels.length - 1}`}</span></div>}
             <p className="mute">The failure, then past train cases. Never held-out.</p>
             <div className="verdict">{live.filter(l => l.gate).map(l => {
-              const g = l.gate!, n = live.indexOf(l) + 1, broke = g.regression_total - g.regression_passed
-              return g.accepted ? <span key={l._id} className="ok">#{n} shipped: fixed, {g.regression_passed}/{g.regression_total} pass</span>
-                : <span key={l._id} className="no">#{n} rejected: {g.fixed ? `broke ${broke} past case${broke === 1 ? '' : 's'}` : 'not fixed'}</span>
+              const g = l.gate!, k = letter(live.indexOf(l)), broke = g.regression_total - g.regression_passed
+              return g.accepted ? <span key={l._id} className="ok">{k} shipped: fixed, {g.regression_passed}/{g.regression_total} pass</span>
+                : <span key={l._id} className="no">{k} rejected: {g.fixed ? `broke ${broke} past case${broke === 1 ? '' : 's'}` : 'not fixed'}</span>
             })}</div>
             {ringDone === 0 && st === 'running' && <p className="mute">Starting…</p>}
           </> },
     { k: 'commit', title: 'Commit', tag: 'transaction', state: st === 'accepted' ? 'done' : view.ended ? 'skip' : '', open: false,
-      sum: st === 'accepted' && shipped ? `v${version} · ${shipped._id}` : '' },
+      sum: st === 'accepted' && shipped ? `Seam ${version} · ${shipped.title || shipped._id}` : '' },
     { k: 'swap', title: 'Hot-swap', tag: 'change stream', state: st === 'accepted' ? (swapped ? 'done' : 'active') : view.ended ? 'skip' : '', open: st === 'accepted' && !swapped,
       sum: swapped ? `agent on v${state.genome.version}` : '', body: <p>Pushing to the running agent, no restart.</p> },
   ]
 
-  async function decide(id: string, d: 'approve' | 'reject') {
-    setBusy(id); setErr('')
-    try { await api.quarantine(id, d) } catch (e) { setErr(String((e as Error).message)) }
+  async function decide(pick: string | null) {  // like the Telegram card: one fix (the others drop) or none
+    const q = live.filter(l => l.status === 'quarantined'), qs = [...q.filter(l => l._id === pick), ...q.filter(l => l._id !== pick)]
+    setBusy('1'); setErr('')
+    try { for (const l of qs) await api.quarantine(l._id, l._id === pick ? 'approve' : 'reject') } catch (e) { setErr(String((e as Error).message)) }
     setBusy('')
   }
   const activeKey = steps.find(s => s.state === 'active' || (s.open && s.state === 'bad'))?.k
@@ -143,7 +151,7 @@ function LoopRail({ view, state }: { view: View | null; state: State }) {
   }, [activeKey, c?._id])
 
   const sub = !view ? 'waiting for a signal' : view.ended
-    ? (st === 'accepted' ? `last cycle shipped ${shipped?._id ?? ''}` : st === 'quarantined' ? 'waiting for Thomas' : st === 'duplicate' ? 'last cycle: already known'
+    ? (st === 'accepted' ? `last cycle shipped Seam ${version ?? ''}` : st === 'quarantined' ? 'waiting for Thomas' : st === 'duplicate' ? 'last cycle: already known'
       : st === 'false_alarm' ? 'last cycle: false alarm' : 'last cycle: nothing shipped')
     : `learning from ${view.who}`
   return (
@@ -283,6 +291,7 @@ function fly(fromEl: Element | null, toEl: HTMLElement | null) {
 
 function Genome({ state, events, onLesson }: { state: State; events: LiveEvent[]; onLesson: (id: string) => void }) {
   const items = state.genome_items, ta = state.genome.tool_access
+  const byId = new Map(state.lessons.map(l => [l._id, l]))
   const ids = Object.values(items).flat().map(i => i.lesson).filter(Boolean) as string[]
   const prev = useRef<Set<string> | null>(null), root = useRef<HTMLDivElement>(null)
   useLayoutEffect(() => {
@@ -309,8 +318,9 @@ function Genome({ state, events, onLesson }: { state: State; events: LiveEvent[]
                 {items[s].map(i => (
                   <motion.li key={i.lesson ?? i.text} data-l={i.lesson ?? undefined} className={i.lesson ? 'learned' : ''} layout="position"
                     exit={RM ? undefined : { opacity: 0, x: 18, transition: { duration: .8 } }}>
-                    <span title={i.text}>{i.text}</span>
-                    {i.lesson && <button className="lid" onClick={() => onLesson(i.lesson!)} aria-label={`Lineage of ${i.lesson}`}>{i.lesson}</button>}
+                    <span title={i.text}>{(i.lesson && byId.get(i.lesson)?.title) || i.text}</span>
+                    {i.lesson && <button className="lid" onClick={() => onLesson(i.lesson!)} aria-label="Where this lesson came from">
+                      {state.versions[i.lesson] != null ? `Seam ${state.versions[i.lesson]}` : 'lineage'}</button>}
                   </motion.li>))}
               </AnimatePresence>
               {!items[s].length && <li className="mute">empty</li>}
@@ -359,9 +369,9 @@ export default function Stage({ state, events, onLesson }: { state: State; event
   const testedIdx = view?.tested ? view.cands.filter(l => l.status !== 'duplicate').findIndex(l => l._id === view.tested) : -1
   const caption =
     c?.status === 'proposing' ? `Learning from ${view!.who}…`
-    : c?.status === 'running' ? (ring ? `Gate: testing candidate ${testedIdx + 1} on ${ring.labels.length} cases` : 'Gate: preparing…')
+    : c?.status === 'running' ? (ring ? `Gate: testing candidate ${letter(testedIdx)} on ${ring.labels.length} cases` : 'Gate: preparing…')
     : revokedAgo < RECENT ? `Revoked ${g.cause?.revoked?.length ?? 1}. Genome v${g.version} rebuilt.`
-    : c?.status === 'accepted' && endedAgo < RECENT ? `Shipped ${shipped?._id ?? ''}. Genome v${c.version} is live.`
+    : c?.status === 'accepted' && endedAgo < RECENT ? `Seam ${c.version} shipped: ${shipped?.title ?? ''}`
     : quarantined ? 'A stranger’s lesson waits for Thomas'
     : c && ['rejected', 'no_candidates'].includes(c.status) && endedAgo < RECENT ? 'Gate said no. Nothing changed.'
     : c?.status === 'duplicate' && endedAgo < RECENT ? 'Already known'

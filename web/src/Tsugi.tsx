@@ -118,7 +118,7 @@ function Tsugi({ lessons, mood, episodes, ring, onSeam }: Props) {
       old?.remove()
       const g = document.createElementNS(NS, 'g'), d = kind === 'crack' ? seamPath(id + '!', 2) : seamPath(id)
       g.setAttribute('class', 'seam ' + (kind === 'seam' ? '' : kind)); g.dataset.kind = kind
-      const text = lessons.find(l => l._id === id)?.text ?? ''
+      const les = lessons.find(l => l._id === id), text = les?.title || les?.text || ''
       g.innerHTML = `<title></title><path class="hit" d="${d}"/><path class="line" pathLength="100" d="${d}"/>`
       g.querySelector('title')!.textContent = text
       g.addEventListener('click', () => onSeamRef.current(id))
@@ -181,16 +181,16 @@ function Tsugi({ lessons, mood, episodes, ring, onSeam }: Props) {
       nodes.current!.innerHTML = ring.labels.map((lab, i) => {
         const a = angle(i) * Math.PI / 180, x = RC[0] + Math.cos(a) * RR, y = RC[1] + Math.sin(a) * RR, c = Math.cos(a), s = Math.sin(a)
         const lx = RC[0] + c * (RR + 20), ly = RC[1] + s * (RR + 20) + 4 + (s < -.9 ? -8 : s > .9 ? 10 : 0)
-        return `<g class="node" data-i="${i}"><circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${i === 0 ? 11 : 8}"/><text x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" text-anchor="${c > .3 ? 'start' : c < -.3 ? 'end' : 'middle'}"></text></g>`
+        return `<g class="node${lab.startsWith('scar ') ? ' scar' : ''}" data-i="${i}"><circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${i === 0 ? 11 : 8}"/><text x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" text-anchor="${c > .3 ? 'start' : c < -.3 ? 'end' : 'middle'}"></text></g>`
       }).join('')
-      nodes.current!.querySelectorAll('text').forEach((t, i) => { t.textContent = ring.labels[i] })
+      nodes.current!.querySelectorAll('text').forEach((t, i) => { t.textContent = ring.labels[i].startsWith('scar ') ? 'scar' : ring.labels[i] })  // a past live mistake, replayed
       g.classList.add('on')
     }
     let firstPending = -1, newest = -1
     ring.labels.forEach((lab, i) => {
       const node = nodes.current!.querySelector<SVGGElement>(`.node[data-i="${i}"]`)!, r = ring.results[lab]
       if (r === undefined && firstPending < 0 && !ring.done) firstPending = i
-      node.setAttribute('class', 'node ' + (r === true ? 'pass' : r === false ? 'fail' : i === firstPending ? 'testing' : ''))
+      node.setAttribute('class', 'node ' + (lab.startsWith('scar ') ? 'scar ' : '') + (r === true ? 'pass' : r === false ? 'fail' : i === firstPending ? 'testing' : ''))
       if (r !== undefined && seen.current[lab] !== r) {
         seen.current[lab] = r; newest = i
         const c = node.querySelector('circle')!

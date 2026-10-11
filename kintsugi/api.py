@@ -135,9 +135,10 @@ async def state():
 
 @app.get("/api/lineage")
 async def lineage_all():
-    nodes = await db.lineage.find({}, {"type": 1, "status": 1, "label": 1, "parents": 1}).to_list(500)
+    nodes = await db.lineage.find({}, {"type": 1, "status": 1, "label": 1, "parents": 1, "flags": 1, "flag_latency_s": 1}).to_list(500)
     return {"nodes": [{"_id": n["_id"], "type": n.get("type", ""), "status": n.get("status", ""), "label": n.get("label", ""),
-                       "parents": n.get("parents", [])} for n in nodes]}
+                       "parents": n.get("parents", []), **{k: n[k] for k in ("flags", "flag_latency_s") if k in n}}
+                      for n in nodes]}
 
 
 @app.get("/api/lineage/{node_id}")

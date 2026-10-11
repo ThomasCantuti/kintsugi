@@ -1,6 +1,7 @@
 /** Lineage: every lesson points back to what caused it; revoke cascades through $graphLookup in one transaction. */
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { api, SEC, type LNode, type State } from './live'
+import { api, CAUGHT_TIP, RAINDROP_URL, SEC, type LNode, type State } from './live'
+import { RaindropChip } from './Stage'
 
 const RM = matchMedia('(prefers-reduced-motion: reduce)').matches
 const W = 214, H = 58, GX = 64, GY = 14
@@ -57,7 +58,9 @@ export default function Lineage({ state, selected, onSelect, visible, toast }:
   const kids = sel ? descendants(nodes, sel) : []
   const liveKids = kids.filter(k => byId.get(k)?.status === 'active')
   const status = (n: LNode) => cascade.includes(n._id) ? 'revoked' : n.status
-  const sourceOf = (id?: string) => (node?.parents || []).map(p => byId.get(p)).filter(Boolean).map(p => `${SOURCE[p!.type] ?? p!.type.toUpperCase()}: ${p!.label}`).join('; ')
+  const name = (id: string) => lessons.get(id)?.title || byId.get(id)?.label || id
+  const seam = (id: string) => state.versions[id] != null ? `Seam ${state.versions[id]}` : ''
+  const parents = (node?.parents || []).map(p => byId.get(p)).filter((p): p is LNode => !!p)
 
   async function revoke() {
     if (!sel || running) return
@@ -88,31 +91,40 @@ export default function Lineage({ state, selected, onSelect, visible, toast }:
               return <path key={p + '>' + n._id} className={'edge' + (status(n) === 'revoked' && cascade.includes(n._id) ? ' bad' : '')} d={`M${x1},${y1} C${m},${y1} ${m},${y2} ${x2},${y2}`} />
             }))}
             {nodes.map(n => {
-              const p = pos[n._id], lesson = n.type === 'lesson', label = n.label.length > 31 ? n.label.slice(0, 30) + '…' : n.label
-              const k = lesson ? `${n._id} · ${status(n).toUpperCase()}` : SOURCE[n.type] ?? n.type.toUpperCase()
-              return (
+              const p = pos[n._id], lesson = n.type === 'lesson', rain = n.type === 'raindrop'
+              const full = lesson ? name(n._id) : rain && n.flags?.length ? n.flags.join(', ') : n.label
+              const label = full.length > 31 ? full.slice(0, 30) + '…' : full
+              const k = lesson ? [seam(n._id), status(n)].filter(Boolean).join(' · ').toUpperCase()
+                : rain ? `🌧️ RAINDROP${n.flag_latency_s != null ? ` · CAUGHT IN ${n.flag_latency_s} S` : ''}` : SOURCE[n.type] ?? n.type.toUpperCase()
+              const box = (
+
                 <g key={n._id} data-id={n._id} className={`gn ${lesson ? 'lesson' : 'source'} t-${n.type} ${status(n)}${n._id === sel ? ' sel' : ''}`}
                   style={{ transformBox: 'fill-box', transformOrigin: 'center' }}
                   tabIndex={lesson ? 0 : -1} role={lesson ? 'button' : undefined} aria-label={n.label}
                   onClick={() => lesson && onSelect(n._id)} onKeyDown={e => { if (lesson && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); onSelect(n._id) } }}>
-                  <title>{n.label}</title>
+                  <title>{rain ? `${full}\n“${n.label}”${n.flag_latency_s != null ? `\n${CAUGHT_TIP}` : ''}` : full}</title>
                   <rect x={p.x} y={p.y} width={W} height={H} rx={10} />
                   <text className="k" x={p.x + 11} y={p.y + 19}>{k}</text>
                   <text className="v" x={p.x + 11} y={p.y + 40}>{label}</text>
                 </g>)
+              return rain ? <a key={n._id} href={RAINDROP_URL} target="_blank" rel="noreferrer">{box}</a> : box
             })}
           </svg>}
       </div>
       <aside className="inspector" aria-live="polite">
         {!sel || !node ? <p className="mute">Pick a lesson, or click a gold seam on Tsugi.</p> : <>
-          <div className="ihead"><span className={'tag ' + status(node)}>{status(node)}</span><span className="mono mute">{sel}</span></div>
-          <p className="itext">{l?.text ?? node.label}</p>
+          <div className="ihead"><span className={'tag ' + status(node)}>{status(node)}</span>{seam(sel) && <span className="mono mute">{seam(sel)}</span>}</div>
+          <p className="itext">{name(sel)}</p>
+          {l?.title && <p className="mute" style={{ margin: 0 }}>{l.text}</p>}
           <dl className="meta">
             {l && <div><dt>Section</dt><dd>{SEC[l.section]}{l.section === 'tool_access' && l.tools ? `: ${l.only ? 'only' : l.allow ? 'allow' : 'remove'} ${l.tools.join(', ')} for ${l.tier}` : ''}</dd></div>}
-            <div><dt>Came from</dt><dd>{sourceOf(sel) || (l ? `${l.source.tier}, ${l.source.kind}` : 'unknown')}</dd></div>
+            <div><dt>Came from</dt><dd>{parents.length ? parents.map(p => <span key={p._id} style={{ display: 'block' }}>
+              {p.type === 'raindrop' ? <><RaindropChip flags={p.flags} s={p.flag_latency_s} /> “{p.label}”</>
+                : p.type === 'lesson' ? <>{seam(p._id) || 'lesson'}: {name(p._id)}</> : <>{SOURCE[p.type] ?? p.type}: {p.label}</>}</span>)
+              : l ? `${l.source.tier}, ${l.source.kind}` : 'unknown'}</dd></div>
             {l?.gate && <div><dt>Gate</dt><dd>{l.gate.fixed ? 'fixed' : 'not fixed'}, {l.gate.regression_passed}/{l.gate.regression_total} past cases pass</dd></div>}
             <div><dt>Shipped in</dt><dd>{state.versions[sel] != null ? `genome v${state.versions[sel]}` : 'not shipped'}</dd></div>
-            {kids.length > 0 && <div><dt>Built on it</dt><dd>{kids.join(', ')}</dd></div>}
+            {kids.length > 0 && <div><dt>Built on it</dt><dd>{kids.map(name).join(', ')}</dd></div>}
           </dl>
           {node.status === 'active' && !cascade.length && <button className="btn danger solid" disabled={running} onClick={revoke} style={{ justifySelf: 'start' }}>
             Revoke{liveKids.length ? ` with ${liveKids.length} descendant${liveKids.length === 1 ? '' : 's'}` : ''}</button>}
