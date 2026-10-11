@@ -47,7 +47,8 @@ Telegram (owner / stranger) ─► agent.run(genome vN, messages, world, tier)
   `lesson_quarantined`. Evals, the gate and evolution runs send nothing.
   Every minute the bot asks Raindrop's Query API for live turns it flagged (User Frustration, Attempted Prompt
   Injection, and our custom signal, which Raindrop named "Request Execution Needs Correction") and sends each
-  one that nobody has learned from yet to the learner, like a 👎.
+  one that nobody has learned from yet to the learner, like a 👎. The supervisor first checks the turn: if it
+  was already right, the flag ends as a false alarm and no lesson is proposed. No Raindrop-sourced lesson exists yet.
 - **Supervisor**: a stronger model reviews failed episodes and proposes lessons. Its critique is only a
   signal: the gate decides, and the chart is scored only by deterministic DB-state checks.
 
