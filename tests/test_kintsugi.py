@@ -216,6 +216,22 @@ def test_stranger_lessons_are_quarantined(run, monkeypatch):
     assert run(genome.current())["version"] == 0  # nothing went live
 
 
+def test_owner_pick_drops_alternatives_only_if_it_ships(run, monkeypatch):
+    fail = {"source_id": "E-flag", "kind": "raindrop", "tier": "stranger"}
+    run(db.lessons.insert_many([{"_id": i, "status": "quarantined", "text": i, "section": "rules", "failure": fail}
+                                for i in ("L-a", "L-b", "L-c")]))
+    verdict = {"status": "rejected"}
+
+    async def gate_and_commit(candidates, f, notify=None):
+        return dict(verdict, lessons=candidates)
+    monkeypatch.setattr(learner, "_gate_and_commit", gate_and_commit)
+    out = run(learner.approve("L-a"))  # the gate rejects the pick: the others stay on offer
+    assert sorted(l["_id"] for l in out["left"]) == ["L-b", "L-c"]
+    verdict["status"] = "accepted"
+    run(learner.approve("L-b"))  # the pick ships: its alternative is dropped as skipped
+    assert run(db.lessons.find_one({"_id": "L-c"}))["status"] == "skipped"
+
+
 def test_revoke_cascades_through_lineage(run, monkeypatch):
     monkeypatch.setattr(models, "embed", no_embed)
     run(db.lineage.insert_one({"_id": "E-poison", "type": "telegram", "parents": [], "status": "active"}))

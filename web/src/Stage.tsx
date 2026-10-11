@@ -138,10 +138,12 @@ function LoopRail({ view, state }: { view: View | null; state: State }) {
       sum: swapped ? `agent on v${state.genome.version}` : '', body: <p>Pushing to the running agent, no restart.</p> },
   ]
 
-  async function decide(pick: string | null) {  // like the Telegram card: one fix (the others drop) or none
-    const q = live.filter(l => l.status === 'quarantined'), qs = [...q.filter(l => l._id === pick), ...q.filter(l => l._id !== pick)]
+  async function decide(pick: string | null) {  // like the Telegram card: test one fix (the others drop only if it ships) or none
     setBusy('1'); setErr('')
-    try { for (const l of qs) await api.quarantine(l._id, l._id === pick ? 'approve' : 'reject') } catch (e) { setErr(String((e as Error).message)) }
+    try {
+      if (pick) await api.quarantine(pick, 'approve')
+      else for (const l of live.filter(l => l.status === 'quarantined')) await api.quarantine(l._id, 'reject')
+    } catch (e) { setErr(String((e as Error).message)) }
     setBusy('')
   }
   const activeKey = steps.find(s => s.state === 'active' || (s.open && s.state === 'bad'))?.k

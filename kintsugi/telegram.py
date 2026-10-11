@@ -132,15 +132,14 @@ def progress(status):
 
 async def ask_owner(bot, lessons: list[dict], header: str) -> None:
     """One card per quarantine: the owner picks one candidate (it still has to pass the gate) or none.
-    Callback data: ok:<picked>:<the others, dropped> · no:<all ids> (ids are ~8 chars, 3 fit in Telegram's 64 bytes)."""
+    Callback data: ok:<id> · no:<all ids> (ids are ~8 chars, 3 fit in Telegram's 64 bytes)."""
     if not (lessons and config.OWNER_TELEGRAM_ID):
         return
     ids = [l["_id"] for l in lessons]
     lines = [f"{header} · Pick a fix. The gate still tests it."] + [
         f"<b>{chr(65 + i)}</b> · {escape(l.get('title') or learner.clip(l['text'], 60))} <i>[{LABEL[l['section']]}]</i>"
         for i, l in enumerate(lessons)]
-    buttons = [InlineKeyboardButton(f"✅ {chr(65 + i)}", callback_data=f"ok:{l['_id']}:{','.join(x for x in ids if x != l['_id'])}")
-               for i, l in enumerate(lessons)] + [InlineKeyboardButton("❌ None", callback_data="no:" + ",".join(ids))]
+    buttons = [InlineKeyboardButton(f"✅ {chr(65 + i)}", callback_data=f"ok:{l['_id']}") for i, l in enumerate(lessons)] + [InlineKeyboardButton("❌ None", callback_data="no:" + ",".join(ids))]
     await bot.send_message(config.OWNER_TELEGRAM_ID, "\n".join(lines), reply_markup=InlineKeyboardMarkup([buttons]))
 
 
@@ -182,21 +181,22 @@ async def on_button(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
             return
         await q.answer()
         # the decision is written on the card itself (this also removes the buttons)
-        picked, _, others = ref.partition(":")
+        picked = ref.partition(":")[0]  # older cards also carry ":<others>" (ignored now)
         if action == "no":
             for lesson_id in picked.split(","):
                 await learner.reject(lesson_id)
             await q.edit_message_text(f"{q.message.text_html}\n\n❌ <b>None</b>. Nothing changed.")
             return
-        for lesson_id in filter(None, others.split(",")):  # the owner chose another fix
-            await learner.reject(lesson_id)
         label = next((b.text for row in q.message.reply_markup.inline_keyboard for b in row if b.callback_data == q.data), "✅")
         await q.edit_message_text(f"{q.message.text_html}\n\n{label} <b>approved</b>. Running the gate…")
         ctx.application.create_task(_approve(q, picked))
 
 
 async def _approve(q, lesson_id: str):
-    await q.message.reply_text(describe(await learner.approve(lesson_id)))
+    result = await learner.approve(lesson_id)
+    await q.message.reply_text(describe(result))
+    if result.get("left"):  # the pick failed the gate: offer the alternatives again
+        await ask_owner(q.get_bot(), result["left"], "🔒 <b>That fix failed the gate</b>")
 
 
 def build() -> Application | None:

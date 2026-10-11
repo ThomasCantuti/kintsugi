@@ -204,12 +204,19 @@ async def learn(f: dict, notify: Notify = None) -> dict:
 
 
 async def approve(lesson_id: str, notify: Notify = None) -> dict:
-    """Owner approved a quarantined lesson: it still has to pass the gate."""
+    """Owner approved a quarantined lesson: it still has to pass the gate. Its quarantined alternatives (same failure)
+    are dropped only if it ships; if the gate rejects it they stay quarantined and come back as `left` for another pick."""
     lesson = await db.lessons.find_one({"_id": lesson_id, "status": "quarantined"})
     if not lesson:
         return {"status": "not_found"}
     await db.lessons.update_one({"_id": lesson_id}, {"$set": {"status": "candidate", "approved_by": "owner"}})
-    return await _gate_and_commit([lesson], lesson["failure"], notify)
+    result = await _gate_and_commit([lesson], lesson["failure"], notify)
+    same = {"status": "quarantined", "failure.source_id": lesson["failure"]["source_id"]}
+    if result["status"] == "accepted":
+        await db.lessons.update_many(same, {"$set": {"status": "skipped"}})
+    else:
+        result["left"] = await db.lessons.find(same, {"embedding": 0}).to_list(5)
+    return result
 
 
 async def reject(lesson_id: str) -> dict:
