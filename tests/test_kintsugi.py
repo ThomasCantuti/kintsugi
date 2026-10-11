@@ -1,7 +1,9 @@
 """Zero-token tests: a scripted model whose behaviour depends on what the genome tells it."""
 import inspect
 import json
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
+
+from bson import ObjectId
 
 from kintsugi import agent, evals, gate, genome, learner, models, tools
 from kintsugi.db import db
@@ -157,6 +159,24 @@ def test_a_live_mistake_the_gate_fixed_guards_later_lessons(run, monkeypatch):
     run(db.lessons.insert_one({**notes, "status": "active"}))
     bad = run(gate.judge(lesson("Focus blocks are 90 minutes. Never save notes."), {"source_id": "case:focus", "case": FOCUS}, g))
     assert bad["fixed"] and not bad["accepted"] and bad["regression_total"] == 1  # no train case left: the scar caught it
+
+
+def test_replay_starts_from_the_world_before_the_failed_turn(run, monkeypatch):
+    seen = []
+
+    async def fake_run(g, history, world, tier, *a, **kw):
+        seen.extend(e["title"] for e in await db.events.find({"world": world}).to_list())
+        return {"steps": [], "reply": ""}
+
+    async def ok(*a):
+        return {"passed": True}
+    monkeypatch.setattr(gate.agent, "run", fake_run)
+    monkeypatch.setattr(gate, "supervisor_judge", ok)
+    run(db.events.insert_one({"_id": ObjectId.from_datetime(datetime.now(UTC) - timedelta(minutes=5)), "world": "live", "title": "old"}))
+    run(db.events.insert_one({"world": "live", "title": "made by the failed turn"}))
+    run(db.episodes.insert_one({"_id": "E-1", "created_at": datetime.now(UTC), "latency": 3}))
+    run(gate._replay({"version": 1}, {"source_id": "E-1", "history": [], "tier": "owner", "correction": "x"}))
+    assert seen == ["old"]
 
 
 def test_gate_tool_access_lesson_regresses_only_its_tier(monkeypatch):

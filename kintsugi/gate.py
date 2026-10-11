@@ -5,7 +5,9 @@ Uses train cases only (held-out never influences a decision).
 import asyncio
 import json
 from collections.abc import Awaitable, Callable
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
+
+from bson import ObjectId
 
 from . import agent, config, evals, genome, models
 from .db import TOOL_COLLS, db, wipe_world
@@ -31,10 +33,15 @@ async def supervisor_judge(history: list, steps: list, reply: str, correction: s
 
 
 async def _replay(cand: dict, live: dict) -> tuple[bool, str]:
-    """Replay a live turn ({source_id, history, tier, correction}) in a scratch copy of the live world; the supervisor judges it."""
+    """Replay a live turn ({source_id, history, tier, correction}) in a scratch copy of the live world as it was before
+    that turn; the supervisor judges it."""
     world = f"gate:{cand['version']}:{live['source_id']}"
+    ep = await db.episodes.find_one({"_id": live["source_id"]}, {"created_at": 1, "latency": 1})
+    # without this the replay sees the turn's own wrong event and the fix just leaves it there (rejected the investor teach)
+    # ponytail: ObjectId times drop docs the turn created; moves/cancels it made stay in the copy
+    before = {"_id": {"$lt": ObjectId.from_datetime(ep["created_at"] - timedelta(seconds=ep.get("latency") or 0))}} if ep else {}
     for coll in TOOL_COLLS:
-        docs = await db[coll].find({"world": "live"}, {"_id": 0}).to_list()
+        docs = await db[coll].find({"world": "live", **before}, {"_id": 0}).to_list()
         if docs:
             await db[coll].insert_many([{**d, "world": world} for d in docs])
     ep = await agent.run(cand, live["history"], world, live["tier"])
