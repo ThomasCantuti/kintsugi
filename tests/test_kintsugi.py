@@ -98,9 +98,9 @@ def test_web_search_is_offered_only_in_the_live_world(run, monkeypatch):
         return Reply("ok")
     monkeypatch.setattr(models, "chat", chat)
     g = run(genome.current())
-    for world in ("live", "eval-x"):
+    for world in ("live", "eval-x", "gate:3:E-x"):  # a gate replay of a live turn gets the live tools too
         run(agent.run(g, [{"role": "user", "content": "hi"}], world, "owner"))
-    assert "web_search" in offered[0] and "web_search" not in offered[1]
+    assert "web_search" in offered[0] and "web_search" not in offered[1] and "web_search" in offered[2]
 
 
 def test_due_reminders_ping_the_owner_once(run):
@@ -197,6 +197,16 @@ def test_tool_access_allowlist_keeps_exactly_its_tools():
     g["tools_known"].remove("note_search")  # as if note_search joined the registry after this version was stored
     assert "note_search" not in genome.allowed_tools(g, "stranger")  # an allowlist stays closed to new tools
     assert "note_search" in genome.allowed_tools(g, "owner")
+
+
+def test_short_memory_survives_a_restart(run):
+    from kintsugi import telegram
+    run(db.episodes.insert_many([{"_id": f"E-m{i}", "kind": "live", "chat": 42, "reply": f"a{i}",
+                                  "created_at": datetime(2026, 10, 11, 12, i, tzinfo=UTC),  # recalled memory comes first
+                                  "input": [{"role": "system", "content": "memory"}, {"role": "user", "content": f"q{i}"}]}
+                                 for i in range(6)]))
+    assert [m["content"] for m in run(telegram.recent_turns(42))] == ["q2", "a2", "q3", "a3", "q4", "a4", "q5", "a5"]
+    assert run(telegram.recent_turns(7)) == []
 
 
 def test_learner_and_gate_never_read_heldout():

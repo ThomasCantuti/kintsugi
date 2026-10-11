@@ -5,22 +5,59 @@ Every message is HTML (bot default): escape anything that comes from a user, the
 import re
 from datetime import UTC, datetime
 from html import escape as _escape
+from zoneinfo import ZoneInfo
 
 import raindrop.analytics as raindrop
 from telegram import ForceReply, InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.constants import ChatAction, ParseMode
 from telegram.ext import Application, CallbackQueryHandler, CommandHandler, ContextTypes, Defaults, MessageHandler, filters
 
-from . import agent, config, genome, learner
+from . import agent, config, genome, learner, models
+from .db import EPISODES_VEC, db
 
 HISTORY_TURNS = 8
-history: dict[int, list[dict]] = {}  # chat id → recent messages
+RECALL_K = 3                         # long memory: past owner turns recalled per message
+history: dict[int, list[dict]] = {}  # chat id → recent messages (short memory, rebuilt from Atlas after a restart)
 episodes: dict[str, dict] = {}       # episode id → {ep, history, tier}
 awaiting: dict[int, str] = {}        # chat id → episode id waiting for a correction
 
 
 def tier_of(update: Update) -> str:
     return "owner" if update.effective_user and update.effective_user.id == config.OWNER_TELEGRAM_ID else "stranger"
+
+
+async def recent_turns(chat: int) -> list[dict]:
+    """Short memory that survives a restart: the chat's last turns, rebuilt from its live episodes."""
+    eps = await db.episodes.find({"kind": "live", "chat": chat}, {"input": {"$slice": -1}, "reply": 1}) \
+        .sort("created_at", -1).limit(HISTORY_TURNS // 2).to_list()
+    return [m for e in reversed(eps) for m in (e["input"][-1], {"role": "assistant", "content": e["reply"] or ""})]
+
+
+async def remember(ep: dict) -> None:
+    """Long memory (second brain): embed an owner turn so later turns can recall it by meaning."""
+    text = f"Thomas: {ep['input'][-1]['content'][:500]}\nTsugi: {ep['reply'][:1000]}"
+    try:
+        [vec] = await models.embed([text])
+        await db.episodes.update_one({"_id": ep["_id"]}, {"$set": {"memory": text, "embedding": vec}})
+    except Exception as e:  # memory must never break a turn
+        print(f"remember: {e!r}")
+
+
+async def recall(chat: int, query: str) -> list[dict]:
+    """The owner's past turns closest in meaning to this message ($vectorSearch), as one system message."""
+    try:
+        [vec] = await models.embed([query], "query")
+        hits = await (await db.episodes.aggregate([
+            {"$vectorSearch": {"index": EPISODES_VEC, "path": "embedding", "queryVector": vec,
+                               "numCandidates": 100, "limit": RECALL_K, "filter": {"chat": chat}}},
+            {"$project": {"memory": 1, "created_at": 1}}])).to_list()
+    except Exception:  # index not built yet, or embeddings down: answer without long memory
+        return []
+    # ponytail: no score threshold, the top-k are always recalled; add one if unrelated memories confuse replies
+    tz = ZoneInfo(config.TIMEZONE)
+    lines = [f"[{h['created_at'].astimezone(tz):%a %b %d %H:%M}]\n{h['memory']}" for h in hits]
+    return [{"role": "system", "content": "Earlier conversations with Thomas (your memory; may be outdated):\n\n"
+             + "\n\n".join(lines)}] if lines else []
 
 
 def feedback_buttons(ep_id: str) -> InlineKeyboardMarkup:
@@ -83,15 +120,20 @@ async def on_message(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     if chat in awaiting:  # this message is the correction for a 👎
         await learn_from(update, ctx, awaiting.pop(chat), text)
         return
-    turns = history.setdefault(chat, [])
+    if chat not in history:
+        history[chat] = await recent_turns(chat)
+    turns = history[chat]
     turns.append({"role": "user", "content": text})
     await ctx.bot.send_chat_action(chat, ChatAction.TYPING)
-    ep = await agent.run(await genome.current(), turns[-HISTORY_TURNS:], "live", tier)
+    memory = await recall(chat, text) if tier == "owner" else []  # long memory is the owner's only
+    ep = await agent.run(await genome.current(), memory + turns[-HISTORY_TURNS:], "live", tier)
     await agent.save(ep, "live", chat=chat)
     reply = reply_html(ep["reply"]) if ep["reply"] else f"⚠️ {escape(ep['error'])}" if ep["error"] else "…"
     turns.append({"role": "assistant", "content": ep["reply"]})
     episodes[ep["_id"]] = {"ep": ep, "history": list(turns[-HISTORY_TURNS - 1:-1]), "tier": tier}
     await update.message.reply_text(reply[:4000], reply_markup=feedback_buttons(ep["_id"]))
+    if tier == "owner" and ep["reply"]:
+        await remember(ep)
 
 
 async def learn_from(update: Update, ctx: ContextTypes.DEFAULT_TYPE, ep_id: str, correction: str):

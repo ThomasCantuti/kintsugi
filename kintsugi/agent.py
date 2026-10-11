@@ -99,7 +99,9 @@ async def run(g: dict, history: list[dict], world: str, tier: str, now: str | No
               model: str | None = None, sw: Switches = Switches()) -> dict:
     """One user turn (history ends with the user's message) → episode dict."""
     t0 = time.monotonic()
-    allowed = [t for t in (allowed_tools(g, tier) if sw.genome else ALL_TOOLS) if world == "live" or t not in LIVE_ONLY]
+    # live-only tools also exist when the gate replays a live turn ("gate:…"), else a fix is judged without them
+    allowed = [t for t in (allowed_tools(g, tier) if sw.genome else ALL_TOOLS)
+               if world == "live" or world.startswith("gate:") or t not in LIVE_ONLY]
     query = next((m["content"] for m in reversed(history) if m["role"] == "user"), "")
     msgs = [{"role": "system", "content": await system_prompt(g, tier, now, query, sw)}] + history
     ep = {"_id": f"E-{uuid.uuid4().hex[:8]}", "world": world, "tier": tier, "now": now,

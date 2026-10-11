@@ -188,7 +188,8 @@ async def learn(f: dict, notify: Notify = None) -> dict:
     await db.gates.update_one({"_id": f["gate_id"]}, {"$set": {"lessons": [l["_id"] for l in candidates]}})
     live = [l for l in candidates if l["status"] == "candidate"]
     await _say(notify, f"💡 <b>{len(live)} candidate(s)</b>\n" + "\n".join(
-        f"{chr(64 + n)} · {escape(l.get('title') or clip(l['text'], 40), quote=False)}" for n, l in enumerate(live, 1)))
+        f"{chr(64 + n)} · {escape(l.get('title') or clip(l['text'], 40), quote=False)}" for n, l in enumerate(live, 1))
+        + ("\n<i>The gate tries them in order: nothing to pick.</i>" if f["tier"] == "owner" and len(live) > 1 else ""))
     if not live:
         status = "no_candidates" if not candidates else "duplicate"
         await db.gates.update_one({"_id": f["gate_id"]}, {"$set": {"status": status, "ended_at": datetime.now(UTC)}})

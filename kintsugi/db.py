@@ -13,6 +13,7 @@ db = client[config.DB_NAME]
 TOOL_COLLS = ["events", "notes", "reminders", "contacts", "outbox"]
 VECTOR_INDEX = "lessons_vec"
 NOTES_VEC, NOTES_TEXT = "notes_vec", "notes_text"
+EPISODES_VEC = "episodes_vec"  # long memory: the owner's past live turns, recalled by meaning
 
 
 async def setup() -> None:
@@ -35,6 +36,9 @@ async def ensure_search_indexes(dims: int) -> None:
         ("notes", NOTES_VEC): {"fields": [
             {"type": "vector", "path": "embedding", "numDimensions": dims, "similarity": "cosine"},
             {"type": "filter", "path": "world"}]},
+        ("episodes", EPISODES_VEC): {"fields": [
+            {"type": "vector", "path": "embedding", "numDimensions": dims, "similarity": "cosine"},
+            {"type": "filter", "path": "chat"}]},
         ("notes", NOTES_TEXT): {"analyzer": "lucene.english", "mappings": {"dynamic": False, "fields": {
             "text": {"type": "string"}, "tags": {"type": "string"}, "world": {"type": "token"}}}},
     }
