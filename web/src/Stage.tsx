@@ -76,6 +76,7 @@ function LoopRail({ view, state }: { view: View | null; state: State }) {
   const st = c?.status ?? ''
   const live = view?.cands.filter(l => l.status !== 'duplicate') ?? []
   const dups = view?.cands.filter(l => l.status === 'duplicate') ?? []
+  const waiting = live.some(l => l.status === 'quarantined')  // the cycle stays 'quarantined' after Thomas says no to all
   const shipped = view?.cands.find(l => l.status === 'active' || (l.status === 'revoked' && c?.version))
   const version = c?.version ?? (shipped ? state.versions[shipped._id] : undefined)
   const swapped = !!version && state.genome.version >= version
@@ -110,9 +111,9 @@ function LoopRail({ view, state }: { view: View | null; state: State }) {
         const best = Math.max(0, ...view.cands.flatMap(l => (l.similar || []).map(s => s.score)))
         return best ? `new (closest ${best.toFixed(2)})` : 'new'
       })() },
-    st === 'quarantined' || live.some(l => l.status === 'quarantined')
-      ? { k: 'gate', title: 'Quarantine', tag: 'owner decides', state: 'bad', open: true, sum: '',
-          body: <><p>From a stranger, so Thomas picks one fix or none. The gate still tests it.</p>
+    st === 'quarantined' || waiting
+      ? { k: 'gate', title: 'Quarantine', tag: 'owner decides', state: 'bad', open: waiting, sum: waiting ? '' : 'Thomas said no',
+          body: waiting && <><p>From a stranger, so Thomas picks one fix or none. The gate still tests it.</p>
             <div className="acts">
               {live.filter(l => l.status === 'quarantined').map(l => (
                 <button key={l._id} className="btn primary" disabled={!!busy} onClick={() => decide(l._id)}>Approve {letter(live.indexOf(l))}</button>))}
@@ -153,7 +154,7 @@ function LoopRail({ view, state }: { view: View | null; state: State }) {
   }, [activeKey, c?._id])
 
   const sub = !view ? 'waiting for a signal' : view.ended
-    ? (st === 'accepted' ? `last cycle shipped Seam ${version ?? ''}` : st === 'quarantined' ? 'waiting for Thomas' : st === 'duplicate' ? 'last cycle: already known'
+    ? (st === 'accepted' ? `last cycle shipped Seam ${version ?? ''}` : st === 'quarantined' ? (waiting ? 'waiting for Thomas' : 'last cycle: Thomas said no') : st === 'duplicate' ? 'last cycle: already known'
       : st === 'false_alarm' ? 'last cycle: false alarm' : 'last cycle: nothing shipped')
     : `learning from ${view.who}`
   return (
@@ -239,7 +240,7 @@ function Transcript({ state }: { state: State }) {
   useLayoutEffect(() => {
     const l = logs[tab].current, end = () => l?.scrollTo({ top: l.scrollHeight, behavior: RM ? 'auto' : 'smooth' })
     end(); document.fonts.ready.then(end)  // first load: web fonts reflow the log after the first scroll
-  }, [shown.length, tab])  // eslint-disable-line react-hooks/exhaustive-deps
+  }, [shown.length, tab, corrections[shown.at(-1)?._id ?? '']])  // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <section className="chat" aria-label="Telegram mirror">
