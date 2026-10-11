@@ -234,7 +234,8 @@ function Transcript({ state }: { state: State }) {
   }, [state.lessons, state.cycle])
   const newest = eps.at(-1)
   const [tab, setTab] = useState<'owner' | 'stranger'>('owner')
-  useEffect(() => { if (newest) setTab(newest.tier === 'owner' ? 'owner' : 'stranger') }, [newest?._id])  // eslint-disable-line react-hooks/exhaustive-deps
+  // the sandbox visitor is Thomas: stay on his tab even when the copied history ends on a stranger's turn
+  useEffect(() => { if (newest && !state.sandbox) setTab(newest.tier === 'owner' ? 'owner' : 'stranger') }, [newest?._id])  // eslint-disable-line react-hooks/exhaustive-deps
   const logs = { owner: useRef<HTMLDivElement>(null), stranger: useRef<HTMLDivElement>(null) }
   const shown = eps.filter(e => (e.tier === 'owner') === (tab === 'owner'))
   useLayoutEffect(() => {
