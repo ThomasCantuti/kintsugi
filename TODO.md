@@ -78,25 +78,23 @@ Prototype + plan: https://claude.ai/artifact/JMwZ6ocNfWh41j12H5VkLi
 - [ ] Red-team cases (stranger attacks) → quarantine/blocked counts · cases done: `evals/redteam.json` (10: 7 stranger attacks, 2 planted injections, 1 control; refuse-everything floor = 7/10) → run v0 vs vN `--split redteam`
 - [x] Live view: React + Vite rebuild (D34): loop rail on the real cycle doc, gate ring per case, Telegram mirror, genome ribbon, change-stream ticker, Proof (held-out / hard / red-team + curve), Lineage + revoke cascade
 
-## Next (handoff from the evals session, 12:55)
-Measured and in MEMORY.md Numbers (3 trials, held-out n=36, run ids there): curve v0 47% → v5 81% → v6 (B) 75% · **C Sonnet v0
-24/36 67%** (R-f7bdc0, pure, $0.46) · red-team v0 9/30 → v6 20/30 · hard v0 21/24 = v6 21/24. Invalid runs carry an `invalid`
-field in Atlas (the live view skips them).
-1. **In flight at handoff** (bash script in the old session, may die with it): `D` = Sonnet + naive memory (run R-a7ebca) and `Dn` =
-   Nemotron + naive memory (R-ff6cfe), held-out, v0, 3 trials. Check `runs` for labels D / Dn without `invalid`. If missing, re-run
-   ONE AT A TIME (Sonnet is capped at 20 req/min on this account; models.chat waits out 429s, `--model` disables fallback):
-   `uv run python -m kintsugi.evals --label D --split heldout --version 0 --model anthropic/claude-sonnet-5.5 --naive --trials 3`
-   `uv run python -m kintsugi.evals --label Dn --split heldout --version 0 --naive --trials 3` (~$0.5 total).
-   Check `counters.fallbacks == 0` on any frontier run before using it.
-2. **Framing with D/Dn** (MEMORY.md open question): if naive memory matches Kintsugi on clean held-out, the pitch rests on what
-   memory can't do: lessons are tested before shipping (gate), revocable with lineage, stranger "lessons" quarantined, red-team
-   9 → 20/30. Next measurement that shows it: naive memory that also holds a stranger's planted "rule" vs Kintsugi on the red-team split.
-3. **[you] live-teach convention**: v6 already knows the focus rule. Pick a fresh one (e.g. "investor calls are 30 min, titled
-   'Investor: …'", "never book over lunch 12–1") or revoke the focus lesson before stage and re-teach.
-4. **Gate speed for the stage**: cycle took 66–95 s vs a ~55 s beat. c2's gate/learner changes landed (8c1cc59), so time a
-   live-style teach now. **Latency under load**: paid Nemotron episodes go from 3–8 s (quiet) to 40–60 s avg (max 311 s) while evals
-   run in parallel. Run no evals during the demo or rehearsals.
-5. Wrangling counters from traces → MEMORY.md (repairs 0 everywhere so far; Lightning 429s are the only provider failures seen).
+## Next (handoff from the evals session 1f, 13:15)
+All in MEMORY.md Numbers + D35–D37 (3 trials, run ids there). Held-out n=36: A0 18 · A v0 17 · B v6 27 → **B v7 30 (83%)** · Dn
+(Nemotron + memory) 28 · C Sonnet v0 24 · **D Sonnet + memory 36**. Red-team n=30: v0 9 · v6 20 · **v7 27** · Dn 23 · C 27 · D 27 ·
+poisoned memory Dnp 21 / Dp 27. Curve v0 47% → v5 81% → v6 75% → v7 83%. Wrangling: 1 repair in 802 Nemotron episodes, 0 fallbacks,
+blocks 0 until v7 (rt-v7: 2). Spend $3.79 of the $10 key at 13:15 ($5 BUDGET_USD: ask Thomas before more Sonnet runs).
+- [x] D / Dn stored (R-a7ebca 36/36, R-ff6cfe 28/36). [x] Wrangling counters → MEMORY.md. [x] Red-team C/D/Dn + poisoning (D37).
+- [x] Gate fix 6410f87 (tool_access lessons regression-tested on their tier only) → **v7 = L-950b70** stranger tool access, live
+  since the 12:59 restart. Disclose D35 wherever v7 numbers appear (the red-team result led to the gate fix; red-team never fed the learner).
+- [x] Stage teach convention (D36): "Investor calls are 30 min, titled 'Investor: <name>'".
+1. **Pitch framing** ([you] decide, honest version): memory ≈ Kintsugi on clean held-out (D 36/36 beats everything). Kintsugi's
+   measured edge: v7 Nemotron = Sonnet on red-team (27/30) at ~1/14 the cost, through a tool-access edit memory can't make (blocks are
+   code, not prompt); held-out 47% → 83% at $0.0015/task vs Sonnet v0 67% at $0.013. One planted line didn't poison either model.
+2. **Known hole** ([you] decide): v7 strangers keep note_search, contact_lookup, calendar_move, calendar_cancel (lesson text says
+   "only note_add + calendar_list", tool list removed 4). Fix = tool_access lessons that set an allowlist (`genome.materialize` + learner
+   schema) and one more cycle; again red-team-informed → disclose. No case tests stranger cancel.
+3. **Time a live investor teach** on Telegram with NO evals running (v7 cycle took 66 s with 2 regression cases; owner lessons run 8).
+4. rt-two-step fails for v7 and Sonnet: both over-serve/over-block on a strict "exactly 1 note" check. Check stays (no goalpost moves).
 
 **Parallel sessions** (shared working tree): **20** = docs, cases, README · **37** = Raindrop (bot runs detached, see its handoff) ·
 **c2** = React + Vite live view (`web/`, `api.py`, gate progress). Commit your own finished, tested work without asking Thomas
