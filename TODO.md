@@ -127,7 +127,7 @@ Done: web_search (Exa, live only, D38) · reminders ping on Telegram · scars (D
 ### Handoff from session 20 (~14:30) → next docs/README session
 Role: README, PLAN, docs, demo prep; small harness features when Thomas asks. Every README number is checked in Atlas `runs`
 (run id, per-trial counts, `invalid` field, `counters.fallbacks == 0` on frontier runs) before it's written; peers' numbers too.
-1. **v10 measurement** (evals session 1f, started ~14:28, Thomas approved: held-out + 11-case red team + hard, Nemotron, 3 trials).
+1. [x] **v10 measurement** (done 14:50, README B = v10, see the 15:45 handoff below) (evals session 1f, started ~14:28, Thomas approved: held-out + 11-case red team + hard, Nemotron, 3 trials).
    When 1f sends "evals done": verify the run ids in Atlas, then README Results (add v10 to the curve and red-team table; B stays v7
    unless the README says otherwise; disclose that v8–v10 came from live teaching). Don't time or rehearse until then.
 2. **Rehearse the demo** (PLAN §6) once with a timer, then the `judge-panel` agent. Backup: `assets/video/backup-teach-4x.mp4`.
@@ -138,6 +138,39 @@ Role: README, PLAN, docs, demo prep; small harness features when Thomas asks. Ev
    serve `api.app` + `api.watch()` on :8001 with `DB_NAME=kintsugi_rehearsal` (empty RAINDROP/TELEGRAM env) → run the teach with
    `DB_NAME=kintsugi_rehearsal`. playwright-cli `video-stop` takes no filename (prints the path). ffmpeg here has no drawtext:
    render labels with system python3 + Pillow, then `overlay`. Live calendar: the leftover Maya event is deleted (Thomas OK'd).
+
+### Handoff from session 20 (~15:45) → next session (Thomas talks to it in a fresh context)
+**Done 14:35–15:45** (all committed and pushed; GitHub now shows TypeScript: 88 commits had never been pushed):
+- README Results at v10, verified in Atlas: **B = v10 31/36** (R-826f1e; matches the live view's B bar), curve adds v10, red team
+  on 11 cases (rt-v10 30/33, R-c43055; on the first 10 = 27/30 = Sonnet at ~1/15 the cost), hard v10 21/24 (R-4af572), v7 hole closed
+  at v8. PLAN §6 rewritten for v10 (revoke before the 👎, recorded Raindrop beat, how to open the leak event in Raindrop).
+- **Judges' sandbox, live: https://tsugi-production.up.railway.app** (D42). `SANDBOX=1`: web visitors are the owner of a copy of
+  Tsugi (own DB `kintsugi_sandbox`, no Telegram/Raindrop keys, caps 400 turns / 40 cycles per restart). Owner chat + 👎 correction
+  → real gate; stranger chat/teach → quarantine; revoke. UI: sandbox banner, pulsing **Start the tour** (11-step spotlight over
+  every scene; says what you write here doesn't go to Telegram but teaches this Tsugi), **Prompts** panel with Copy buttons
+  (opens after the tour), one-click prompt chips under each chat tab. README "Try it". Verified in a browser (desktop + 390 px).
+  Sandbox is at v10 with nothing taught (refreshed 15:32). The real server now binds 127.0.0.1 (live bot restarted by 37 at 15:24).
+- Rehearsal setup (not used yet): the sandbox itself is the easiest rehearsal stage (owner chat + 👎 from the web, real gate).
+
+**Open decisions for Thomas:**
+1. **Reset the sandbox between judges?** One judge's lesson stays for the next. Reset = `DB_NAME=kintsugi_sandbox uv run python -m
+   kintsugi.sandbox`, then restart the service (Railway dashboard → tsugi → Restart, or GraphQL `serviceInstanceRedeploy`, below).
+2. **Stage revoke** (judge-panel finding, verified in gate.py): `genome.revoke()` makes a version with no `baselines` doc, so the next
+   gate first runs all 19 train cases → a much slower teach. Options: drop the revoke from the stage, or make revoke carry the
+   baseline over (minus cases whose lessons were revoked) and time one teach. Other judge-panel notes: cut the Leo ask at 2:30, Proof
+   ≤ 3 numbers, say "one transaction, $graphLookup, change stream" while revoking; unbacked claims: "everything built on it" (0 live
+   revokes yet), "~2 min" gate (best case), rt-v10's gain over v7 is all rt-override (written after the same leak).
+3. **Rehearsal** with a timer (PLAN §6) + `judge-panel` after it. Not done yet.
+4. After judging: remove the Atlas access-list entry 0.0.0.0/0 "Railway sandbox (hackathon)".
+
+**Railway how-to** (project `kintsugi-sandbox`, service `tsugi`, us-west2; ids: project 6a236c36-8bd9-4a92-b446-3077314fe32f,
+env c7fd6079-1863-4ec4-9bd1-7a464a1d0334, service 52c02816-6e00-4d73-9d5a-a78f78a37117):
+- Deploy **only from a clean HEAD export** (`railway up` uploads the working tree, others' uncommitted files included):
+  `D=$(mktemp -d) && git archive HEAD | tar -x -C $D && cd $D && RAILWAY_TOKEN=$(grep '^RAILWAY_PROJECT_TOKEN=' <repo>/.env | cut -d= -f2-) railway up --service tsugi --detach`
+- `.env` `RAILWAY_API_KEY` is a workspace token: the CLI rejects it, the GraphQL API (https://backboard.railway.com/graphql/v2,
+  `Authorization: Bearer`) accepts it: deployment status `deployment(id){status}`, logs `buildLogs`/`deploymentLogs`, restart
+  `serviceInstanceRedeploy(serviceId, environmentId)`, vars `variableCollectionUpsert`. Railpack needs `RAILPACK_START_CMD` (set).
+- Env on Railway: SANDBOX=1, DB_NAME=kintsugi_sandbox, model/embedding/Exa keys from .env. Never add TELEGRAM_*/OWNER_*/RAINDROP_*.
 
 ## 15:15–15:45 BOOST (only if everything above is green)
 - [x] Genome transfer: v10 (learned on Nemotron Super) on Lightning, held-out 15/36 → 29/36 (R-fa666f → R-85b009, MEMORY Numbers)
