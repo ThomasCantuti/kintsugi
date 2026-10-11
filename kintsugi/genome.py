@@ -123,7 +123,17 @@ async def revoke(node_id: str) -> dict:
         await db.lessons.update_many({"_id": {"$in": ids}, "status": {"$in": ["active", "quarantined"]}},
                                      {"$set": {"status": "revoked", "revoked_at": datetime.now(UTC)}}, session=s)
         await db.lineage.update_many({"_id": {"$in": ids}}, {"$set": {"status": "revoked"}}, session=s)
-        return await _rebuild(s, {"op": "revoke", "node": node_id, "revoked": ids})
+        g = await _rebuild(s, {"op": "revoke", "node": node_id, "revoked": ids})
+        # the gate's passing past cases carry over, minus the cases a revoked lesson came from (they may fail again),
+        # so the next teach doesn't re-measure the whole train split first
+        # ponytail: cases a revoked lesson merely helped are assumed to still pass; re-measure with run_split if it matters
+        prev = await db.baselines.find_one({"_id": g["version"] - 1}, session=s)
+        if prev:
+            gone = {l["source"]["ref"] for l in await db.lessons.find({"_id": {"$in": ids}}, {"source": 1}, session=s).to_list()
+                    if l.get("source")}
+            await db.baselines.replace_one({"_id": g["version"]}, {"_id": g["version"], "passing": [
+                c for c in prev["passing"] if f"case:{c}" not in gone]}, upsert=True, session=s)
+        return g
 
     async with client.start_session() as s:
         g = await s.with_transaction(txn)
