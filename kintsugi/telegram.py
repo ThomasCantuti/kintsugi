@@ -23,34 +23,37 @@ def feedback_buttons(ep_id: str) -> InlineKeyboardMarkup:
                                   InlineKeyboardButton("👎", callback_data=f"down:{ep_id}")]])
 
 
+LABEL = {"rules": "rule", "context_policies": "context policy", "guardrails": "guardrail", "tool_access": "tool access"}
+
+
 def describe(result: dict) -> str:
     s = result["status"]
     if s == "accepted":
         l, v = result["lesson"], result["lesson"]["gate"]
-        return (f"✨ Learned (genome v{result['version']}), new gold seam:\n[{l['section']}] {l['text']}\n"
-                f"Gate: fixed the failure · {v['regression_passed']}/{v['regression_total']} past cases still pass")
+        return (f"✨ New {LABEL[l['section']]} · genome v{result['version']}\n{l['text']}\n"
+                f"✓ fixed, {v['regression_passed']}/{v['regression_total']} past cases pass")
     if s == "quarantined":
-        return "🔒 Thanks! Your suggestion is waiting for my owner's approval."
+        return "🔒 Thanks! Waiting for my owner's OK."
     if s == "duplicate":
         return "I already know this one. 🌱"
     if s == "false_alarm":
-        return f"🌦️ My supervisor checked: that turn was already right ({result['why']}). Nothing to learn."
-    lessons = result.get("lessons", [])
-    return f"I couldn't find a safe fix ({len(lessons)} candidate{'s' if len(lessons) != 1 else ''} failed the gate)."
+        return f"🌦️ False alarm: that turn was already right. {learner.clip(result['why'], 160)}"
+    n = len(result.get("lessons", []))
+    return f"No safe fix: {n} candidate{'s' if n != 1 else ''} failed the gate. Nothing changed."
 
 
 async def on_start(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     g = await genome.current()
-    await update.message.reply_text(f"Hi, I'm Tsugi 🌱 (genome v{g['version']}, {len(g['lessons'])} lessons). "
-                                    "Ask me to plan, note, remind or email. 👎 my mistakes and I'll learn.")
+    await update.message.reply_text(f"Hi, I'm Tsugi 🌱 genome v{g['version']}, {len(g['lessons'])} lessons.\n"
+                                    "I plan, note, remind and email. 👎 a mistake and I'll learn.")
 
 
 async def on_genome(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     g = await genome.current()
-    lines = [f"Genome v{g['version']}"]
-    for s in ("rules", "context_policies", "guardrails"):
-        lines += [f"\n{s}:"] + [f"{'✨' if i['lesson'] else '·'} {i['text']}" for i in g[s]]
-    lines += [f"\ntool_access: {g['tool_access']}"]
+    lines = [f"Genome v{g['version']} (✨ = learned)"]
+    for s, title in (("rules", "Rules"), ("context_policies", "Context policies"), ("guardrails", "Guardrails")):
+        lines += [f"\n{title}"] + [f"{'✨' if i['lesson'] else '·'} {learner.clip(i['text'], 120)}" for i in g[s]]
+    lines += ["\nTool access"] + [f"· {tier}: {', '.join(tools)}" for tier, tools in g["tool_access"].items()]
     await update.message.reply_text("\n".join(lines)[:4000])
 
 
@@ -76,7 +79,7 @@ async def learn_from(update: Update, ctx: ContextTypes.DEFAULT_TYPE, ep_id: str,
         await update.message.reply_text("I lost that conversation, sorry. Try again?")
         return
     ep = item["ep"]
-    notify = progress(await update.message.reply_text("🌱 Learning… asking my supervisor for lessons."))
+    notify = progress(await update.message.reply_text("🌱 Learning…"))
     f = {"source_id": ep_id, "kind": "telegram", "tier": item["tier"], "history": item["history"],
          "steps": ep["steps"], "reply": ep["reply"], "correction": correction}
     raindrop.track_signal(event_id=ep_id, name="correction", signal_type="edit", after=correction,
@@ -108,7 +111,7 @@ async def ask_owner(bot, lessons: list[dict], why: str) -> None:
     """Quarantined lessons go to the owner for ✅/❌ (they still have to pass the gate)."""
     for l in lessons if config.OWNER_TELEGRAM_ID else []:
         await bot.send_message(
-            config.OWNER_TELEGRAM_ID, f"🔒 {why}:\n[{l['section']}] {l['text']}\nAllow it? (it still has to pass the gate)",
+            config.OWNER_TELEGRAM_ID, f"🔒 {why}:\n{l['text']}\nAllow it? The gate still tests it.",
             reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("✅ Approve", callback_data=f"ok:{l['_id']}"),
                                                 InlineKeyboardButton("❌ Reject", callback_data=f"no:{l['_id']}")]]))
 
@@ -120,10 +123,10 @@ async def heal_flag(bot, ep: dict, flags: list[str]) -> dict:
     if not (bot and config.OWNER_TELEGRAM_ID):
         return await learner.learn(f)
     status = await bot.send_message(config.OWNER_TELEGRAM_ID, f"🌧️ Raindrop flagged a {ep['tier']} turn ({', '.join(flags)}):\n"
-                                    f"“{ep['input'][-1]['content'][:200]}”\n🌱 Learning… asking my supervisor for lessons.")
+                                    f"“{learner.clip(ep['input'][-1]['content'], 120)}”\n🌱 Learning…")
     result = await learner.learn(f, progress(status))
     if result["status"] == "quarantined":
-        await ask_owner(bot, result["lessons"], "Raindrop flagged a stranger's turn, I'd learn")
+        await ask_owner(bot, result["lessons"], "Raindrop flagged a stranger's turn. I'd learn")
     else:
         await bot.send_message(config.OWNER_TELEGRAM_ID, describe(result))
     return result

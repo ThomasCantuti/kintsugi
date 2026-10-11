@@ -93,6 +93,10 @@ async def propose(f: dict, g: dict) -> list[dict]:
     return out
 
 
+def clip(text: str, n: int = 90) -> str:
+    return text if len(text) <= n else text[:n - 1].rstrip() + "…"
+
+
 async def _say(notify: Notify, text: str) -> None:
     if notify:
         await notify(text)
@@ -109,12 +113,12 @@ async def _gate_and_commit(candidates: list[dict], f: dict, notify: Notify = Non
         await db.gates.update_one({"_id": gate_id}, {"$push": {"progress": e}})
     result = {"status": "rejected", "lessons": candidates}
     for n, lesson in enumerate(candidates, 1):
-        await _say(notify, f"🧪 Testing #{n}: does it fix the failure without breaking past cases?")
+        await _say(notify, f"🧪 Gate: testing #{n}…")
         v = await gate.judge(lesson, f, g, progress)
-        await _say(notify, f"   #{n} " + (
-            f"✓ fixed · {v['regression_passed']}/{v['regression_total']} past cases still pass → shipping" if v["accepted"]
-            else f"✗ fixed it but broke {v['regression_total'] - v['regression_passed']} past case(s)" if v["fixed"]
-            else "✗ didn't fix the failure"))
+        await _say(notify, f"#{n} " + (
+            f"✓ fixed, {v['regression_passed']}/{v['regression_total']} past cases pass" if v["accepted"]
+            else f"✗ broke {v['regression_total'] - v['regression_passed']} past case(s)" if v["fixed"]
+            else "✗ not fixed"))
         await db.lessons.update_one({"_id": lesson["_id"]}, {"$set": {"gate": v}})
         if v["accepted"]:
             new = await genome.commit({**lesson, "gate": v}, lesson["parents"])
@@ -171,8 +175,8 @@ async def learn(f: dict, notify: Notify = None) -> dict:
         await asyncio.sleep(2)
     await db.gates.update_one({"_id": f["gate_id"]}, {"$set": {"lessons": [l["_id"] for l in candidates]}})
     live = [l for l in candidates if l["status"] == "candidate"]
-    await _say(notify, f"💡 {len(live)} candidate lesson(s):\n" + "\n".join(
-        f"#{n} [{l['section']}] {l['text']}" for n, l in enumerate(live, 1)))
+    await _say(notify, f"💡 {len(live)} candidate(s):\n" + "\n".join(
+        f"#{n} {clip(l['text'])}" for n, l in enumerate(live, 1)))
     if not live:
         status = "no_candidates" if not candidates else "duplicate"
         await db.gates.update_one({"_id": f["gate_id"]}, {"$set": {"status": status, "ended_at": datetime.now(UTC)}})
