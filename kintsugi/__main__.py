@@ -4,11 +4,12 @@ import asyncio
 import uvicorn
 from telegram import Update
 
-from . import api, config, db, genome, telegram
+from . import api, config, db, genome, seed, telegram
 
 
 async def main() -> None:
     await db.setup()
+    await seed.seed()
     g = await genome.current()
     server = uvicorn.Server(uvicorn.Config(api.app, host="0.0.0.0", port=config.PORT, log_level="warning"))
     bot = telegram.build()
@@ -16,7 +17,8 @@ async def main() -> None:
         await bot.initialize()
         await bot.start()
         await bot.updater.start_polling(allowed_updates=Update.ALL_TYPES, drop_pending_updates=True)
-    print(f"Tsugi up · http://localhost:{config.PORT} · telegram {'on' if bot else 'off (no token)'} · genome v{g['version']}")
+    print(f"Tsugi up · http://localhost:{config.PORT} · telegram {'on' if bot else 'off (no token)'} · genome v{g['version']}",
+          flush=True)
     try:
         await asyncio.gather(server.serve(), api.watch())
     finally:
