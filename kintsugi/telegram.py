@@ -73,12 +73,20 @@ async def learn_from(update: Update, ctx: ContextTypes.DEFAULT_TYPE, ep_id: str,
         await update.message.reply_text("I lost that conversation, sorry. Try again?")
         return
     ep = item["ep"]
-    await update.message.reply_text("🌱 Learning… proposing lessons and testing them before they go live.")
+    status = await update.message.reply_text("🌱 Learning… asking my supervisor for lessons.")
+    lines = [status.text]
+
+    async def notify(text: str):  # one message that updates as the gate works
+        lines.append(text)
+        try:
+            await status.edit_text("\n".join(lines)[-4000:])
+        except Exception:
+            pass
     f = {"source_id": ep_id, "kind": "telegram", "tier": item["tier"], "history": item["history"],
          "steps": ep["steps"], "reply": ep["reply"], "correction": correction}
 
     async def job():
-        result = await learner.learn(f)
+        result = await learner.learn(f, notify)
         await update.message.reply_text(describe(result))
         if result["status"] == "quarantined" and config.OWNER_TELEGRAM_ID:
             for l in result["lessons"]:

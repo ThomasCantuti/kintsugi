@@ -4,6 +4,7 @@ Never touches held-out cases (only `evals.cases("train")`, via the gate).
 """
 import json
 import uuid
+from collections.abc import Awaitable, Callable
 from datetime import UTC, datetime
 
 from . import config, gate, genome, models
@@ -12,6 +13,7 @@ from .genome import SECTIONS
 from .tools import ALL_TOOLS
 
 MAX_CANDIDATES = 3
+Notify = Callable[[str], Awaitable[None]] | None
 
 PROPOSE = """You improve the harness ("genome") of Tsugi, a personal-assistant agent for its owner Thomas.
 The genome has four sections:
@@ -87,14 +89,24 @@ async def propose(f: dict, g: dict) -> list[dict]:
     return out
 
 
-async def _gate_and_commit(candidates: list[dict], f: dict) -> dict:
+async def _say(notify: Notify, text: str) -> None:
+    if notify:
+        await notify(text)
+
+
+async def _gate_and_commit(candidates: list[dict], f: dict, notify: Notify = None) -> dict:
     g = await genome.current()
     gate_id = f"G-{uuid.uuid4().hex[:6]}"
     await db.gates.insert_one({"_id": gate_id, "status": "running", "lessons": [l["_id"] for l in candidates],
                                "source": f["source_id"], "created_at": datetime.now(UTC)})
     result = {"status": "rejected", "lessons": candidates}
-    for lesson in candidates:
+    for n, lesson in enumerate(candidates, 1):
+        await _say(notify, f"🧪 Testing #{n}: does it fix the failure without breaking past cases?")
         v = await gate.judge(lesson, f, g)
+        await _say(notify, f"   #{n} " + (
+            f"✓ fixed · {v['regression_passed']}/{v['regression_total']} past cases still pass → shipping" if v["accepted"]
+            else f"✗ fixed it but broke {v['regression_total'] - v['regression_passed']} past case(s)" if v["fixed"]
+            else "✗ didn't fix the failure"))
         await db.lessons.update_one({"_id": lesson["_id"]}, {"$set": {"gate": v}})
         if v["accepted"]:
             new = await genome.commit({**lesson, "gate": v}, lesson["parents"])
@@ -106,7 +118,7 @@ async def _gate_and_commit(candidates: list[dict], f: dict) -> dict:
     return result
 
 
-async def learn(f: dict) -> dict:
+async def learn(f: dict, notify: Notify = None) -> dict:
     """f: {source_id, kind (telegram|case|redteam), tier, history, steps, reply, correction?, case?, failed?}"""
     await db.lineage.update_one({"_id": f["source_id"]}, {"$setOnInsert": {
         "type": f["kind"], "parents": [], "status": "active", "trust": f["tier"],
@@ -125,21 +137,23 @@ async def learn(f: dict) -> dict:
     if candidates:
         await db.lessons.insert_many(candidates)
     live = [l for l in candidates if l["status"] == "candidate"]
+    await _say(notify, f"💡 {len(live)} candidate lesson(s):\n" + "\n".join(
+        f"#{n} [{l['section']}] {l['text']}" for n, l in enumerate(live, 1)))
     if not live:
         return {"status": "no_candidates" if not candidates else "duplicate", "lessons": candidates}
     if f["tier"] != "owner":  # every source untrusted → owner decides
         await db.lessons.update_many({"_id": {"$in": [l["_id"] for l in live]}}, {"$set": {"status": "quarantined"}})
         return {"status": "quarantined", "lessons": live}
-    return await _gate_and_commit(live, f)
+    return await _gate_and_commit(live, f, notify)
 
 
-async def approve(lesson_id: str) -> dict:
+async def approve(lesson_id: str, notify: Notify = None) -> dict:
     """Owner approved a quarantined lesson: it still has to pass the gate."""
     lesson = await db.lessons.find_one({"_id": lesson_id, "status": "quarantined"})
     if not lesson:
         return {"status": "not_found"}
     await db.lessons.update_one({"_id": lesson_id}, {"$set": {"status": "candidate", "approved_by": "owner"}})
-    return await _gate_and_commit([lesson], lesson["failure"])
+    return await _gate_and_commit([lesson], lesson["failure"], notify)
 
 
 async def reject(lesson_id: str) -> dict:
