@@ -43,7 +43,7 @@ Scope and timeline: PLAN.md §8–9. **No project code before 10:30.**
 ## Raindrop (D32, PLAN.md §12; session 37)
 - [ ] [you] ~~raindrop.ai signup → `RAINDROP_WRITE_KEY`~~ (done) · Query API key `RAINDROP_QUERY_API_KEY`; enable presets Task Failure, User Frustration, Jailbreaking; create the custom signal (text in §12)
 - [x] Live turns → Raindrop events + tool spans (private notes hidden); 👍/👎/correction/outcome signals; 800-event cap; test. Verified 12:13: web + Telegram events, tool spans, 👍 signal (HTTP 200/204), Thomas saw them in the dashboard
-- [ ] Raindrop → Kintsugi poller (flagged live episode → learner, kind `raindrop`); measure signal latency → MEMORY.md
+- [ ] Raindrop → Kintsugi: built + tested 12:35 (`__main__.heal_flagged`, every 60 s, last 2 h of events; flagged live turn not yet learned from → `telegram.heal_flag` → learner kind `raindrop`, owner sees it in Telegram). Live after the next bot restart · [you] enable presets + custom signal (only "Thumbs up" exists) · measure flag latency → MEMORY.md
 - [ ] README + live view: Raindrop line, `raindrop` lineage node (README / live-view session)
 
 ## 12:45–13:15 Lunch

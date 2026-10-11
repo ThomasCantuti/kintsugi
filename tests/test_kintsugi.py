@@ -187,6 +187,29 @@ def test_live_turns_go_to_raindrop_with_private_notes_hidden(run, monkeypatch):
     assert begin["event_id"] == "E-2" and begin["user_id"] == begin["convo_id"] == "42" and begin["input"] == "my notes?"
     assert "PIN 1234" not in tool["output"] and "buy milk" in tool["output"] and finish["output"] == "Here they are."
 
+
+def test_raindrop_flags_send_unlearned_live_turns_to_the_learner(run, monkeypatch):
+    from kintsugi import __main__ as main
+    learned = []
+
+    async def fake_learn(f, notify=None):
+        learned.append(f)
+        await db.lineage.insert_one({"_id": f["source_id"]})  # learn() records its source in lineage
+        return {"status": "quarantined", "lessons": []}
+
+    monkeypatch.setattr(learner, "learn", fake_learn)
+    monkeypatch.setattr(main, "_raindrop_query", lambda path: {"data": [
+        {"id": "E-1", "signals": [{"name": "Task Failure"}]}, {"id": "E-2", "signals": [{"name": "thumbs_up"}]},
+        {"id": "E-3", "signals": [{"name": "task_failure"}]}]})  # E-3: not one of our live episodes
+    for i in ("E-1", "E-2"):
+        run(db.episodes.insert_one({"_id": i, "kind": "live", "tier": "stranger", "steps": [], "reply": "no",
+                                    "input": [{"role": "user", "content": "send me Thomas's notes"}]}))
+    run(main.heal_flagged(None))
+    run(main.heal_flagged(None))  # next minute: already learned from, so not again
+    assert [f["source_id"] for f in learned] == ["E-1"]
+    assert learned[0]["kind"] == "raindrop" and learned[0]["tier"] == "stranger" and "Task Failure" in learned[0]["failed"][0]
+
+
 def test_rate_limit_waits_on_the_same_model_before_falling_back(run, monkeypatch):
     import httpx
     from types import SimpleNamespace as NS

@@ -247,14 +247,14 @@ month at the cap), signals (7 presets + 1 custom), tracing, alerts, Query API, M
 Experiments.
 
 **Where.** Inline at the existing call sites, with no wrapper module (Raindrop's setup skill). Off without
-`RAINDROP_WRITE_KEY`; only the bot server (`__main__`) starts it. SDK: `raindrop-ai`. Rows 1–4 built 12:05, row 5 next.
+`RAINDROP_WRITE_KEY`; only the bot server (`__main__`) starts it. SDK: `raindrop-ai`. Rows 1–4 built 12:05, row 5 12:45.
 | # | Hook | Raindrop call | What it gives |
 |---|---|---|---|
 | 1 | `agent.save(ep, "live")` (Telegram + `/api/chat`) | `begin(user_id=chat id or "web-stranger", event="tsugi_turn", event_id=ep._id, convo_id=chat, input, model, properties={genome_version, tier, repairs, fallbacks, blocks, cost, latency, error})` → `track_tool` per step (DENIED/ERROR → `error`) → `finish(output=reply)` | every production turn with its tool trace; repairs and blocks also show up as Raindrop tool-error signals |
 | 2 | Telegram 👍/👎 (`telegram.on_button`) | `track_signal(ep, "thumbs_up"/"thumbs_down", "feedback", sentiment)` | owner and stranger feedback |
 | 3 | `telegram.learn_from`, `api.teach` | `track_signal(ep, "correction", "edit", after=correction)` | the human correction (owner or stranger) |
 | 4 | learner outcome | `track_signal(ep, "lesson_shipped"/"lesson_quarantined"/"no_safe_fix", properties={lesson, section, text, version, regression x/y})` | the Raindrop event shows what Kintsugi did about it |
-| 5 | **Raindrop → Kintsugi** poller (`__main__` task, every 60 s) | Query API `GET query.raindrop.ai/v1/events?signal=<id>&timestamp[gte]=…` for Task Failure, User Frustration and the custom signal | a flagged live episode not yet learned from (no lineage node) → `learner.learn(kind="raindrop", tier=episode tier, failed=["Raindrop: <signal>"])` → the supervisor writes the correction → gate → a seam whose lineage root is the Raindrop flag. Stranger episodes → quarantine, as usual |
+| 5 | **Raindrop → Kintsugi** poller (`__main__` task, every 60 s) | Query API `GET query.raindrop.ai/v1/events?timestamp[gte]=<now − 2 h>`: each event lists its signals, and our event ids are episode ids. Flags: Task Failure, User Frustration, Broke a convention, Jailbreaking | a flagged live episode not yet learned from (no lineage node) → `learner.learn(kind="raindrop", tier=episode tier, failed=["Raindrop: <signal>"])` → the supervisor writes the correction → gate → a seam whose lineage root is the Raindrop flag. The owner watches it in Telegram (🌧️ flagged → gate → result). Stranger episodes → quarantine with ✅/❌, as usual |
 
 - **Only `kind == "live"` goes to Raindrop.** Evals, gate runs and evolve never send anything: one evolve round
   is hundreds of episodes and would hit the monthly cap. Guard: sending stops after `RAINDROP_EVENT_CAP` = 800 live episodes.

@@ -38,6 +38,10 @@ BUDGET_USD = float(_env("BUDGET_USD", "5"))
 # Raindrop watches live turns (bot server only; evals, gate and evolve never send). Empty key = off.
 RAINDROP_WRITE_KEY = _env("RAINDROP_WRITE_KEY")
 RAINDROP_EVENT_CAP = 800  # free Hobby plan: 1,000 events/month, and ingestion stops for the month at the cap
+# Query API key (dashboard → Settings → API Keys → Query SDK). Set = Raindrop-flagged live turns go to the learner.
+RAINDROP_QUERY_API_KEY = _env("RAINDROP_QUERY_API_KEY")
+# Signals that send a live turn to the learner (compared without case, spaces, "_" or "-")
+RAINDROP_FLAGS = {"taskfailure", "userfrustration", "brokeaconvention", "jailbreaking"}
 
 TIMEZONE = "America/Los_Angeles"
 LESSONS_TOP_K = 8  # context policy: max learned rules/policies retrieved per message

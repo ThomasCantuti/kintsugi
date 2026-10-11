@@ -74,15 +74,7 @@ async def learn_from(update: Update, ctx: ContextTypes.DEFAULT_TYPE, ep_id: str,
         await update.message.reply_text("I lost that conversation, sorry. Try again?")
         return
     ep = item["ep"]
-    status = await update.message.reply_text("🌱 Learning… asking my supervisor for lessons.")
-    lines = [status.text]
-
-    async def notify(text: str):  # one message that updates as the gate works
-        lines.append(text)
-        try:
-            await status.edit_text("\n".join(lines)[-4000:])
-        except Exception:
-            pass
+    notify = progress(await update.message.reply_text("🌱 Learning… asking my supervisor for lessons."))
     f = {"source_id": ep_id, "kind": "telegram", "tier": item["tier"], "history": item["history"],
          "steps": ep["steps"], "reply": ep["reply"], "correction": correction}
     raindrop.track_signal(event_id=ep_id, name="correction", signal_type="edit", after=correction,
@@ -91,15 +83,48 @@ async def learn_from(update: Update, ctx: ContextTypes.DEFAULT_TYPE, ep_id: str,
     async def job():
         result = await learner.learn(f, notify)
         await update.message.reply_text(describe(result))
-        if result["status"] == "quarantined" and config.OWNER_TELEGRAM_ID:
-            for l in result["lessons"]:
-                await ctx.bot.send_message(
-                    config.OWNER_TELEGRAM_ID,
-                    f"🔒 A stranger taught me:\n[{l['section']}] {l['text']}\nAllow it? (it still has to pass the gate)",
-                    reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("✅ Approve", callback_data=f"ok:{l['_id']}"),
-                                                        InlineKeyboardButton("❌ Reject", callback_data=f"no:{l['_id']}")]]))
+        if result["status"] == "quarantined":
+            await ask_owner(ctx.bot, result["lessons"], "A stranger taught me")
 
     ctx.application.create_task(job())
+
+
+def progress(status):
+    """A learner `notify` that keeps one Telegram message updated as the gate works."""
+    lines = [status.text]
+
+    async def notify(text: str):
+        lines.append(text)
+        try:
+            await status.edit_text("\n".join(lines)[-4000:])
+        except Exception:
+            pass
+    return notify
+
+
+async def ask_owner(bot, lessons: list[dict], why: str) -> None:
+    """Quarantined lessons go to the owner for ✅/❌ (they still have to pass the gate)."""
+    for l in lessons if config.OWNER_TELEGRAM_ID else []:
+        await bot.send_message(
+            config.OWNER_TELEGRAM_ID, f"🔒 {why}:\n[{l['section']}] {l['text']}\nAllow it? (it still has to pass the gate)",
+            reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("✅ Approve", callback_data=f"ok:{l['_id']}"),
+                                                InlineKeyboardButton("❌ Reject", callback_data=f"no:{l['_id']}")]]))
+
+
+async def heal_flag(bot, ep: dict, flags: list[str]) -> dict:
+    """A live turn Raindrop flagged and nobody corrected: learn from it like a 👎 (the supervisor writes the correction)."""
+    f = {"source_id": ep["_id"], "kind": "raindrop", "tier": ep["tier"], "history": ep["input"], "steps": ep["steps"],
+         "reply": ep["reply"], "failed": [f"Raindrop flagged this turn: {', '.join(flags)}"]}
+    if not (bot and config.OWNER_TELEGRAM_ID):
+        return await learner.learn(f)
+    status = await bot.send_message(config.OWNER_TELEGRAM_ID, f"🌧️ Raindrop flagged a {ep['tier']} turn ({', '.join(flags)}):\n"
+                                    f"“{ep['input'][-1]['content'][:200]}”\n🌱 Learning… asking my supervisor for lessons.")
+    result = await learner.learn(f, progress(status))
+    if result["status"] == "quarantined":
+        await ask_owner(bot, result["lessons"], "Raindrop flagged a stranger's turn, I'd learn")
+    else:
+        await bot.send_message(config.OWNER_TELEGRAM_ID, describe(result))
+    return result
 
 
 async def on_button(update: Update, ctx: ContextTypes.DEFAULT_TYPE):

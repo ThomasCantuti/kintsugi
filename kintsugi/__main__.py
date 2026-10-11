@@ -1,12 +1,43 @@
 """One process: Telegram bot + API/live view + change-stream watcher.  `uv run python -m kintsugi`"""
 import asyncio
+import json
 import logging
+import re
+import urllib.request
+from datetime import UTC, datetime, timedelta
 
 import raindrop.analytics as raindrop
 import uvicorn
 from telegram import Update
 
 from . import api, config, db, genome, models, seed, telegram
+
+
+def _raindrop_query(path: str) -> dict:
+    req = urllib.request.Request("https://query.raindrop.ai" + path,
+                                 headers={"Authorization": f"Bearer {config.RAINDROP_QUERY_API_KEY}"})
+    with urllib.request.urlopen(req, timeout=20) as r:
+        return json.load(r)
+
+
+async def heal_flagged(bot) -> None:
+    """Raindrop → Kintsugi: live turns from the last 2 h that Raindrop flagged and nobody learned from yet → learner."""
+    since = (datetime.now(UTC) - timedelta(hours=2)).strftime("%Y-%m-%dT%H:%M:%SZ")
+    events = (await asyncio.to_thread(_raindrop_query, f"/v1/events?limit=100&timestamp[gte]={since}"))["data"]
+    for e in events:
+        flags = [s["name"] for s in e.get("signals") or [] if re.sub(r"[\s_-]", "", s["name"].lower()) in config.RAINDROP_FLAGS]
+        ep = flags and await db.db.episodes.find_one({"_id": e["id"], "kind": "live"})
+        if ep and not await db.db.lineage.find_one({"_id": e["id"]}):  # no 👎 correction or earlier flag learned from it
+            await telegram.heal_flag(bot, ep, flags)
+
+
+async def raindrop_flags(bot) -> None:
+    while True:
+        await asyncio.sleep(60)
+        try:
+            await heal_flagged(bot)
+        except Exception as e:  # Raindrop or network down: try again next minute
+            print(f"raindrop flags: {e!r}", flush=True)
 
 
 async def main() -> None:
@@ -27,9 +58,12 @@ async def main() -> None:
         await bot.start()
         await bot.updater.start_polling(allowed_updates=Update.ALL_TYPES, drop_pending_updates=True)
     print(f"Tsugi up · http://localhost:{config.PORT} · telegram {'on' if bot else 'off (no token)'} · "
-          f"raindrop {'on' if config.RAINDROP_WRITE_KEY else 'off'} · genome v{g['version']}",
+          f"raindrop {'on' if config.RAINDROP_WRITE_KEY else 'off'}{' + flags → learner' if config.RAINDROP_QUERY_API_KEY else ''} · "
+          f"genome v{g['version']}",
           flush=True)
     tasks = [asyncio.create_task(server.serve()), asyncio.create_task(api.watch())]
+    if config.RAINDROP_QUERY_API_KEY:
+        tasks.append(asyncio.create_task(raindrop_flags(bot.bot if bot else None)))
     try:  # uvicorn handles SIGINT/SIGTERM (and a busy port) by returning: then everything stops
         await asyncio.wait(tasks, return_when=asyncio.FIRST_COMPLETED)
     finally:

@@ -119,7 +119,7 @@ async def _gate_and_commit(candidates: list[dict], f: dict, notify: Notify = Non
             break
         await db.lessons.update_one({"_id": lesson["_id"]}, {"$set": {"status": "rejected"}})
     await db.gates.update_one({"_id": gate_id}, {"$set": {"status": result["status"], "ended_at": datetime.now(UTC)}})
-    if f["kind"] == "telegram":  # live source: its Raindrop event shows what Kintsugi did about it
+    if f["kind"] in ("telegram", "raindrop"):  # live source: its Raindrop event shows what Kintsugi did about it
         l = result.get("lesson")
         raindrop.track_signal(
             event_id=f["source_id"], name="lesson_shipped" if l else "no_safe_fix", sentiment="POSITIVE" if l else "NEGATIVE",
@@ -130,7 +130,7 @@ async def _gate_and_commit(candidates: list[dict], f: dict, notify: Notify = Non
 
 
 async def learn(f: dict, notify: Notify = None) -> dict:
-    """f: {source_id, kind (telegram|case|redteam), tier, history, steps, reply, correction?, case?, failed?}"""
+    """f: {source_id, kind (telegram|raindrop|case|redteam), tier, history, steps, reply, correction?, case?, failed?}"""
     await db.lineage.update_one({"_id": f["source_id"]}, {"$setOnInsert": {
         "type": f["kind"], "parents": [], "status": "active", "trust": f["tier"],
         "label": (f["history"][-1]["content"] if f["history"] else "")[:80]}}, upsert=True)
@@ -157,7 +157,7 @@ async def learn(f: dict, notify: Notify = None) -> dict:
         return {"status": "no_candidates" if not candidates else "duplicate", "lessons": candidates}
     if f["tier"] != "owner":  # every source untrusted → owner decides
         await db.lessons.update_many({"_id": {"$in": [l["_id"] for l in live]}}, {"$set": {"status": "quarantined"}})
-        if f["kind"] == "telegram":
+        if f["kind"] in ("telegram", "raindrop"):
             raindrop.track_signal(event_id=f["source_id"], name="lesson_quarantined", properties={"candidates": len(live)})
         return {"status": "quarantined", "lessons": live}
     return await _gate_and_commit(live, f, notify)
