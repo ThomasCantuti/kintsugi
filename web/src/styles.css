@@ -259,6 +259,12 @@ main { position: relative; min-height: 0 }
 .call.denied .res, .call.error .res { color: var(--shu-ink) }
 .call .args { color: var(--ink-2); display: flex; flex-wrap: wrap; gap: 0 .7rem }
 .call .args i { font-style: normal; color: var(--mute) }
+.msg .did { font-size: .84rem; color: var(--ink-2); margin: .1rem 0 }
+.msg .did.denied, .msg .did.error { color: var(--shu-ink) }
+.typing { display: flex; gap: .3rem; padding: .35rem 0 .15rem }
+.typing i { width: .42rem; height: .42rem; border-radius: 50%; background: var(--mute); animation: blink 1s ease-in-out infinite }
+.typing i:nth-child(2) { animation-delay: .15s }
+.typing i:nth-child(3) { animation-delay: .3s }
 .composer { display: grid; gap: .4rem }
 .composer form { display: flex; gap: .4rem }
 .composer input { flex: 1; min-width: 0; border: 1px solid var(--hair); background: var(--plate); border-radius: 999px; padding: .4rem .85rem; font-size: .88rem }
@@ -290,7 +296,8 @@ main { position: relative; min-height: 0 }
 .ticker ol { list-style: none; margin: 0; padding: 0; display: flex; gap: 1.3rem; min-width: 0; overflow: hidden; -webkit-mask-image: linear-gradient(90deg, #000 75%, transparent); mask-image: linear-gradient(90deg, #000 75%, transparent) }
 .ticker li { white-space: nowrap; animation: tin .5s cubic-bezier(.2, .9, .25, 1) both }
 .ticker .op { color: var(--atlas-ink) }
-.ticker .op.update { color: var(--gold-ink) }
+.ticker .op.gold { color: var(--gold-ink) }
+.ticker .op.bad { color: var(--shu-ink) }
 .ticker li:first-child { color: var(--ink-2) }
 
 /* proof */

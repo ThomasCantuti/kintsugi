@@ -2,7 +2,7 @@
  *  Everything here is derived from /api/state; the loop follows the latest learning-cycle doc in `gates`. */
 import { animate, AnimatePresence, motion } from 'motion/react'
 import { Fragment, memo, useEffect, useLayoutEffect, useMemo, useRef, useState, type FormEvent } from 'react'
-import { api, CAUGHT_TIP, lastUser, letter, parseT, RAINDROP_URL, raindropText, SEC, type Cycle, type Episode, type Lesson, type LiveEvent, type State, type ToolStep } from './live'
+import { api, CAUGHT_TIP, lastUser, letter, parseT, RAINDROP_URL, raindropText, SEC, type Cycle, type Episode, type Lesson, type LiveEvent, type LiveStep, type State, type ToolStep } from './live'
 import Tsugi, { type Mood, type Ring } from './Tsugi'
 import { PROMPTS } from './Tour'
 
@@ -198,8 +198,38 @@ function resultLabel(s: ToolStep): [string, string] {
 }
 const time = (iso: string) => { const t = parseT(iso); return isNaN(t) ? '' : new Date(t).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }
 
-const Turn = memo(function Turn({ ep, tab, correction }: { ep: Episode; tab: string; correction?: string }) {
-  const anim = RM ? {} : { initial: { opacity: 0, y: 8, scale: .97 }, animate: { opacity: 1, y: 0, scale: 1 }, transition: { type: 'spring' as const, stiffness: 300, damping: 26 } }
+/** A live-view turn while Tsugi works: the message at once, then each step in plain words (no tool names), then the reply. */
+const DOING: Record<string, string> = {
+  calendar_list: 'Checking the calendar', calendar_create: 'Adding it to the calendar', calendar_move: 'Moving the event',
+  calendar_cancel: 'Cancelling the event', note_add: 'Writing a note', note_search: 'Searching the notes',
+  reminder_set: 'Setting a reminder', contact_lookup: 'Looking up the contact', outbox_draft: 'Drafting the email',
+  outbox_send: 'Sending the email', web_search: 'Searching the web',
+}
+type Pending = { text: string; steps: LiveStep[]; done?: string; reply?: string }
+type Upd = (f: (p: Pending | null) => Pending | null) => void
+
+function PendingTurn({ p, tab }: { p: Pending; tab: string }) {
+  const pop = RM ? {} : { initial: { opacity: 0, y: 8, scale: .97 }, animate: { opacity: 1, y: 0, scale: 1 }, transition: { type: 'spring' as const, stiffness: 300, damping: 26 } }
+  return (
+    <>
+      <motion.div className={'msg me' + (tab === 'stranger' ? ' stranger' : '')} {...pop}>
+        <div className="who"><b>{tab === 'owner' ? 'Thomas' : 'stranger'}</b><span>now</span></div>{p.text}
+      </motion.div>
+      <motion.div className="msg bot" {...pop} transition={{ ...pop.transition, delay: .2 }}>
+        <div className="who"><b>Tsugi</b></div>
+        {p.steps.map((s, i) => (
+          <motion.div key={i} className={'did ' + s.status} initial={RM ? false : { opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}>
+            {s.status === 'ok' ? `${DOING[s.tool] ?? 'Working'}…`
+              : `✕ ${DOING[s.tool] ?? 'That step'}: ${s.status === 'denied' ? (tab === 'owner' ? 'not allowed' : 'not allowed for strangers') : 'didn’t work, trying again'}`}
+          </motion.div>))}
+        {p.reply ? <div>{p.reply.replace(/\*\*/g, '')}</div> : <div className="typing" role="status" aria-label="Tsugi is working"><i /><i /><i /></div>}
+      </motion.div>
+    </>
+  )
+}
+
+const Turn = memo(function Turn({ ep, tab, correction, still }: { ep: Episode; tab: string; correction?: string; still?: boolean }) {
+  const anim = RM || still ? {} : { initial: { opacity: 0, y: 8, scale: .97 }, animate: { opacity: 1, y: 0, scale: 1 }, transition: { type: 'spring' as const, stiffness: 300, damping: 26 } }
   const reply = ep.reply || (ep.error ? '' : '…')
   return (
     <>
@@ -210,7 +240,7 @@ const Turn = memo(function Turn({ ep, tab, correction }: { ep: Episode; tab: str
         <div className="who"><b>Tsugi</b>{ep.genome_version != null && <span className="gv">genome v{ep.genome_version}</span>}</div>
         {ep.steps.map((s, i) => {
           const [cls, label] = resultLabel(s)
-          return <div key={i} className={'call ' + cls}><div className="ch"><span className="fn">{s.tool}</span><span className="res">{label}</span></div>
+          return <div key={i} className={'call ' + cls}><div className="ch"><span className="fn" title={s.tool}>{DOING[s.tool] ?? s.tool}</span><span className="res">{label}</span></div>
             <div className="args">{parseArgs(s.args).map(([k, v]) => <span key={k}><i>{k}</i> {v}</span>)}</div></div>
         })}
         {reply && <div>{(reply.length > 280 ? reply.slice(0, 279) + '…' : reply).split(/\*\*(.+?)\*\*/).map((t, i) => i % 2 ? <b key={i}>{t}</b> : t)}</div>}
@@ -239,10 +269,13 @@ function Transcript({ state }: { state: State }) {
   useEffect(() => { if (newest && !state.sandbox) setTab(newest.tier === 'owner' ? 'owner' : 'stranger') }, [newest?._id])  // eslint-disable-line react-hooks/exhaustive-deps
   const logs = { owner: useRef<HTMLDivElement>(null), stranger: useRef<HTMLDivElement>(null) }
   const shown = eps.filter(e => (e.tier === 'owner') === (tab === 'owner'))
+  // a turn sent from here shows at once; the stored episode takes its place once /api/state has it
+  const [pending, setPending] = useState<Record<string, Pending | null>>({ owner: null, stranger: null })
+  const cur = pending[tab], wip = cur && !(cur.done && shown.some(e => e._id === cur.done)) ? cur : null
   useLayoutEffect(() => {
     const l = logs[tab].current, end = () => l?.scrollTo({ top: l.scrollHeight, behavior: RM ? 'auto' : 'smooth' })
     end(); document.fonts.ready.then(end)  // first load: web fonts reflow the log after the first scroll
-  }, [shown.length, tab, corrections[shown.at(-1)?._id ?? '']])  // eslint-disable-line react-hooks/exhaustive-deps
+  }, [shown.length, tab, corrections[shown.at(-1)?._id ?? ''], wip?.steps.length, !!wip?.reply])  // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <section className="chat" aria-label="Telegram mirror">
@@ -255,23 +288,33 @@ function Transcript({ state }: { state: State }) {
       </div>
       {(['owner', 'stranger'] as const).map(t => (
         <div key={t} ref={logs[t]} className={'log' + (t === 'stranger' ? ' str' : '')} hidden={tab !== t} aria-live="polite">
-          {t === tab && (shown.length ? shown.slice(-14).map(ep => <Fragment key={ep._id}><Turn ep={ep} tab={t} correction={corrections[ep._id]} /></Fragment>)
+          {t === tab && (shown.length || wip ? <>{shown.slice(-14).map(ep => <Fragment key={ep._id}><Turn ep={ep} tab={t} correction={corrections[ep._id]} still={ep._id === cur?.done} /></Fragment>)}
+              {wip && <PendingTurn p={wip} tab={t} />}</>
             : <p className="empty">{t === 'owner' ? (state.sandbox ? 'Write to Tsugi as Thomas below.' : "Thomas's chats appear here live.") : 'Write as a stranger below.'}</p>)}
         </div>))}
-      {(tab === 'stranger' || state.sandbox) && <Composer key={tab} tier={tab} sandbox={!!state.sandbox} />}
+      {(tab === 'stranger' || state.sandbox) && <Composer key={tab} tier={tab} sandbox={!!state.sandbox}
+        live={f => setPending(m => ({ ...m, [tab]: f(m[tab]) }))} />}
     </section>
   )
 }
 
-function Composer({ tier, sandbox }: { tier: 'owner' | 'stranger'; sandbox: boolean }) {  // owner only in the judges' sandbox
+function Composer({ tier, sandbox, live }: { tier: 'owner' | 'stranger'; sandbox: boolean; live: Upd }) {  // owner only in the judges' sandbox
   const [text, setText] = useState(''), [rule, setRule] = useState(''), [note, setNote] = useState(''), [sending, setSending] = useState(false)
   const owner = tier === 'owner'
   async function go(e: FormEvent, kind: 'chat' | 'teach') {
     e.preventDefault()
     const t = (kind === 'chat' ? text : rule).trim(); if (!t) return
-    setSending(true); setNote(kind === 'chat' ? 'Tsugi is answering…' : owner ? 'Sent. Watch the loop: the gate tests the fix (~2–4 min).' : 'Sent. Expect quarantine.')
-    try { kind === 'chat' ? (await api.chat(t, tier), setText(''), setNote('')) : (await api.teach(t, tier), setRule('')) }
-    catch (err) { setNote(String((err as Error).message)) }
+    setSending(true); setNote(kind === 'chat' ? '' : owner ? 'Sent. Watch the loop: the gate tests the fix (~1–2 min).' : 'Sent. Expect quarantine.')
+    try {
+      if (kind === 'chat') {  // the message shows in the chat at once, then each step as Tsugi takes it
+        setText(''); live(() => ({ text: t, steps: [] }))
+        const r = await api.chat(t, tier, s => live(p => p && { ...p, steps: [...p.steps, s] }))
+        live(p => p && { ...p, done: r.episode_id, reply: r.reply })
+      } else { await api.teach(t, tier); setRule('') }
+    } catch (err) {
+      if (kind === 'chat') { live(() => null); setText(t) }
+      setNote(String((err as Error).message))
+    }
     setSending(false)
   }
   return (
@@ -345,7 +388,7 @@ function Genome({ state, events, onLesson }: { state: State; events: LiveEvent[]
           <div className="tiers">
             {Object.entries(ta).map(([tier, tools]) => (
               <div className="tier" key={tier}><b>{tier}</b>
-                {allTools.map(t => <span key={t} className={'tool' + (tools.includes(t) ? '' : ' off')}>{t}</span>)}
+                {allTools.map(t => <span key={t} title={t} className={'tool' + (tools.includes(t) ? '' : ' off')}>{TOOL[t] ?? t}</span>)}
               </div>))}
           </div>
         </div>
@@ -355,12 +398,50 @@ function Genome({ state, events, onLesson }: { state: State; events: LiveEvent[]
   )
 }
 
+const TOOL: Record<string, string> = {
+  calendar_create: 'add events', calendar_list: 'read calendar', calendar_move: 'move events', calendar_cancel: 'cancel events',
+  note_add: 'add notes', note_search: 'search notes', reminder_set: 'set reminders', contact_lookup: 'look up contacts',
+  outbox_draft: 'draft emails', outbox_send: 'send emails', web_search: 'search the web',
+}
+type Tone = '' | 'gold' | 'bad'
+const GATE: Record<string, [string, Tone]> = {
+  proposing: ['Learning from a mistake', ''], running: ['The gate is testing a lesson', ''],
+  accepted: ['The gate passed a lesson', 'gold'], rejected: ['The gate said no', 'bad'],
+  quarantined: ['Waiting for Thomas to approve', 'bad'], duplicate: ['Already knew that lesson', ''],
+  no_candidates: ['No lesson to try', ''], false_alarm: ['False alarm: Tsugi was right', ''],
+}
+const LESSON: Record<string, [string, Tone]> = {
+  candidate: ['Lesson proposed', ''], duplicate: ['Lesson already known', ''], active: ['Lesson is live', 'gold'],
+  rejected: ['Lesson rejected', 'bad'], skipped: ['Lesson set aside', ''], revoked: ['Lesson revoked', 'bad'],
+  quarantined: ['Stranger’s lesson on hold', 'bad'],
+}
+/** One Atlas change in plain words (no ids), or null for the noisy ones (memory embeddings, verdict details, the gate's plan). */
+function say({ coll, op, note = '' }: LiveEvent): [string, Tone] | null {
+  if (coll === 'episodes') return op === 'insert' ? [note === 'owner' ? 'Tsugi answered Thomas' : 'Tsugi answered a stranger', ''] : null
+  if (coll === 'genomes') return note ? [`Tsugi updated to ${note}`, 'gold'] : null
+  if (coll === 'runs') return op === 'insert' ? [`Test run: ${note.split(' ').pop()} passed`, ''] : null
+  if (coll === 'gates') {
+    const m = note.match(/ (pass|fail)$/)
+    return m ? (m[1] === 'pass' ? ['Gate test passed', 'gold'] : ['Gate test failed', 'bad']) : GATE[note] ?? null
+  }
+  if (coll === 'lessons') return op === 'update' && note === 'candidate' ? ['Thomas approved a lesson', 'gold'] : LESSON[note] ?? null
+  return null
+}
+
 function Ticker({ events }: { events: LiveEvent[] }) {
+  const rows: { key: string; text: string; tone: Tone; n: number }[] = []
+  for (const e of events) {
+    const s = say(e)
+    if (!s) continue
+    const last = rows[rows.length - 1]
+    if (last?.text === s[0]) last.n++  // 8 gate cases in a row read "Gate test passed ×8"
+    else rows.push({ key: e.t + e.id + e.op + e.note, text: s[0], tone: s[1], n: 1 })
+  }
   return (
-    <div className="ticker" aria-label="Atlas change stream">
-      <span className="tl"><i />Atlas change stream</span>
-      <ol>{events.map(e => <li key={e.t + e.id + e.op}><span className={'op ' + e.op}>{e.op}</span> {e.coll} {e.id}{e.note ? ' ' + e.note : ''}</li>)}
-        {!events.length && <li className="mute">waiting for the first event</li>}</ol>
+    <div className="ticker" aria-label="Live from Atlas">
+      <span className="tl" title="Every change saved in MongoDB Atlas, pushed to this page by a change stream"><i />Live from Atlas</span>
+      <ol>{rows.map(r => <li key={r.key}><span className={'op ' + r.tone}>●</span> {r.text}{r.n > 1 ? ` ×${r.n}` : ''}</li>)}
+        {!rows.length && <li className="mute">changes show up here as they happen</li>}</ol>
     </div>
   )
 }

@@ -96,8 +96,9 @@ async def execute(call: ToolCall, world: str, allowed: list[str], sw: Switches, 
 
 
 async def run(g: dict, history: list[dict], world: str, tier: str, now: str | None = None,
-              model: str | None = None, sw: Switches = Switches()) -> dict:
-    """One user turn (history ends with the user's message) → episode dict."""
+              model: str | None = None, sw: Switches = Switches(), on_step=None) -> dict:
+    """One user turn (history ends with the user's message) → episode dict. on_step(step) is awaited after each
+    tool call (the live view shows it as it happens); it never changes the prompt or the episode."""
     t0 = time.monotonic()
     # live-only tools also exist when the gate replays a live turn ("gate:…"), else a fix is judged without them
     allowed = [t for t in (allowed_tools(g, tier) if sw.genome else ALL_TOOLS)
@@ -127,6 +128,8 @@ async def run(g: dict, history: list[dict], world: str, tier: str, now: str | No
             {"id": c.id, "type": "function", "function": {"name": c.name, "arguments": c.arguments}} for c in calls]})
         for c in calls:
             msgs.append({"role": "tool", "tool_call_id": c.id, "content": await execute(c, world, allowed, sw, ep)})
+            if on_step:
+                await on_step(ep["steps"][-1])
         if ep["error"]:
             break
     else:

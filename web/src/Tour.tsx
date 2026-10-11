@@ -46,13 +46,13 @@ const STEPS: Step[] = [
     <p>Your correction starts a cycle you can follow here. A supervisor model proposes up to 3 small lessons, and Atlas Vector Search checks they aren’t duplicates of past ones.</p>
     <p>A lesson from a stranger waits in quarantine until the owner approves it.</p></> },
   { scene: 'stage', at: '.center', title: 'The gate', body: <>
-    <p>The gate replays your conversation with the new lesson and re-runs past cases that used to pass, all at once (2–4 minutes).</p>
+    <p>The gate replays your conversation with the new lesson and re-runs past cases that used to pass, all at once (about 1–2 minutes).</p>
     <p>The lesson ships only if it fixes your case and breaks none of the others. Then Tsugi gets a new <b>gold seam</b> and the genome version goes up.</p></> },
   { scene: 'stage', at: '.ribbon', title: 'The genome', body: <>
     <p>Everything Tsugi follows: rules, context policies, guardrails, and the tools the owner and strangers may call. Crossed-out tools are blocked in code.</p>
-    <p>Items marked <b>Seam N</b> were learned. Click one to see where it came from.</p></> },
+    <p>Items marked <b>Seam N</b> were learned. Click one to see where it came from. The line at the bottom shows each change as Atlas saves it.</p></> },
   { scene: 'stage', at: '.chips', title: 'Live from Atlas', body:
-    <p>Genome version, whether the gate is testing right now, the Atlas change stream that pushes every change to this page, and what the models have cost so far.</p> },
+    <p>Genome version, whether the gate is testing right now, whether this page is live (Atlas pushes every change to it), and what the models have cost so far.</p> },
   { scene: 'proof', at: '.scene.proof', title: 'Proof', body: <>
     <p>Held-out cases Tsugi never learned from: <b>47% at v0 → 86% at v10</b> (12 cases × 3 runs), plus a red team of stranger attacks and frontier-model baselines.</p>
     <p>Every number comes from a stored run.</p></> },

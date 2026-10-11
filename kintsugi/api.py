@@ -20,6 +20,7 @@ EVENT_TYPES = {"lessons": "lesson", "genomes": "genome", "episodes": "episode", 
 subscribers: set[asyncio.Queue] = set()
 web_turns: dict[str, list[dict]] = {"owner": [], "stranger": []}  # live-view chats (owner only in the sandbox)
 used = {"chat": 0, "teach": 0}  # sandbox spend so far (this process)
+running: set[asyncio.Task] = set()  # live-view chat turns in flight (asyncio keeps only weak refs to tasks)
 bot = None  # the Telegram bot, set by __main__: a quarantine from the live view reaches the owner's phone too
 
 
@@ -223,15 +224,39 @@ class Chat(BaseModel):
 
 @app.post("/api/chat")
 async def chat(body: Chat):
-    """Chat from the live view: unauthenticated, so stranger tier only, except in the judges' sandbox (owner too)."""
+    """Chat from the live view: unauthenticated, so stranger tier only, except in the judges' sandbox (owner too).
+    Streams NDJSON: {"step": {tool, status}} per tool call as it happens, then {"reply", "episode_id"} or {"error"}."""
     tier = _tier(body.tier)
     _cap("chat")
     turns = web_turns[tier]
     turns.append({"role": "user", "content": body.text})
-    ep = await agent.run(await genome.current(), turns[-8:], "live", tier)
-    await agent.save(ep, "live", chat=f"web-{tier}")
-    turns.append({"role": "assistant", "content": ep["reply"]})
-    return {"reply": ep["reply"] or ep["error"] or "…", "episode_id": ep["_id"]}
+    q: asyncio.Queue = asyncio.Queue()
+
+    async def step(s: dict) -> None:  # tool name and outcome only: results (notes, contacts) stay on the server
+        r = s["result"]
+        await q.put({"step": {"tool": s["tool"], "status": "denied" if r.startswith("DENIED")
+                              else "error" if r.startswith("ERROR") else "ok"}})
+
+    async def turn() -> None:  # finishes and saves even if the browser goes away
+        try:
+            ep = await agent.run(await genome.current(), turns[-8:], "live", tier, on_step=step)
+            await agent.save(ep, "live", chat=f"web-{tier}")
+            turns.append({"role": "assistant", "content": ep["reply"]})
+            await q.put({"reply": ep["reply"] or ep["error"] or "…", "episode_id": ep["_id"]})
+        except Exception as e:
+            await q.put({"error": repr(e)[:200]})
+
+    t = asyncio.create_task(turn())
+    running.add(t)
+    t.add_done_callback(running.discard)
+
+    async def lines():
+        while True:
+            m = await q.get()
+            yield json.dumps(m) + "\n"
+            if "step" not in m:
+                return
+    return StreamingResponse(lines(), media_type="application/x-ndjson")
 
 
 class Teach(BaseModel):

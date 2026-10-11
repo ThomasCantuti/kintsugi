@@ -12,6 +12,7 @@ export type Lesson = {
   tier?: string; tools?: string[]; allow?: boolean; only?: boolean; title?: string
 }
 export type ToolStep = { tool: string; args: string; result: string }
+export type LiveStep = { tool: string; status: 'ok' | 'denied' | 'error' }
 export type Episode = {
   _id: string; tier: string; input: { role: string; content: string }[]; steps: ToolStep[]
   reply: string; error: string | null; genome_version: number | null; created_at: string
@@ -79,7 +80,7 @@ export async function start() {
   es.onmessage = e => {
     try {
       const ev = JSON.parse(e.data)
-      set({ events: [{ coll: ev.coll ?? ev.type, op: ev.op, id: ev.id, note: ev.note, t: Date.now() }, ...snap.events].slice(0, 14) })
+      set({ events: [{ coll: ev.coll ?? ev.type, op: ev.op, id: ev.id, note: ev.note, t: Date.now() }, ...snap.events].slice(0, 40) })
       refreshSoon()
     } catch { /* ping or malformed: ignore */ }
   }
@@ -96,7 +97,26 @@ async function post(path: string, body?: unknown) {
 export const api = {
   revoke: (id: string): Promise<{ revoked: string[]; version: number }> => post(`/api/revoke/${encodeURIComponent(id)}`),
   quarantine: (id: string, d: 'approve' | 'reject') => post(`/api/quarantine/${encodeURIComponent(id)}/${d}`),
-  chat: (text: string, tier = 'stranger'): Promise<{ reply: string }> => post('/api/chat', { text, tier }),
+  /** Streams the turn (NDJSON): onStep for each tool call as it happens, then the reply. */
+  chat: async (text: string, tier = 'stranger', onStep?: (s: LiveStep) => void): Promise<{ reply: string; episode_id: string }> => {
+    if (snap.conn === 'mock') throw new Error('server unreachable (mock data)')
+    const r = await fetch('/api/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text, tier }) })
+    if (!r.ok) throw new Error((await r.json().catch(() => ({}))).detail || `${r.status} /api/chat`)
+    const rd = r.body!.pipeThrough(new TextDecoderStream()).getReader()
+    let buf = ''
+    for (;;) {
+      const { value, done } = await rd.read()
+      if (done) throw new Error('connection lost before the reply')
+      buf += value
+      let i
+      while ((i = buf.indexOf('\n')) >= 0) {
+        const m = JSON.parse(buf.slice(0, i)); buf = buf.slice(i + 1)
+        if (m.step) onStep?.(m.step)
+        else if (m.error) throw new Error(m.error)
+        else { refreshSoon(0); return m }
+      }
+    }
+  },
   teach: (text: string, tier = 'stranger') => post('/api/teach', { text, tier }),
   raindrop: async (): Promise<{ flagged: Flagged[]; agreement: Agreement | null }> => {
     if (snap.conn === 'mock') return { flagged: [], agreement: null }

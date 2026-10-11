@@ -9,7 +9,7 @@ const Lineage = lazy(() => import('./Lineage'))
 const Raindrop = lazy(() => import('./Raindrop'))
 const SCENES = [['stage', 'Stage'], ['proof', 'Proof'], ['lineage', 'Lineage'], ['raindrop', 'Raindrop']] as const
 type Scene = typeof SCENES[number][0]
-const CONN: Record<Conn, string> = { connecting: 'connecting', live: 'change stream', reconnecting: 'reconnecting', mock: 'MOCK data' }
+const CONN: Record<Conn, string> = { connecting: 'connecting', live: 'live', reconnecting: 'reconnecting', mock: 'MOCK data' }
 
 export default function App() {
   const { state, events, conn } = useLive()
