@@ -19,14 +19,14 @@ Built solo at the MongoDB SF hackathon, Sun 2026-10-11, 10:30–17:00. **No proj
 ## Stack
 Python 3.12 · uv · **own harness, no agent framework** · `openai` SDK → `LLM_BASE_URL` (OpenRouter or NVIDIA) ·
 FastAPI · python-telegram-bot · pymongo (async) · **Atlas Sandbox = operational DB + Vector Search** (change streams, `$graphLookup`, transactions, `$vectorSearch`/`$rankFusion`) · Atlas CLI ·
-static `web/index.html`. Module contracts: PLAN.md §3.
+live view in `web/`: React 19 + Vite 8 + Motion + TypeScript (D34; the only non-Python part, built output committed). Module contracts: PLAN.md §3.
 Tests: `ScriptedModel` (deterministic, no tokens) behind the same Model protocol.
 
 ## Layout (planned; update when real)
 ```
 kintsugi/   config · db · models · tools · genome · agent · evals · learner · gate · evolve · telegram · api · __main__
 evals/      cases.json (hand-written; held-out frozen before the first learning run)
-web/        index.html
+web/        React live view: src/ (App, Stage, Tsugi, Proof, Lineage, live store), dist/ (committed build), legacy.html (/legacy)
 tests/      one test per non-trivial loop (ScriptedModel)
 ```
 
@@ -35,7 +35,8 @@ tests/      one test per non-trivial loop (ScriptedModel)
 - `uv run python -m kintsugi.evals --label A --split heldout` (`--raw` = A0, `--naive` = D, `--model` = C, `--judge`)
 - `uv run python -m kintsugi.evolve --rounds 2 --measure` (learn from failing train cases, held-out curve)
 - Local dev DB: `atlas local` deployment `kintsugi-dev` (empty `MONGODB_URI`)
-- `uv run pytest -q`
+- `uv run pytest -q` (shared `kintsugi_test` DB: announce runs to the other sessions)
+- Live view: `cd web && npm install && npm run build` (commit `web/dist`); dev `npm run dev` on :5173 proxies /api to :8000
 
 ## Conventions
 - Async everywhere (`AsyncMongoClient`). Config from env via `kintsugi/config.py`; secrets only in `.env`.

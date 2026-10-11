@@ -3,11 +3,13 @@
 Uses train cases only (held-out never influences a decision).
 """
 import json
+from collections.abc import Awaitable, Callable
 
 from . import agent, config, evals, genome, models
 from .db import TOOL_COLLS, db, wipe_world
 
 REGRESSION_SAMPLE = 8
+Progress = Callable[[dict], Awaitable[None]] | None
 
 JUDGE = """You check whether an assistant followed its owner's feedback.
 Owner feedback: {correction}
@@ -52,20 +54,43 @@ async def baseline_passing(g: dict) -> list[str]:
     return doc["passing"]
 
 
-async def judge(lesson: dict, f: dict, g: dict) -> dict:
+def _sample(passing: list[str], case_id: str | None) -> list[dict]:
+    return [c for c in evals.cases("train") if c["id"] in passing and c["id"] != case_id][:REGRESSION_SAMPLE]
+
+
+async def _quiet(_: dict) -> None:
+    pass
+
+
+async def judge(lesson: dict, f: dict, g: dict, progress: Progress = None) -> dict:
+    """progress(event) reports the plan ({lesson, cases}) and each result ({lesson, case, passed}) for the live view."""
+    say = progress or _quiet
     active = await db.lessons.find({"status": "active"}).sort("created_at").to_list()
     cand = genome.materialize(g["version"] + 1, active + [lesson])
+    case_id = (f.get("case") or {}).get("id")
+    first = case_id or f"replay {f['source_id']}"
+    # the past cases are listed up front only when the baseline is cached: measuring a missing one runs the train
+    # split, which stays behind the fix check (an unfixed candidate never pays for regression runs)
+    known = await db.baselines.find_one({"_id": g["version"]})
+    sample = _sample(known["passing"], case_id) if known else []
+    await say({"lesson": lesson["_id"], "cases": [first] + [c["id"] for c in sample]})
     fixed, why = await _fixes(cand, f)
+    await say({"lesson": lesson["_id"], "case": first, "passed": fixed})
     v = {"fixed": fixed, "why": why, "regression_passed": 0, "regression_total": 0, "accepted": False, "still_passing": []}
     if not fixed:
         return v
-    case_id = (f.get("case") or {}).get("id")
-    passing = await baseline_passing(g)
-    sample = [c for c in evals.cases("train") if c["id"] in passing and c["id"] != case_id][:REGRESSION_SAMPLE]
-    results = await evals.run_cases(cand, sample, run_id=f"gate-{lesson['_id']}")
+    if not known:
+        sample = _sample(await baseline_passing(g), case_id)
+        await say({"lesson": lesson["_id"], "cases": [first] + [c["id"] for c in sample]})
+        await say({"lesson": lesson["_id"], "case": first, "passed": True})
+
+    async def tell(r: dict, retry: bool = False) -> None:
+        await say({"lesson": lesson["_id"], "case": r["case"], "passed": r["passed"], **({"retry": True} if retry else {})})
+    results = await evals.run_cases(cand, sample, run_id=f"gate-{lesson['_id']}", on_result=tell)
     for i, r in enumerate(results):  # one retry per failure: separate model noise from real regressions
         if not r["passed"]:
             results[i] = await evals.run_case(cand, sample[i], run_id=f"gate-{lesson['_id']}")
+            await tell(results[i], retry=True)
     ok = [r["case"] for r in results if r["passed"]]
     v.update(regression_passed=len(ok), regression_total=len(sample), accepted=len(ok) == len(sample),
              still_passing=ok)

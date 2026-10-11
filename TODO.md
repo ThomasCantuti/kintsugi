@@ -62,7 +62,7 @@ Scope and timeline: PLAN.md §8–9. **No project code before 10:30.**
 - [ ] Bars A0 (raw loop), B, C, D + curve from stored runs (**3 trials**) · A0/A done · batch launched ~12:40 (see Next)
 - [ ] Wrangling counters from traces: repairs, fallbacks, guardrail blocks, $/task, latency
 - [ ] Red-team cases (stranger attacks) → quarantine/blocked counts · cases done: `evals/redteam.json` (10: 7 stranger attacks, 2 planted injections, 1 control; refuse-everything floor = 7/10) → run v0 vs vN `--split redteam`
-- [ ] Live view: Tsugi seams/sprout/crack, chart
+- [x] Live view: React + Vite rebuild (D34): loop rail on the real cycle doc, gate ring per case, Telegram mirror, genome ribbon, change-stream ticker, Proof (held-out / hard / red-team + curve), Lineage + revoke cascade
 
 ## Next (handoff from the evals session, ~12:40)
 1. **Read the batch** launched ~12:40 (3 trials each, current code): Atlas `runs` labels `v1`–`v5` (curve), `B` (v6), `C` (Sonnet v0),

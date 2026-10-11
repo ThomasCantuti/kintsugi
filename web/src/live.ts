@@ -1,0 +1,100 @@
+/** One live store: /api/state plus the Atlas change stream (SSE). Every event refetches the state. */
+import { useSyncExternalStore } from 'react'
+
+export type Section = 'rules' | 'context_policies' | 'guardrails' | 'tool_access'
+export type Verdict = { fixed: boolean; why?: string; regression_passed: number; regression_total: number; accepted: boolean }
+export type Lesson = {
+  _id: string; section: Section; text: string; status: string; created_at: string
+  parents: string[]; gate: Verdict | null; prediction?: string
+  source: { kind: string; tier: string; ref: string }
+  failure?: { correction?: string; tier?: string; kind?: string; source_id?: string }
+  similar?: { _id: string; score: number }[]; duplicate_of?: string
+  tier?: string; tools?: string[]; allow?: boolean
+}
+export type ToolStep = { tool: string; args: string; result: string }
+export type Episode = {
+  _id: string; tier: string; input: { role: string; content: string }[]; steps: ToolStep[]
+  reply: string; error: string | null; genome_version: number | null; created_at: string
+}
+export type Progress = { lesson: string; cases?: string[]; case?: string; passed?: boolean; retry?: boolean }
+export type Cycle = {
+  _id: string; status: string; source?: string; kind?: string; tier?: string; correction?: string | null
+  lessons?: string[]; progress?: Progress[]; version?: number; created_at: string; ended_at?: string
+}
+export type Run = {
+  _id: string; label: string; split: string; model: string; genome_version: number | null
+  n: number; passed: number; pass_rate: number; cost: number; trials?: number; trial_passed?: number[]; created_at: string
+}
+export type GenomeItem = { text: string; lesson: string | null }
+export type State = {
+  genome: { version: number; tool_access: Record<string, string[]>; created_at?: string; cause?: { op: string; lesson?: string; node?: string; revoked?: string[] } }
+  genome_items: Record<'rules' | 'context_policies' | 'guardrails', GenomeItem[]>
+  lessons: Lesson[]
+  counters: { episodes: number; repairs: number; fallbacks: number; blocks: number; cost: number }
+  runs: Run[]; curve: { version: number; pass_rate: number; n: number }[]
+  gate_running: boolean; episodes: Episode[]; cycle: Cycle | null; versions: Record<string, number>
+}
+export type LiveEvent = { coll: string; op: string; id: string; note?: string; t: number }
+export type LNode = { _id: string; type: string; status: string; label: string; parents?: string[] }
+export type Conn = 'connecting' | 'live' | 'reconnecting' | 'mock'
+type Snap = { state: State | null; events: LiveEvent[]; conn: Conn }
+
+let snap: Snap = { state: null, events: [], conn: 'connecting' }
+const subs = new Set<() => void>()
+const set = (patch: Partial<Snap>) => { snap = { ...snap, ...patch }; subs.forEach(f => f()) }
+const subscribe = (f: () => void) => { subs.add(f); return () => { subs.delete(f) } }
+export const useLive = () => useSyncExternalStore(subscribe, () => snap)
+
+async function getState(): Promise<State> {
+  const r = await fetch('/api/state')
+  if (!r.ok) throw new Error(`/api/state ${r.status}`)
+  return r.json()
+}
+let timer = 0
+async function refresh() {
+  try { set({ state: await getState() }) } catch { if (snap.conn !== 'mock') set({ conn: 'reconnecting' }) }
+}
+export function refreshSoon(ms = 250) { clearTimeout(timer); timer = window.setTimeout(refresh, ms) }
+
+export async function start() {
+  try { set({ state: await getState() }) } catch {
+    const { MOCK } = await import('./mock')  // server unreachable: labelled mock data, never mixed with live data
+    set({ state: MOCK, conn: 'mock' })
+    return
+  }
+  const es = new EventSource('/api/events')
+  es.onopen = () => set({ conn: 'live' })
+  es.onerror = () => set({ conn: 'reconnecting' })
+  es.onmessage = e => {
+    try {
+      const ev = JSON.parse(e.data)
+      set({ events: [{ coll: ev.coll ?? ev.type, op: ev.op, id: ev.id, note: ev.note, t: Date.now() }, ...snap.events].slice(0, 14) })
+      refreshSoon()
+    } catch { /* ping or malformed: ignore */ }
+  }
+}
+
+async function post(path: string, body?: unknown) {
+  if (snap.conn === 'mock') throw new Error('server unreachable (mock data)')
+  const r = await fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: body ? JSON.stringify(body) : undefined })
+  const data = await r.json().catch(() => ({}))
+  if (!r.ok) throw new Error(data.detail || `${r.status} ${path}`)
+  refreshSoon(0)
+  return data
+}
+export const api = {
+  revoke: (id: string): Promise<{ revoked: string[]; version: number }> => post(`/api/revoke/${encodeURIComponent(id)}`),
+  quarantine: (id: string, d: 'approve' | 'reject') => post(`/api/quarantine/${encodeURIComponent(id)}/${d}`),
+  chat: (text: string): Promise<{ reply: string }> => post('/api/chat', { text, tier: 'stranger' }),
+  teach: (text: string) => post('/api/teach', { text }),
+  lineage: async (): Promise<{ nodes: LNode[] }> => {
+    if (snap.conn === 'mock') return (await import('./mock')).MOCK_LINEAGE
+    const r = await fetch('/api/lineage')
+    if (!r.ok) throw new Error(`/api/lineage ${r.status}`)
+    return r.json()
+  },
+}
+
+export const SEC: Record<Section, string> = { rules: 'Rules', context_policies: 'Context policies', guardrails: 'Guardrails', tool_access: 'Tool access' }
+export const parseT = (s?: string) => Date.parse(/[zZ]|[+-]\d\d:?\d\d$/.test(s || '') ? s! : (s || '') + 'Z')  // naive datetimes are UTC
+export const lastUser = (ep: Episode) => [...ep.input].reverse().find(m => m.role === 'user')?.content ?? ''

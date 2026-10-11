@@ -100,13 +100,17 @@ async def _say(notify: Notify, text: str) -> None:
 
 async def _gate_and_commit(candidates: list[dict], f: dict, notify: Notify = None) -> dict:
     g = await genome.current()
-    gate_id = f"G-{uuid.uuid4().hex[:6]}"
-    await db.gates.insert_one({"_id": gate_id, "status": "running", "lessons": [l["_id"] for l in candidates],
-                               "source": f["source_id"], "created_at": datetime.now(UTC)})
+    gate_id = f.get("gate_id") or f"G-{uuid.uuid4().hex[:6]}"  # learn() opened the cycle doc; approve() starts one here
+    await db.gates.update_one({"_id": gate_id}, {"$set": {"status": "running"}, "$setOnInsert": {
+        "lessons": [l["_id"] for l in candidates], "source": f["source_id"], "kind": f.get("kind"), "tier": f.get("tier"),
+        "correction": f.get("correction"), "created_at": datetime.now(UTC)}}, upsert=True)
+
+    async def progress(e: dict) -> None:  # each gate case lands on the cycle doc; the change stream shows it live
+        await db.gates.update_one({"_id": gate_id}, {"$push": {"progress": e}})
     result = {"status": "rejected", "lessons": candidates}
     for n, lesson in enumerate(candidates, 1):
         await _say(notify, f"🧪 Testing #{n}: does it fix the failure without breaking past cases?")
-        v = await gate.judge(lesson, f, g)
+        v = await gate.judge(lesson, f, g, progress)
         await _say(notify, f"   #{n} " + (
             f"✓ fixed · {v['regression_passed']}/{v['regression_total']} past cases still pass → shipping" if v["accepted"]
             else f"✗ fixed it but broke {v['regression_total'] - v['regression_passed']} past case(s)" if v["fixed"]
@@ -116,9 +120,12 @@ async def _gate_and_commit(candidates: list[dict], f: dict, notify: Notify = Non
             new = await genome.commit({**lesson, "gate": v}, lesson["parents"])
             await gate.carry_baseline(g, new["version"], v, (f.get("case") or {}).get("id"))
             result = {"status": "accepted", "lesson": {**lesson, "gate": v}, "version": new["version"]}
+            await db.lessons.update_many({"_id": {"$in": [l["_id"] for l in candidates[n:]]}},  # untested alternatives
+                                         {"$set": {"status": "skipped"}})
             break
         await db.lessons.update_one({"_id": lesson["_id"]}, {"$set": {"status": "rejected"}})
-    await db.gates.update_one({"_id": gate_id}, {"$set": {"status": result["status"], "ended_at": datetime.now(UTC)}})
+    await db.gates.update_one({"_id": gate_id}, {"$set": {"status": result["status"], "ended_at": datetime.now(UTC),
+                                                          "version": result.get("version")}})
     if f["kind"] in ("telegram", "raindrop"):  # live source: its Raindrop event shows what Kintsugi did about it
         l = result.get("lesson")
         raindrop.track_signal(
@@ -134,8 +141,12 @@ async def learn(f: dict, notify: Notify = None) -> dict:
     await db.lineage.update_one({"_id": f["source_id"]}, {"$setOnInsert": {
         "type": f["kind"], "parents": [], "status": "active", "trust": f["tier"],
         "label": (f["history"][-1]["content"] if f["history"] else "")[:80]}}, upsert=True)
+    f["gate_id"] = f"G-{uuid.uuid4().hex[:6]}"  # one doc per learning cycle in `gates`: the live view follows it
+    await db.gates.insert_one({"_id": f["gate_id"], "status": "proposing", "source": f["source_id"], "kind": f["kind"],
+                               "tier": f["tier"], "correction": f.get("correction"), "lessons": [], "created_at": datetime.now(UTC)})
     if not f.get("correction"):
         f["correction"] = await write_correction(f)
+        await db.gates.update_one({"_id": f["gate_id"]}, {"$set": {"correction": f["correction"]}})
     g = await genome.current()
     candidates = []
     for lesson in await propose(f, g):
@@ -144,19 +155,24 @@ async def learn(f: dict, notify: Notify = None) -> dict:
         if similar and similar[0]["score"] >= 0.95:  # Vector Search dedup: we already know this
             lesson.update(status="duplicate", duplicate_of=similar[0]["_id"])
         lesson["parents"] += [s["_id"] for s in similar if s["score"] >= 0.85 and s["_id"] not in lesson["parents"]]
+        lesson["similar"] = [{"_id": s["_id"], "score": round(s["score"], 3)} for s in similar]
         candidates.append(lesson)
     if candidates:
         await db.lessons.insert_many(candidates)
         # ponytail: Atlas Search indexes new docs in ~1.1 s (measured); the gate's retrieval must see them.
         # Poll similar_lessons(ids=...) instead if this ever flakes.
         await asyncio.sleep(2)
+    await db.gates.update_one({"_id": f["gate_id"]}, {"$set": {"lessons": [l["_id"] for l in candidates]}})
     live = [l for l in candidates if l["status"] == "candidate"]
     await _say(notify, f"💡 {len(live)} candidate lesson(s):\n" + "\n".join(
         f"#{n} [{l['section']}] {l['text']}" for n, l in enumerate(live, 1)))
     if not live:
-        return {"status": "no_candidates" if not candidates else "duplicate", "lessons": candidates}
+        status = "no_candidates" if not candidates else "duplicate"
+        await db.gates.update_one({"_id": f["gate_id"]}, {"$set": {"status": status, "ended_at": datetime.now(UTC)}})
+        return {"status": status, "lessons": candidates}
     if f["tier"] != "owner":  # every source untrusted → owner decides
         await db.lessons.update_many({"_id": {"$in": [l["_id"] for l in live]}}, {"$set": {"status": "quarantined"}})
+        await db.gates.update_one({"_id": f["gate_id"]}, {"$set": {"status": "quarantined", "ended_at": datetime.now(UTC)}})
         if f["kind"] in ("telegram", "raindrop"):
             raindrop.track_signal(event_id=f["source_id"], name="lesson_quarantined", properties={"candidates": len(live)})
         return {"status": "quarantined", "lessons": live}

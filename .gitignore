@@ -6,3 +6,4 @@ __pycache__/
 data/simulations/
 .DS_Store
 .playwright-cli/
+web/node_modules/

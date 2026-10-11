@@ -64,12 +64,16 @@ async def run_case(g: dict, case: dict, model: str | None = None, sw: Switches =
             "counters": {k: sum(e["counters"][k] for e in eps) for k in ("repairs", "fallbacks", "blocks")}}
 
 
-async def run_cases(g: dict, case_list: list[dict], model=None, sw: Switches = Switches(), run_id="adhoc") -> list[dict]:
+async def run_cases(g: dict, case_list: list[dict], model=None, sw: Switches = Switches(), run_id="adhoc",
+                    on_result=None) -> list[dict]:
     sem = asyncio.Semaphore(CONCURRENCY)
 
     async def one(c):
         async with sem:
-            return await run_case(g, c, model, sw, run_id)
+            r = await run_case(g, c, model, sw, run_id)
+        if on_result:  # e.g. the gate's live progress
+            await on_result(r)
+        return r
 
     return await asyncio.gather(*(one(c) for c in case_list))
 
