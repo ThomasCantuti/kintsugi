@@ -49,6 +49,19 @@ Scope and timeline: PLAN.md §8–9. **No project code before 10:30.**
 - Gotchas: the bot runs detached (nohup, since 12:34), log `~/Library/Logs/kintsugi-bot.log`. Restart: kill `pgrep -f "python3 -u -m kintsugi$"`, then `nohup uv run python -u -m kintsugi >> ~/Library/Logs/kintsugi-bot.log 2>&1 < /dev/null &`. ONE instance only (Telegram Conflict). Never send eval/gate traffic to Raindrop (1,000 events/month, ingestion stops at the cap). Announce pytest to the other sessions first (shared `kintsugi_test`). Commit own hunks via a temporary index (GIT_INDEX_FILE), then `git reset -- <paths>`; c2 has a staged web rename
 - [ ] README + live view: live view done (5115713, c2's React view shows kind `raindrop`); README line waits for the first Raindrop-sourced lesson (session 20)
 
+## Live view (D34): handoff from session c2, ~13:00
+Done (8c1cc59): React + Vite app in `web/` (dark "lacquer" default), build committed in `web/dist`, old page at `/legacy`.
+Stage = loop rail driven by the latest `gates` cycle doc + gate ring (one node per case, from `progress[]`) + Telegram mirror
+(live episodes, reply tagged with its genome version) + genome ribbon + change-stream ticker. Proof = held-out A0/A/B/Dn/C/D +
+curve, hard, red team (latest run per label; runs with `invalid` are skipped). Lineage = all nodes, inspector, revoke cascade.
+- [ ] ✅ Check on stage: one live teach on Telegram while watching :8000 (cycle doc → ring ticks per case → seam + v+1). The bot
+      runs the new learner/gate since 12:45 but no live cycle has gone through it yet.
+- [ ] Stranger panel (Stage → Telegram → Stranger tab: Send / Teach) not exercised live yet (one model call each).
+- [ ] Revoke from Lineage revokes for real (genome rebuild): only on a lesson you mean to remove.
+- [ ] D re-run pending (evals session); its bar fills itself when stored.
+Rebuild after any web/src change: `cd web && npm run build` (no bot restart: dist is read per request), commit `web/dist`.
+Prototype + plan: https://claude.ai/artifact/JMwZ6ocNfWh41j12H5VkLi
+
 ## 12:45–13:15 Lunch
 - [x] Evolution run on train → genome **v6**, 6 lessons accepted, 11 rejected (2 rounds)
 
