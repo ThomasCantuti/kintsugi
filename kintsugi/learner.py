@@ -42,8 +42,10 @@ Propose up to {n} ALTERNATIVE lessons that would fix this kind of failure. Each 
 section, written as one general imperative sentence that also helps with similar future requests (not only
 this exact one). The gate tests each alternative ALONE, so each one must cover EVERY part of the feedback by
 itself. Don't repeat what the genome already says. Best lesson first.
+Give each lesson a "title": at most 6 plain words that a non-technical audience understands at a glance
+(e.g. "Focus blocks are 90 minutes", "Strangers can't search notes").
 Answer only JSON:
-{{"lessons": [{{"section": "rules|context_policies|guardrails|tool_access", "text": "...",
+{{"lessons": [{{"section": "rules|context_policies|guardrails|tool_access", "text": "...", "title": "...",
 "tier": "stranger", "tools": ["tool_name"], "allow": false, "only": false,
 "prediction": "what will change in Tsugi's behaviour"}}]}}
 ("tier", "tools", "allow", "only" only for tool_access.)"""
@@ -81,6 +83,7 @@ async def propose(f: dict, g: dict) -> list[dict]:
         if section not in SECTIONS or not text:
             continue
         lesson = {"_id": f"L-{uuid.uuid4().hex[:6]}", "section": section, "text": text,
+                  "title": (p.get("title") or "").strip() or clip(text, 40),  # what people see; the id stays for machines
                   "prediction": p.get("prediction", ""), "status": "candidate", "created_at": now,
                   "parents": [f["source_id"]], "gate": None,
                   "source": {"kind": f["kind"], "tier": f["tier"], "ref": f["source_id"]},
@@ -137,7 +140,7 @@ async def _gate_and_commit(candidates: list[dict], f: dict, notify: Notify = Non
         l = result.get("lesson")
         raindrop.track_signal(
             event_id=f["source_id"], name="lesson_shipped" if l else "no_safe_fix", sentiment="POSITIVE" if l else "NEGATIVE",
-            properties={"lesson": l["_id"], "section": l["section"], "text": l["text"], "genome_version": result["version"],
+            properties={"lesson": l["_id"], "title": l.get("title"), "section": l["section"], "text": l["text"], "genome_version": result["version"],
                         "past_cases_passing": f"{l['gate']['regression_passed']}/{l['gate']['regression_total']}"}
             if l else {"candidates_rejected": len(candidates)})
     return result
@@ -188,7 +191,8 @@ async def learn(f: dict, notify: Notify = None) -> dict:
         await db.lessons.update_many({"_id": {"$in": [l["_id"] for l in live]}}, {"$set": {"status": "quarantined"}})
         await db.gates.update_one({"_id": f["gate_id"]}, {"$set": {"status": "quarantined", "ended_at": datetime.now(UTC)}})
         if f["kind"] in ("telegram", "raindrop"):
-            raindrop.track_signal(event_id=f["source_id"], name="lesson_quarantined", properties={"candidates": len(live)})
+            raindrop.track_signal(event_id=f["source_id"], name="lesson_quarantined",
+                                  properties={"candidates": len(live), "titles": [l.get("title") for l in live]})
         return {"status": "quarantined", "lessons": live}
     return await _gate_and_commit(live, f, notify)
 
