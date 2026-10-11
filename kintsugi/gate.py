@@ -104,15 +104,6 @@ async def judge(lesson: dict, f: dict, g: dict, progress: Progress = None) -> di
     scars = await _scars(active, f, lesson)
     scar_ids = [f"scar {s['_id']}" for s in scars]
     await say({"lesson": lesson["_id"], "cases": [first] + [c["id"] for c in sample] + scar_ids})
-    fixed, why = await _fixes(cand, f)
-    await say({"lesson": lesson["_id"], "case": first, "passed": fixed})
-    v = {"fixed": fixed, "why": why, "regression_passed": 0, "regression_total": 0, "accepted": False, "still_passing": []}
-    if not fixed:
-        return v
-    if not known:
-        sample = _sample(await baseline_passing(g), case_id, lesson)
-        await say({"lesson": lesson["_id"], "cases": [first] + [c["id"] for c in sample] + scar_ids})
-        await say({"lesson": lesson["_id"], "case": first, "passed": True})
 
     async def tell(r: dict, retry: bool = False) -> None:
         await say({"lesson": lesson["_id"], "case": r["case"], "passed": r["passed"], **({"retry": True} if retry else {})})
@@ -121,13 +112,38 @@ async def judge(lesson: dict, f: dict, g: dict, progress: Progress = None) -> di
         ok = (await _replay(cand, {**s, "source_id": s["_id"]}))[0] or (await _replay(cand, {**s, "source_id": s["_id"]}))[0]
         await say({"lesson": lesson["_id"], "case": label, "passed": ok})  # one retry, like train cases
         return ok
-    results, scars_ok = await asyncio.gather(  # all at once: the stage teach waits on the slowest case
-        evals.run_cases(cand, sample, run_id=f"gate-{lesson['_id']}", on_result=tell, concurrency=len(sample) or 1),
-        asyncio.gather(*(scar(s, label) for s, label in zip(scars, scar_ids))))
-    for i, r in enumerate(results):  # one retry per failure: separate model noise from real regressions
+
+    async def case(c: dict) -> dict:  # one retry per failure, right away: separate model noise from real regressions
+        r = await evals.run_case(cand, c, run_id=f"gate-{lesson['_id']}")
+        await tell(r)
         if not r["passed"]:
-            results[i] = await evals.run_case(cand, sample[i], run_id=f"gate-{lesson['_id']}")
-            await tell(results[i], retry=True)
+            r = await evals.run_case(cand, c, run_id=f"gate-{lesson['_id']}")
+            await tell(r, retry=True)
+        return r
+
+    def past(sample: list[dict]) -> asyncio.Future:  # all at once: the stage teach waits on the slowest case
+        return asyncio.gather(asyncio.gather(*(case(c) for c in sample)),
+                              asyncio.gather(*(scar(s, label) for s, label in zip(scars, scar_ids))))
+    # baseline cached: the past cases run alongside the fix check, so the gate waits on the slower one, not on both
+    # (an unfixed candidate pays for the part that ran before it's cancelled: ~1¢)
+    batch = past(sample) if known else None
+    fixed, why = await _fixes(cand, f)
+    await say({"lesson": lesson["_id"], "case": first, "passed": fixed})
+    v = {"fixed": fixed, "why": why, "regression_passed": 0, "regression_total": 0, "accepted": False, "still_passing": []}
+    if not fixed:
+        if batch:
+            batch.cancel()
+            await asyncio.wait([batch])
+            for coll in TOOL_COLLS:  # cancelled cases never reached their own wipe
+                await db[coll].delete_many({"world": {"$in": [f"gate:{cand['version']}:{s['_id']}" for s in scars]}})
+                await db[coll].delete_many({"world": {"$regex": f"^eval:gate-{lesson['_id']}:"}})
+        return v
+    if not known:
+        sample = _sample(await baseline_passing(g), case_id, lesson)
+        await say({"lesson": lesson["_id"], "cases": [first] + [c["id"] for c in sample] + scar_ids})
+        await say({"lesson": lesson["_id"], "case": first, "passed": True})
+        batch = past(sample)
+    results, scars_ok = await batch
     ok = [r["case"] for r in results if r["passed"]] + [label for label, p in zip(scar_ids, scars_ok) if p]
     total = len(sample) + len(scars)
     v.update(regression_passed=len(ok), regression_total=total, accepted=len(ok) == total, still_passing=ok)
