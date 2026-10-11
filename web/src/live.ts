@@ -75,13 +75,13 @@ export async function start() {
     return
   }
   const es = new EventSource('/api/events')
-  es.onopen = () => set({ conn: 'live' })
+  es.onopen = () => set({ conn: 'live', events: [] })  // the server replays its recent events on every (re)connect
   es.onerror = () => set({ conn: 'reconnecting' })
   es.onmessage = e => {
     try {
       const ev = JSON.parse(e.data)
       set({ events: [{ coll: ev.coll ?? ev.type, op: ev.op, id: ev.id, note: ev.note, t: Date.now() }, ...snap.events].slice(0, 40) })
-      refreshSoon()
+      if (!ev.replay) refreshSoon()
     } catch { /* ping or malformed: ignore */ }
   }
 }

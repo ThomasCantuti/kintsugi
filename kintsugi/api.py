@@ -1,6 +1,7 @@
 """FastAPI: live view, SSE fed by one Atlas change stream (which also hot-swaps the genome), revoke, quarantine, chat."""
 import asyncio
 import json
+from collections import deque
 from pathlib import Path
 
 import raindrop.analytics as raindrop
@@ -18,6 +19,7 @@ WEB = Path(__file__).resolve().parent.parent / "web"
 DIST = WEB / "dist"  # the React live view, built by `npm run build` in web/ (committed)
 EVENT_TYPES = {"lessons": "lesson", "genomes": "genome", "episodes": "episode", "gates": "gate", "runs": "run"}
 subscribers: set[asyncio.Queue] = set()
+recent: deque = deque(maxlen=40)  # replayed to each new page, so the ticker isn't blank after a reload
 web_turns: dict[str, list[dict]] = {"owner": [], "stranger": []}  # live-view chats (owner only in the sandbox)
 used = {"chat": 0, "teach": 0}  # sandbox spend so far (this process)
 running: set[asyncio.Task] = set()  # live-view chat turns in flight (asyncio keeps only weak refs to tasks)
@@ -38,6 +40,7 @@ async def watch() -> None:
                         genome.hot_swap(ch["fullDocument"])
                     evt = {"type": EVENT_TYPES[coll], "coll": coll, "id": str(ch["documentKey"]["_id"]),
                            "op": ch["operationType"], "note": _note(coll, ch)}
+                    recent.append(evt)
                     for q in list(subscribers):
                         q.put_nowait(evt)
         except Exception as e:  # network blip: reopen the stream
@@ -80,10 +83,13 @@ app.mount("/assets", StaticFiles(directory=DIST / "assets", check_dir=False), na
 async def events():
     q: asyncio.Queue = asyncio.Queue()
     subscribers.add(q)
+    backlog = list(recent)  # taken with the subscribe, no await between: nothing is sent twice
 
     async def stream():
         try:
             yield ": connected\n\n"
+            for e in backlog:
+                yield f"data: {json.dumps({**e, 'replay': True})}\n\n"
             while True:
                 try:
                     yield f"data: {json.dumps(await asyncio.wait_for(q.get(), 15))}\n\n"
