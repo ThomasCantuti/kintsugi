@@ -18,12 +18,12 @@ from .agent import RAW, Switches
 from .db import TOOL_COLLS, db, wipe_world
 from .tools import embed_notes
 
-CASES_FILE = Path(__file__).resolve().parent.parent / "evals" / "cases.json"
+CASES_DIR = Path(__file__).resolve().parent.parent / "evals"  # cases.json (train/heldout, frozen) + redteam.json
 CONCURRENCY = 4
 
 
 def cases(split: str) -> list[dict]:
-    return [c for c in json.loads(CASES_FILE.read_text()) if c["split"] == split]
+    return [c for f in sorted(CASES_DIR.glob("*.json")) for c in json.loads(f.read_text()) if c["split"] == split]
 
 
 async def _check(c: dict, world: str, replies: str) -> bool:

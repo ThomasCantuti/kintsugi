@@ -31,7 +31,7 @@ async def ensure_search_indexes(dims: int) -> None:
     want = {
         ("lessons", VECTOR_INDEX): {"fields": [
             {"type": "vector", "path": "embedding", "numDimensions": dims, "similarity": "cosine"},
-            {"type": "filter", "path": "status"}]},
+            {"type": "filter", "path": "status"}, {"type": "filter", "path": "_id"}]},
         ("notes", NOTES_VEC): {"fields": [
             {"type": "vector", "path": "embedding", "numDimensions": dims, "similarity": "cosine"},
             {"type": "filter", "path": "world"}]},

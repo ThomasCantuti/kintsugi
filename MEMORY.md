@@ -63,9 +63,11 @@ Living facts and decisions. Append; don't rewrite history. Date every entry.
 - Modelence: Python / custom start command? External Atlas URI? Do credits cover anything besides hosting? (ask at the venue)
 
 ## Numbers (fill only with measured values, with date + n)
-- Held-out (n=?): A0 Nemotron raw loop — · A Nemotron v0 — · B Nemotron vN — · C frontier v0 — · D frontier + naive memory — (trials, $/task)
+- Held-out (n=12 cases × 2 trials = 24, model `nvidia/nemotron-3-super-120b-a12b` paid, 2026-10-11 ~11:40 PT): **A0 raw loop 8/24 (33%)** $0.0153 · **A v0 11/24 (46%)** $0.0152 · B vN — · C frontier v0 — · D frontier + naive memory —. Per trial: A0 (R-ef7a04) 4/12 + 4/12 · A (R-de79ec) 4/12 + 7/12; same 4 cases pass in every trial (draft-h2, private-h2, stranger-h2, generic-h1), A trial 2 adds tz-h1, remind-h1, team-h1. **A0 vs A: no measurable harness effect at v0; the difference is one trial (4/12 vs 7/12).** At v0 the prompt is identical in both modes (base items stay with genome=False, no lessons, strangers have all tools) and repairs/fallbacks/blocks are 0 in both. Trials vary even at temperature 0 → B vs A needs ≥2 trials (ideally 3), reported per trial.
 - Curve: held-out pass rate per genome version —
-- Supervisor agreement with ground-truth checks: — / n
+- Supervisor agreement with ground-truth checks: **19/19** (Sonnet 5.5 on train run R-762ceb, v0, n=19 cases with a hand-written correction, $0.041). Held-out has no `correction` field, so `--judge` on held-out gives 0/0.
+- Train v0 (n=19, 1 trial, paid Nemotron): 7/19 pass, $0.0082 (run R-762ceb, the gate's v0 baseline).
+- Costs measured: Nemotron Super paid ≈ $0.0002/request (~1.2k in / 200 out tokens); one learning cycle (Sonnet propose + gate) ≈ $0.015.
 - Live: episodes — · lessons accepted/rejected/quarantined — · revokes —
 - RSI: improver acceptance rate per playbook version —
 
@@ -76,3 +78,6 @@ Living facts and decisions. Append; don't rewrite history. Date every entry.
 - 2026-10-11 OpenRouter `/api/v1/key` shows `free_model_daily_requests` (50/day on free tier). Voyage via `https://ai.mongodb.com/v1` works (voyage-4-lite, 1024 dims). Nemotron embed on OpenRouter = 2048 dims.
 - 2026-10-11 v0 baseline behaviour (Nemotron Super free): asks clarifying questions unless told to assume defaults (added to BASE rules); books 2h focus on Friday; sends email without a draft.
 - 2026-10-11 Vector Search verified on the Sandbox (8.0.34): `lessons_vec`, `notes_vec` (1024 dims, voyage-4-lite) + `notes_text` (Atlas Search, lucene.english). **`$rankFusion` works on 8.0.34.** Index build ≈ 45 s, so `__main__` creates them at startup. A freshly inserted note takes ~1 s to become searchable, so `note_search` falls back to keyword regex when hybrid returns nothing (eval worlds are seeded right before the agent runs). Hybrid returns up to 5 notes for any query (6-note worlds → most notes, incl. private).
+- 2026-10-11 **Gate bug fixed**: lesson retrieval filtered `$vectorSearch` by `status: active`, so a candidate under test (status `candidate`) was dropped from the prompt → the gate could never accept a rules/context_policies lesson (guardrails skip retrieval). Now retrieval filters by the running genome's lesson ids (`_id` added as a filter field on `lessons_vec`). Also correct for `--version N` runs.
+- 2026-10-11 Propose prompt: alternatives must each cover EVERY part of the feedback (the gate tests each alone). Before: focus-01's feedback (Deep work 90 min mornings + never Fridays) was split across 3 lessons, each fixing half → all rejected. After: first try accepted → v1 (7/7 regression).
+- 2026-10-11 Switched to paid models with $10 OpenRouter credits (key hard limit $10): agent `nemotron-3-super-120b-a12b` (paid; free super + lightning as fallbacks), supervisor `claude-sonnet-5.5`. Free tier = 50 req/day and 20/min, too tight for the gate (16–20 requests per burst).

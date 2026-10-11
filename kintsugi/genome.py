@@ -127,14 +127,16 @@ async def embed_lesson(lesson: dict) -> None:
     await ensure_search_indexes(len(vec))
 
 
-async def similar_lessons(text: str, k: int = config.LESSONS_TOP_K, statuses=("active",)) -> list[dict] | None:
-    """Top-k lessons by meaning ($vectorSearch). None if vector search isn't available yet."""
+async def similar_lessons(text: str, k: int = config.LESSONS_TOP_K, statuses=("active",),
+                          ids: list[str] | None = None) -> list[dict] | None:
+    """Top-k lessons by meaning ($vectorSearch), among `ids` (a genome's lessons) or else by status.
+    None if vector search isn't available yet."""
     try:
         [vec] = await models.embed([text], "query")
         return await (await db.lessons.aggregate([
             {"$vectorSearch": {"index": VECTOR_INDEX, "path": "embedding", "queryVector": vec,
                                "numCandidates": max(50, k * 10), "limit": k,
-                               "filter": {"status": {"$in": list(statuses)}}}},
+                               "filter": {"_id": {"$in": ids}} if ids is not None else {"status": {"$in": list(statuses)}}}},
             {"$project": {"text": 1, "section": 1, "score": {"$meta": "vectorSearchScore"}}},
         ])).to_list()
     except Exception:

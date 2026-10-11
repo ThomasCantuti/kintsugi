@@ -44,7 +44,7 @@ async def system_prompt(g: dict, tier: str, now: str | None, query: str, sw: Swi
     items = {s: [i for i in g[s] if sw.genome or i["lesson"] is None] for s in ("rules", "context_policies", "guardrails")}
     learned = [i for s in ("rules", "context_policies") for i in items[s] if i["lesson"]]
     if sw.retrieval and learned:
-        hits = await similar_lessons(query)
+        hits = await similar_lessons(query, ids=[i["lesson"] for i in learned])  # this genome's lessons, not 'active' ones
         if hits is not None:  # vector search available: keep base items + the top-k relevant lessons
             keep = {h["_id"] for h in hits}
             for s in ("rules", "context_policies"):

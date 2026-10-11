@@ -2,6 +2,7 @@
 
 Never touches held-out cases (only `evals.cases("train")`, via the gate).
 """
+import asyncio
 import json
 import uuid
 from collections.abc import Awaitable, Callable
@@ -35,7 +36,8 @@ Feedback: {correction}
 
 Propose up to {n} ALTERNATIVE lessons that would fix this kind of failure. Each lesson is a small delta to ONE
 section, written as one general imperative sentence that also helps with similar future requests (not only
-this exact one). Don't repeat what the genome already says. Best lesson first.
+this exact one). The gate tests each alternative ALONE, so each one must cover EVERY part of the feedback by
+itself. Don't repeat what the genome already says. Best lesson first.
 Answer only JSON:
 {{"lessons": [{{"section": "rules|context_policies|guardrails|tool_access", "text": "...",
 "tier": "stranger", "tools": ["tool_name"], "allow": false,
@@ -136,6 +138,9 @@ async def learn(f: dict, notify: Notify = None) -> dict:
         candidates.append(lesson)
     if candidates:
         await db.lessons.insert_many(candidates)
+        # ponytail: Atlas Search indexes new docs in ~1.1 s (measured); the gate's retrieval must see them.
+        # Poll similar_lessons(ids=...) instead if this ever flakes.
+        await asyncio.sleep(2)
     live = [l for l in candidates if l["status"] == "candidate"]
     await _say(notify, f"💡 {len(live)} candidate lesson(s):\n" + "\n".join(
         f"#{n} [{l['section']}] {l['text']}" for n, l in enumerate(live, 1)))
