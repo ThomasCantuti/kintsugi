@@ -177,7 +177,7 @@ teaches once, the free model runs every day.*
 | 2:50 | **Close**: "Agents that get stronger where they break." |
 
 Revoke is shown in Q&A or the video, not during the gate: a revoke while a gate runs rebuilds the genome under it.
-**Backup**: a recorded real teach (live view, labelled with its speed) if the gate isn't done by 2:40.
+**Backup**: `assets/video/backup-teach-4x.mp4` (89 s, a real teach on a scratch copy of the live data at 4x, labelled) if the gate isn't done by 2:40. Real speed that run: turn 57 s, gate 221 s, 344 s in all.
 Stranger = a second Telegram account if available, else `POST /chat?tier=stranger` from the live view.
 
 ## 7. 1-minute video (record 16:15)

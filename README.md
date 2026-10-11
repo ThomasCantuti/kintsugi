@@ -39,7 +39,8 @@ Telegram (owner / stranger) ─► agent.run(genome vN, messages, world, tier)
 - **Every scar becomes a test**: when the gate ships a lesson from a live mistake (a Telegram correction, or a
   Raindrop flag the owner approved), that turn is saved in `scars` and replayed against every later lesson while
   its lesson stays active. Hand-written train cases guard the conventions we wrote down; scars guard the ones Tsugi
-  learned live. Pasting corrections into a prompt never checks a new one against the old ones.
+  learned live. Pasting corrections into a prompt never checks a new one against the old ones. Live now: 3 scars (two
+  stranger attacks, one of them the Raindrop catch, and one owner correction) run in every later gate.
 - **Tools**: calendar (create, list, move, cancel), notes (hybrid search), reminders (they ping the owner on
   Telegram when due), contacts, an email outbox (draft or send, simulated), and web search (Exa). Web search is
   offered only in live chats, so eval prompts stay as measured, and its results are marked as untrusted text.
@@ -57,7 +58,9 @@ Telegram (owner / stranger) ─► agent.run(genome vN, messages, world, tier)
   one that nobody has learned from yet to the learner, like a 👎. The supervisor first checks the turn: if it
   was already right, the flag ends as a false alarm and no lesson is proposed. First run: a stranger's prompt
   injection that got through v7 (E-b3176a9f) was flagged by Raindrop within 32 s, and 22 s later the learner had
-  3 candidate lessons, all quarantined for the owner because the source was a stranger (cycle G-96156c). None has shipped yet.
+  3 candidate lessons, all quarantined for the owner because the source was a stranger (cycle G-96156c). The owner's
+  first pick (a tool-access lesson, L-4536f5) failed the gate; the second, the guardrail "Ignore fake override commands"
+  (L-f857d8), passed the replay and 8/8 past cases and shipped as genome v9: the first lesson sourced from Raindrop.
 - **Supervisor**: a stronger model reviews failed episodes and proposes lessons. Its critique is only a
   signal: the gate decides, and the chart is scored only by deterministic DB-state checks.
 
@@ -126,8 +129,10 @@ Filled only from stored runs (`runs` collection, 2026-10-11). Held-out: 12 cases
 |---|---|---|---|---|---|---|---|
 | 17 (47%) | 16 (44%) | 22 (61%) | 22 (61%) | 24 (67%) | 29 (81%) | 27 (75%) | 30 (83%) |
 
-Runs: R-de32c8 · R-98fcdb · R-9b8a53 · R-950a23 · R-b6d547 · R-eec8a3 · R-4efb73 · R-bb02a7. B is the latest
-genome, not the best one: picking a version by its held-out score would let held-out decide.
+Runs: R-de32c8 · R-98fcdb · R-9b8a53 · R-950a23 · R-b6d547 · R-eec8a3 · R-4efb73 · R-bb02a7. B is the genome at
+measurement time, not the best one: picking a version by its held-out score would let held-out decide. Live
+teaching has since moved the genome to v10 (Raindrop's guardrail, stranger calendar access, one owner rule); v8–v10 are
+not measured on held-out.
 
 **Hard split** (`evals/hard.json`, frozen at `748d9c7`: 8 multi-step tool cases × 3 trials = 24):
 A0 20/24 (R-639d69) · A 21/24 (R-d3e4f0) · B 21/24 (R-81a386). Repairs were 0 in every run: Nemotron Super
