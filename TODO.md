@@ -58,18 +58,26 @@ Scope and timeline: PLAN.md §8–9. **No project code before 10:30.**
   Check flags: `uv run python -c "from kintsugi.__main__ import _raindrop_query as q; s={x['id']:x['name'] for x in q('/v1/signals')['data']}; print([(e['id'], [s.get(x['id'], x['name']) for x in e.get('signals') or []]) for e in q('/v1/events?limit=5')['data']])"` · matches per signal: `q('/v1/events?signal=<id>')`.
 - Gotchas: classifier signals arrive on events as uuids (map via /v1/signals) · Raindrop never flags an attack Tsugi refused · bot detached, log `~/Library/Logs/kintsugi-bot.log`; restart = kill `pgrep -f "python3 -u -m kintsugi$"` (often needs `kill -9`), then `nohup uv run python -u -m kintsugi >> ~/Library/Logs/kintsugi-bot.log 2>&1 < /dev/null &`, one instance, write a `--- restart HH:MM (why)` line; restart only with a clean tree and no `gates` cycle in proposing/running · send Telegram cards from another process with `ExtBot(token, defaults=Defaults(parse_mode=HTML))` (a plain `Bot` sends raw `<b>` tags) · never send eval/gate traffic to Raindrop (1,000 events/month) · announce pytest (shared `kintsugi_test`) · commit own hunks only (temporary GIT_INDEX_FILE when a file has others' edits)
 
-## Live view (D34): handoff from session c2, ~13:00
-Done (8c1cc59): React + Vite app in `web/` (dark "lacquer" default), build committed in `web/dist`, old page at `/legacy`.
-Stage = loop rail driven by the latest `gates` cycle doc + gate ring (one node per case, from `progress[]`) + Telegram mirror
-(live episodes, reply tagged with its genome version) + genome ribbon + change-stream ticker. Proof = held-out A0/A/B/Dn/C/D +
-curve, hard, red team (latest run per label; runs with `invalid` are skipped). Lineage = all nodes, inspector, revoke cascade.
-- [ ] ✅ Check on stage: one live teach on Telegram while watching :8000 (cycle doc → ring ticks per case → seam + v+1). The bot
-      runs the new learner/gate since 12:45 but no live cycle has gone through it yet.
-- [ ] Stranger panel (Stage → Telegram → Stranger tab: Send / Teach) not exercised live yet (one model call each).
+## Live view + Telegram UI (D34): handoff from session c2, ~14:35
+Done (all committed, all live): short copy on every scene (fdf7ccc) · lessons by title, "Seam N · title" once shipped (N = genome
+version it made), candidates A/B/C, Raindrop chip "🌧️ Raindrop · <flags> · caught in N s" linked to app.raindrop.ai, scars on the
+gate ring (e03d99b) · Tsugi legend: leaf / gold seam / red crack / faint scar (2273665) · red team: rt-v7 + poisoned-memory bars,
+11-case subtitle (55a7baf, c78eb5f) · allowlist lessons read "only <tools> for <tier>" (1eb302d).
+Telegram: every bot message is HTML (f2e3da5): escape user/model/DB text with `telegram.escape()` / `quote()`. One quarantine card
+per cycle [✅ A][✅ B][✅ C][❌ None]; a pick drops the alternatives only if it ships, else Telegram re-offers them (c78eb5f + test).
+Model `**bold**` is rendered as bold. Bot profile set: /start + /genome menu, description, short description.
+Art (9961204): `assets/telegram/` = bot icon 1024², description picture 640×360, wallpapers (phone 1290×2796, desktop 2560×1600);
+`render.html` regenerates them (serve the folder with `python3 -m http.server` + a `fonts` symlink to web/node_modules/@fontsource;
+playwright-cli blocks file://). Icon seams = the 7 lessons live at v7.
+- [ ] [you] Upload: @BotFather → /mybots → Edit Bot → Edit Botpic (icon) and Edit Description Picture; wallpaper in the Tsugi chat
+      (tap name → ⋯ → Change Wallpaper; Telegram Desktop: Settings → Chat Settings). Dark (Night) theme matches.
+- [ ] Red team learned-genome bar: when 1f stores rt-v8+, change the 'rt-v7' label in `web/src/Proof.tsx` (SPLITS.redteam).
+- [ ] Raindrop per-event URL: when 37 sends the pattern, use it in `web/src/live.ts` (RAINDROP_URL; links are per chip).
 - [ ] Revoke from Lineage revokes for real (genome rebuild): only on a lesson you mean to remove.
-- [ ] D re-run pending (evals session); its bar fills itself when stored.
+- [ ] Stranger "Teach" from the live view not exercised live yet.
 Rebuild after any web/src change: `cd web && npm run build` (no bot restart: dist is read per request), commit `web/dist`.
-Prototype + plan: https://claude.ai/artifact/JMwZ6ocNfWh41j12H5VkLi
+A hash-only navigation doesn't reload the app: reload to see a new build. Bot restart: gate idle + clean tree first; kill, then
+`kill -9` if it lingers (it ignored SIGTERM twice today); one instance; write the restart line in the log.
 
 ## 12:45–13:15 Lunch
 - [x] Evolution run on train → genome **v6**, 6 lessons accepted, 11 rejected (2 rounds)
@@ -113,6 +121,21 @@ Done: web_search (Exa, live only, D38) · reminders ping on Telegram · scars (D
 - [x] [you] OK to delete the leftover "Call with Maya" (2026-10-12 15:00) in the live world before the stage.
 - [x] Backup teach video: `assets/video/backup-teach-4x.mp4` (e8232c2). Demo script in PLAN §6 updated (request before the hook).
 - [x] Gate replay fix (fc4dbde): a live failure replays from the world before that turn (the turn's own event spoiled the fix check).
+
+### Handoff from session 20 (~14:30) → next docs/README session
+Role: README, PLAN, docs, demo prep; small harness features when Thomas asks. Every README number is checked in Atlas `runs`
+(run id, per-trial counts, `invalid` field, `counters.fallbacks == 0` on frontier runs) before it's written; peers' numbers too.
+1. **v10 measurement** (evals session 1f, started ~14:28, Thomas approved: held-out + 11-case red team + hard, Nemotron, 3 trials).
+   When 1f sends "evals done": verify the run ids in Atlas, then README Results (add v10 to the curve and red-team table; B stays v7
+   unless the README says otherwise; disclose that v8–v10 came from live teaching). Don't time or rehearse until then.
+2. **Rehearse the demo** (PLAN §6) once with a timer, then the `judge-panel` agent. Backup: `assets/video/backup-teach-4x.mp4`.
+   Stage teach real speed varies a lot: 139 s to 344 s end to end (MEMORY Numbers). No evals during rehearsals.
+3. Optional if time: web-poisoning red-team case (freeze before any run; web_search is live-only, so an eval case needs web fixtures).
+4. Gotchas: scratch DB `kintsugi_rehearsal` = copy of live + a v11 with the investor lesson (rehearsal only, never the live bot). Recipe:
+   copy live collections (genomes, lessons, baselines, lineage, runs, tool colls with world "live") → `ensure_search_indexes(1024)` →
+   serve `api.app` + `api.watch()` on :8001 with `DB_NAME=kintsugi_rehearsal` (empty RAINDROP/TELEGRAM env) → run the teach with
+   `DB_NAME=kintsugi_rehearsal`. playwright-cli `video-stop` takes no filename (prints the path). ffmpeg here has no drawtext:
+   render labels with system python3 + Pillow, then `overlay`. Live calendar: the leftover Maya event is deleted (Thomas OK'd).
 
 ## 15:15–15:45 BOOST (only if everything above is green)
 - [ ] RSI improver playbook · genome transfer to another model · `red-team` agent pass
