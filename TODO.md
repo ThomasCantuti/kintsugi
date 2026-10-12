@@ -154,7 +154,7 @@ Role: README, PLAN, docs, demo prep; small harness features when Thomas asks. Ev
 - Rehearsal setup (not used yet): the sandbox itself is the easiest rehearsal stage (owner chat + 👎 from the web, real gate).
 
 **Open decisions for Thomas:**
-1. **Reset the sandbox between judges?** One judge's lesson stays for the next. Reset = `DB_NAME=kintsugi_sandbox uv run python -m
+1. ~~**Reset the sandbox between judges?**~~ Retired 19:20 (D44): the sandbox link redirects to prod. One judge's lesson stays for the next. Reset = `DB_NAME=kintsugi_sandbox uv run python -m
    kintsugi.sandbox`, then restart the service (Railway dashboard → tsugi → Restart, or GraphQL `serviceInstanceRedeploy`, below).
 2. ~~**Stage revoke**~~ **Fixed (Thomas chose the fix): 174a4aa** carries the passing past cases over on revoke (scratch copy:
    v11 kept v10's 14). **Live only after a bot restart** (the 15:54 session holds restarts). Original finding (verified in gate.py): `genome.revoke()` makes a version with no `baselines` doc, so the next

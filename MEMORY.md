@@ -132,6 +132,13 @@ Living facts and decisions. Append; don't rewrite history. Date every entry.
   Each `railway up` overlaps old and new containers for ~10 s: 1–2 Telegram `Conflict` lines, then clean (checked 02:08 UTC).
   Thomas's 18:40–18:51 practice: v13 revoked "Say degrees, not F", v14/v15 = degree-symbol / no-Fahrenheit lessons.
 
+- 2026-10-11 D44 **One Tsugi, one link** (Thomas 19:15: "both should point to the same cloud"). The judges' sandbox
+  (service `tsugi`, DB `kintsugi_sandbox`, every visitor the owner) is retired: that service now runs only a stdlib 308
+  redirect (path + query kept) to https://tsugi-prod-production.up.railway.app, deployed from a scratch folder
+  (main.py + railway.json, RAILPACK_START_CMD=python main.py); no repo code. `kintsugi_sandbox` is left in Atlas at v12
+  (restore = `railway up --service tsugi` from a clean HEAD export + RAILPACK_START_CMD=python -m kintsugi). README "Try it"
+  now describes prod (stranger chat; owner actions need the key).
+
 ## Open questions
 - ~~Modelence: Python / custom start command?~~ Answered: Node.js only (D31).
 - ~~**Live teach convention**~~ Answered: investor calls (D36). Still open: learning cycle 66–95 s vs ~55 s teach beat (the v7 cycle
