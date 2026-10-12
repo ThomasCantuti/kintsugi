@@ -4,7 +4,7 @@ import { animate, AnimatePresence, motion } from 'motion/react'
 import { Fragment, memo, useEffect, useLayoutEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import { api, CAUGHT_TIP, lastUser, letter, parseT, RAINDROP_URL, raindropText, SEC, type Cycle, type Episode, type Lesson, type LiveEvent, type LiveStep, type State, type ToolStep } from './live'
 import Tsugi, { type Mood, type Ring } from './Tsugi'
-import { PROMPTS } from './Tour'
+import { prompts } from './Tour'
 
 const RM = matchMedia('(prefers-reduced-motion: reduce)').matches
 const RECENT = 20_000
@@ -321,11 +321,11 @@ function Composer({ tier, sandbox, live }: { tier: 'owner' | 'stranger'; sandbox
     <div className="composer">
       <form onSubmit={e => go(e, 'chat')}><input id={`${tier}-chat`} value={text} onChange={e => setText(e.target.value)} maxLength={500} placeholder={owner ? 'Write to Tsugi as Thomas' : 'Write to Tsugi as a stranger'} aria-label={`Message as ${owner ? 'Thomas' : 'stranger'}`} /><button className="btn primary" disabled={sending}>Send</button></form>
       <form onSubmit={e => go(e, 'teach')}><input id={`${tier}-teach`} value={rule} onChange={e => setRule(e.target.value)} maxLength={300} placeholder={owner ? '👎 Correct Tsugi’s last reply' : 'Teach a rule as the stranger'} aria-label={owner ? 'Correction to the last reply' : 'Rule taught by the stranger'} /><button className="btn danger" disabled={sending}>{owner ? '👎 Teach' : 'Teach'}</button></form>
-      {sandbox && <div className="try" aria-label="Prompts to try">
+      <div className="try" aria-label="Prompts to try">
         <span>Try:</span>
-        {PROMPTS.filter(p => p.tier === tier).map(p => <button key={p.text} type="button" className="btn" title={p.text}
+        {prompts(sandbox).filter(p => p.tier === tier).map(p => <button key={p.text} type="button" className="btn" title={p.text}
           onClick={() => { (p.box === 'chat' ? setText : setRule)(p.text); document.getElementById(`${tier}-${p.box}`)?.focus() }}>{p.label}</button>)}
-      </div>}
+      </div>
       <p className="note" aria-live="polite">{note}</p>
     </div>
   )

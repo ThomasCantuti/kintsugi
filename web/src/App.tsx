@@ -72,10 +72,11 @@ export default function App() {
             {theme === 'dark' ? 'Lacquer' : 'Porcelain'}</button>
         </div>
       </header>
-      {state?.sandbox && <div className="sandbox-note">
+      {state && <div className="sandbox-note">
         <button className={'tour-btn' + (toured ? '' : ' pulse')} onClick={startTour}>▶ Start the tour</button>
         <button className="btn" onClick={() => setPrompts(p => !p)} aria-expanded={prompts}>Prompts</button>
-        <p>Judges' sandbox: a copy of Tsugi where you are Thomas, the owner. Chat in the Telegram panel (Thomas tab), 👎 a reply and correct it, then watch the gate test your lesson. Thomas's own Tsugi isn't affected.</p>
+        <p>{state.sandbox ? "Judges' sandbox: a copy of Tsugi where you are Thomas, the owner. Chat in the Telegram panel (Thomas tab), 👎 a reply and correct it, then watch the gate test your lesson. Thomas's own Tsugi isn't affected."
+          : "Thomas's real Tsugi, live: his Telegram chats appear here as they happen. Talk to Tsugi yourself as a stranger (Stranger tab in the Telegram panel)."}</p>
       </div>}
       <main>
         {!state ? <div className="scene"><p className="empty">Connecting to Atlas…</p></div> : <>
@@ -88,10 +89,10 @@ export default function App() {
         </>}
       </main>
       {toastMsg && <div className="toast" role="status">{toastMsg}</div>}
-      {tour && state && <Tour go={go} onClose={chat => { setTour(false); if (chat) setPrompts(true) }} />}
+      {tour && state && <Tour go={go} sandbox={!!state.sandbox} onClose={chat => { setTour(false); if (chat) setPrompts(true) }} />}
       {prompts && !tour && <section className="prompts-panel" aria-label="Prompts to try">
         <div className="prompts-head"><h2>Try these</h2><button className="btn" onClick={() => setPrompts(false)} aria-label="Close prompts">✕</button></div>
-        <Prompts />
+        <Prompts sandbox={!!state?.sandbox} />
       </section>}
     </>
   )
