@@ -1,11 +1,12 @@
 """FastAPI: live view, SSE fed by one Atlas change stream (which also hot-swaps the genome), revoke, quarantine, chat."""
 import asyncio
 import json
+import secrets
 from collections import deque
 from pathlib import Path
 
 import raindrop.analytics as raindrop
-from fastapi import BackgroundTasks, FastAPI, HTTPException
+from fastapi import BackgroundTasks, Depends, FastAPI, Header, HTTPException
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
@@ -195,12 +196,18 @@ async def lineage(node_id: str):
             "edges": [{"from": p, "to": n["_id"]} for n in nodes for p in n.get("parents", []) if p in ids]}
 
 
-@app.post("/api/revoke/{node_id}")
+def owner(x_owner_key: str = Header("")) -> None:
+    """On the public server, revoke and quarantine decisions are Thomas's: the live view sends its ?key=… here."""
+    if config.OWNER_WEB_KEY and not secrets.compare_digest(x_owner_key.encode(), config.OWNER_WEB_KEY.encode()):
+        raise HTTPException(403, "Only Thomas can do this.")
+
+
+@app.post("/api/revoke/{node_id}", dependencies=[Depends(owner)])
 async def revoke(node_id: str):
     return await genome.revoke(node_id)
 
 
-@app.post("/api/quarantine/{lesson_id}/{decision}")
+@app.post("/api/quarantine/{lesson_id}/{decision}", dependencies=[Depends(owner)])
 async def quarantine(lesson_id: str, decision: str, bg: BackgroundTasks):
     if decision == "approve":
         bg.add_task(learner.approve, lesson_id)  # still has to pass the gate
@@ -216,11 +223,11 @@ def _tier(tier: str) -> str:
 
 
 def _cap(kind: str) -> None:
-    """The sandbox is public: cap its turns and learning cycles (~$2 at most) until the next restart."""
-    if config.SANDBOX:
+    """The sandbox and the public prod server: cap their turns and learning cycles (~$2 at most) until the next restart."""
+    if config.SANDBOX or config.OWNER_WEB_KEY:
         used[kind] += 1
         if used[kind] > (config.SANDBOX_TURNS if kind == "chat" else config.SANDBOX_TEACHES):
-            raise HTTPException(429, "This sandbox reached its spend cap. Ask Thomas to reset it.")
+            raise HTTPException(429, "Tsugi reached its public spend cap. Ask Thomas to reset it.")
 
 
 class Chat(BaseModel):

@@ -51,3 +51,6 @@ PORT = int(_env("PORT", "8000"))
 # Judges' sandbox: a public copy of Tsugi (own DB, no Telegram) where every web visitor is the owner. Caps bound the spend.
 SANDBOX = _env("SANDBOX") == "1"
 SANDBOX_TURNS, SANDBOX_TEACHES = 400, 40
+# Public production server (Railway): revoke and quarantine decisions need this key (live view opened once with ?key=…)
+OWNER_WEB_KEY = _env("OWNER_WEB_KEY")
+HOST = _env("HOST", "0.0.0.0" if SANDBOX else "127.0.0.1")  # local default: approve/revoke stay on this machine

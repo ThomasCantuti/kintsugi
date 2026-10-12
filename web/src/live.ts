@@ -86,9 +86,18 @@ export async function start() {
   }
 }
 
+// Owner key for revoke/approve on the public server: open the page once with ?key=…; it's kept here and dropped from the URL bar
+const KEY = (() => {
+  try {
+    const u = new URL(location.href), k = u.searchParams.get('key')
+    if (k) { localStorage.setItem('ownerKey', k); u.searchParams.delete('key'); history.replaceState(null, '', u) }
+    return k || localStorage.getItem('ownerKey') || ''
+  } catch { return '' }
+})()
+
 async function post(path: string, body?: unknown) {
   if (snap.conn === 'mock') throw new Error('server unreachable (mock data)')
-  const r = await fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: body ? JSON.stringify(body) : undefined })
+  const r = await fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Owner-Key': KEY }, body: body ? JSON.stringify(body) : undefined })
   const data = await r.json().catch(() => ({}))
   if (!r.ok) throw new Error(data.detail || `${r.status} ${path}`)
   refreshSoon(0)

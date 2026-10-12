@@ -393,3 +393,17 @@ def test_rate_limit_waits_on_the_same_model_before_falling_back(run, monkeypatch
     monkeypatch.setattr(models, "RATE_LIMIT_WAITS", (0, None))
     r = run(models.chat([{"role": "user", "content": "x"}], model="frontier", fallbacks=["cheap"]))
     assert calls == ["frontier", "frontier"] and r.model == "frontier" and r.fallbacks == 0
+
+
+def test_public_server_keeps_revoke_and_quarantine_for_the_owner(monkeypatch):
+    from fastapi.testclient import TestClient
+
+    from kintsugi import api, config
+    monkeypatch.setattr(config, "OWNER_WEB_KEY", "s3cret")
+    c = TestClient(api.app)  # no `with`: no startup, and a 403 never reaches the handler or the DB
+    for path in ("/api/revoke/L-x", "/api/quarantine/L-x/approve"):
+        assert c.post(path).status_code == 403
+        assert c.post(path, headers={"X-Owner-Key": "nope"}).status_code == 403
+    api.owner("s3cret")  # the right key passes
+    monkeypatch.setattr(config, "OWNER_WEB_KEY", "")
+    api.owner("")  # local server (no key set): open, as before
