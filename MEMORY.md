@@ -18,6 +18,7 @@ Living facts and decisions. Append; don't rewrite history. Date every entry.
 - **Anti-projects (banned):** basic RAG, Streamlit apps, **dashboard as main feature**, AI mental-health advisor, personality analyzers, image analyzers, education chatbots, job screeners, nutrition/sports coaches, medical advice.
 - **Submission:** form + **1-minute demo video** of what was built during the event + public repo.
 - **Judging round 1** (~3 min live demo + 1–2 min Q&A): Impact 20% · **Technical Demo 35%** · Creativity 15% · **Implementation Difficulty 30%**. Round 2: top 6 on stage, same criteria, equal weights.
+  Judges' questions (Thomas, 2026-10-11 18:10): **Impact**: does it address a significant real-world issue or pain point? · **Technical Demo**: does the actual demo impress, is it well-engineered and working? · **Creativity**: is this something you have never seen before? · **Implementation Difficulty**: how hard is it to recreate, is the technical depth more than a few AI prompts away?
 - Discord: https://discord.gg/YnZj6RDSX (#rules has on-day rules). Contact: gina@cerebralvalley.ai. (Wi-Fi creds in the guide; never commit them, the repo is public.)
 
 ## Constraints
