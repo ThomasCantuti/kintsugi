@@ -128,6 +128,9 @@ Living facts and decisions. Append; don't rewrite history. Date every entry.
   keyed test revoke of a made-up id on prod, 17:33 PT. Fixed 74814fe (nothing active behind the id → 404, no version).
   v12 = "Label options so letters work" (G-0f1848, Telegram teach 17:31). Raindrop flagged Thomas's 17:24 focus turn in 73 s
   (G-54f9ac); the gate rejected all 3 candidates ("his wording, 2 hours" broke focus-01 twice; the other two didn't fix the replay).
+  19:08 PT (eb7c045): a stranger's request saved as a note now pings Thomas on Telegram ("📝 A stranger left you a message").
+  Each `railway up` overlaps old and new containers for ~10 s: 1–2 Telegram `Conflict` lines, then clean (checked 02:08 UTC).
+  Thomas's 18:40–18:51 practice: v13 revoked "Say degrees, not F", v14/v15 = degree-symbol / no-Fahrenheit lessons.
 
 ## Open questions
 - ~~Modelence: Python / custom start command?~~ Answered: Node.js only (D31).
