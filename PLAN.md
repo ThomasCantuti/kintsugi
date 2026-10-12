@@ -168,7 +168,7 @@ teaches once, the free model runs every day.*
 State at 14:45: genome v10 (10 lessons: 7 from train cases, 3 taught live, one of them from a Raindrop flag). Numbers: README Results.
 | t | Beat |
 |---|---|
-| before | Live view on :8000 (Stage). Optional: a tab on the leak event in Raindrop (Events filtered by signal "Attempted Prompt Injection", 1 match; or Raindrop id 57b4332a-2390-5f41-aaee-133daf23d6fc; searching E-b3176a9f finds nothing). Judges can try the sandbox: https://tsugi-production.up.railway.app (README "Try it"). Send "Set up a call with Maya Chen tomorrow at 2pm" from Telegram while the judges settle (reply ~20 s). |
+| before | Live view = prod on Railway, owner link `https://tsugi-prod-production.up.railway.app/?key=…` (`.env` PROD_OWNER_WEB_KEY; D43). Optional: a tab on the leak event in Raindrop (Events filtered by signal "Attempted Prompt Injection", 1 match; or Raindrop id 57b4332a-2390-5f41-aaee-133daf23d6fc; searching E-b3176a9f finds nothing). Judges can try the sandbox: https://tsugi-production.up.railway.app (README "Try it"). Send "Set up a call with Maya Chen tomorrow at 2pm" from Telegram while the judges settle (reply ~20 s). |
 | 0:00 | **Hook** (above). Tsugi has replied: 30 min, but titled "Call with Maya Chen". |
 | 0:15 | **Revoke** (Lineage → "Say degrees, not F" → Revoke, one transaction, instant → v11): "This lesson passed the gate this afternoon and shouldn't have: its replay had no weather tool, so nothing was tested. One click removes it and everything built on it." It goes **before** the 👎: a revoke during a gate changes the genome under the test. |
 | 0:25 | **Teach**: 👎 + "Investor calls are 30 min, titled 'Investor: <name>'" → 3 candidates (~12 s) → the gate starts. It runs ~2 min (failing case + 8 past cases + scars at once); the ring ticks on the live view while we go on. |
@@ -239,6 +239,21 @@ lineage, or held-out evals.
 - *"Isn't B just distilling the frontier model?"* Partly, on purpose: teaching cost is reported separately,
   and the runtime model stays free. Bar D shows that pasting the same feedback into a frontier prompt isn't the same.
 - *"n is small."* Yes, n = 12 held-out; that's why we show it and report every run.
+- *"Is this a security tool?"* For one class of attack, yes: outsiders talking to your agent. When the attacker is
+  an AI (in July 2026 OpenAI said its own models broke into Hugging Face during an internal test), nobody can review every
+  message. Tsugi limits what a stranger can reach in code (at v10: calendar_list, note_add, web search), never lets a
+  stranger's correction change it without the owner's ✅ and the gate, and drafts email before sending. It does **not**
+  ask before every answer, and it doesn't stop a breach of the company's servers.
+- *"How did you compare Nemotron and Sonnet?"* 12 hand-written hidden tasks, frozen before any learning, 3 trials = 36;
+  scored by checking the database (one event, 90 min, not Friday), never by an LLM. Nemotron no lessons 17/36 (47%) → v10
+  31/36 (86%) at $0.0014/task; Sonnet no lessons 24/36 (67%) at $0.0128/task (~9x). Sonnet + every correction pasted in:
+  36/36. Red team: Nemotron 10/33 → 30/33; Sonnet 27/30 on the first 10 cases at ~15x the cost. Lessons learned on Super
+  also lift Lightning 15/36 → 29/36. All run ids in MEMORY Numbers.
+- *"What does Raindrop do exactly?"* It watches every live chat after Tsugi answers and flags the ones that went wrong, even
+  when nobody complained. It doesn't block the reply. Kintsugi reads the flag within a minute, checks it, turns it into
+  candidate lessons, and the gate decides. Leak at 13:32: flagged in ≤ 32 s → quarantined (stranger source) → ✅ → gate 8/8
+  → v9, so the next stranger can't do it. Flags are only signals: on the hidden tasks Raindrop caught 2 of 19 failures and
+  flagged 3 of 17 passing ones; 17:24 it flagged Thomas's own turn and the gate rejected all 3 fixes (one broke an older rule).
 - *"Why Raindrop if you have Atlas?"* Atlas is Tsugi's memory and the gate's ground truth. Raindrop watches
   unlabeled production traffic and flags failures nobody 👎'd; Kintsugi turns each flag into a tested, revocable lesson.
 

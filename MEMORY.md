@@ -115,6 +115,19 @@ Living facts and decisions. Append; don't rewrite history. Date every entry.
   Deploy only from a clean export (`git archive HEAD | tar -x -C <dir>`, then `railway up --service tsugi` there):
   `railway up` uploads the working tree, including other sessions' uncommitted files (happened once at 15:11, fixed 15:14).
 
+- 2026-10-11 D43 **Tsugi's bot runs on Railway now** (Thomas ~17:30: "the prod on railway must have all the secrets, not the
+  localhost projects"; he chose a new service + an owner key). Service `tsugi-prod` (564a82d4-dcb8-4237-81da-ab427a4696c9),
+  https://tsugi-prod-production.up.railway.app: real DB `kintsugi`, Telegram + Raindrop + owner id, HOST=0.0.0.0, spend cap 400
+  turns / 40 teaches per process. Revoke and quarantine need `OWNER_WEB_KEY` (169de7b): open the page once with `?key=<.env
+  PROD_OWNER_WEB_KEY>` (kept in the browser, dropped from the URL bar); everyone else gets the view + stranger chat. The Mac bot
+  was stopped 17:57: **never run `python -m kintsugi` locally with the Telegram token** (two pollers = Conflict). Judges' sandbox
+  `tsugi` unchanged. Prod needs the Atlas 0.0.0.0/0 access-list entry now. Deploy: clean HEAD export + `railway up --service
+  tsugi-prod`; vars via GraphQL `variableCollectionUpsert` with skipDeploys, then `railway up` (no repo linked: a redeploy reuses
+  the last upload). Logs: GraphQL `deploymentLogs`. **Disclosure: genome v11 is empty** (v10's 10 lessons, nothing revoked): a
+  keyed test revoke of a made-up id on prod, 17:33 PT. Fixed 74814fe (nothing active behind the id → 404, no version).
+  v12 = "Label options so letters work" (G-0f1848, Telegram teach 17:31). Raindrop flagged Thomas's 17:24 focus turn in 73 s
+  (G-54f9ac); the gate rejected all 3 candidates ("his wording, 2 hours" broke focus-01 twice; the other two didn't fix the replay).
+
 ## Open questions
 - ~~Modelence: Python / custom start command?~~ Answered: Node.js only (D31).
 - ~~**Live teach convention**~~ Answered: investor calls (D36). Still open: learning cycle 66–95 s vs ~55 s teach beat (the v7 cycle
@@ -228,6 +241,8 @@ Living facts and decisions. Append; don't rewrite history. Date every entry.
 - 2026-10-11 The live world has a leftover "Call with Maya" event on 2026-10-12 at 15:00 (earlier testing): the investor teach
   ("tomorrow at 2pm with Maya Chen") sees it and asks instead of booking. Clear it before the stage (Thomas's OK; live world).
 - (append gotchas here: API quirks, M0 limits hit, things that broke)
+- 2026-10-11 Never check a write endpoint on prod with a made-up id: revoke of an unknown id made the empty genome v11
+  (fixed 74814fe). Check the 403 without the key, and leave the keyed path to the tests.
 - 2026-10-11 Sandbox = project "thomas.cantuti@gmail.com's Sandbox Project" (6acbc97224b62b0067006c45), Cluster0 **M10 AWS us-west-1**, MongoDB 8.0. Venue IP 12.94.170.82 added to the access list (hotspot = new IP → `atlas accessLists create <ip> --projectId …`).
 - 2026-10-11 Only ONE `python -m kintsugi` may run: two instances → Telegram `Conflict: terminated by other getUpdates request`. An orphan ignored SIGTERM; needed `kill -9`.
 - 2026-10-11 OpenRouter `/api/v1/key` shows `free_model_daily_requests` (50/day on free tier). Voyage via `https://ai.mongodb.com/v1` works (voyage-4-lite, 1024 dims). Nemotron embed on OpenRouter = 2048 dims.

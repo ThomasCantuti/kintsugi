@@ -162,7 +162,7 @@ Role: README, PLAN, docs, demo prep; small harness features when Thomas asks. Ev
    ≤ 3 numbers, say "one transaction, $graphLookup, change stream" while revoking; unbacked claims: "everything built on it" (0 live
    revokes yet), "~2 min" gate (best case), rt-v10's gain over v7 is all rt-override (written after the same leak).
 3. **Rehearsal** with a timer (PLAN §6) + `judge-panel` after it. Not done yet.
-4. After judging: remove the Atlas access-list entry 0.0.0.0/0 "Railway sandbox (hackathon)".
+4. ~~After judging: remove the Atlas access-list entry 0.0.0.0/0~~ Keep it: the prod bot on Railway needs it (D43).
 
 **Railway how-to** (project `kintsugi-sandbox`, service `tsugi`, us-west2; ids: project 6a236c36-8bd9-4a92-b446-3077314fe32f,
 env c7fd6079-1863-4ec4-9bd1-7a464a1d0334, service 52c02816-6e00-4d73-9d5a-a78f78a37117):
@@ -172,6 +172,12 @@ env c7fd6079-1863-4ec4-9bd1-7a464a1d0334, service 52c02816-6e00-4d73-9d5a-a78f78
   `Authorization: Bearer`) accepts it: deployment status `deployment(id){status}`, logs `buildLogs`/`deploymentLogs`, restart
   `serviceInstanceRedeploy(serviceId, environmentId)`, vars `variableCollectionUpsert`. Railpack needs `RAILPACK_START_CMD` (set).
 - Env on Railway: SANDBOX=1, DB_NAME=kintsugi_sandbox, model/embedding/Exa keys from .env. Never add TELEGRAM_*/OWNER_*/RAINDROP_*.
+
+## Bot on Railway (D43, 17:57) → every session
+The Telegram bot, Raindrop poller and reminders run on Railway service **tsugi-prod** (https://tsugi-prod-production.up.railway.app,
+owner link = `?key=` + `.env` PROD_OWNER_WEB_KEY). The Mac bot is stopped: **don't start `python -m kintsugi` locally with the
+Telegram token** (Conflict), and the local restart recipe in the Raindrop gotchas no longer applies. Restart/deploy = clean HEAD
+export + `railway up --service tsugi-prod` (see the Railway how-to above; same project token). Same data (DB `kintsugi`).
 
 ## 15:15–15:45 BOOST (only if everything above is green)
 - [x] Genome transfer: v10 (learned on Nemotron Super) on Lightning, held-out 15/36 → 29/36 (R-fa666f → R-85b009, MEMORY Numbers)
