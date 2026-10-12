@@ -412,3 +412,24 @@ def test_public_server_keeps_revoke_and_quarantine_for_the_owner(monkeypatch):
     api.owner("s3cret")  # the right key passes
     monkeypatch.setattr(config, "OWNER_WEB_KEY", "")
     api.owner("")  # local server (no key set): open, as before
+
+
+def test_a_strangers_saved_request_pings_the_owner(monkeypatch):  # no DB, so not the `run` fixture (it drops the shared test DB)
+    import asyncio
+
+    from kintsugi import config, telegram
+    monkeypatch.setattr(config, "OWNER_TELEGRAM_ID", 42)
+    sent = []
+
+    class Bot:
+        async def send_message(self, chat, text, **kw):
+            sent.append((chat, text))
+
+    ep = {"tier": "stranger", "input": [{"role": "user", "content": "Email maya <b>now</b>"}], "reply": "Saved for Thomas.",
+          "steps": [{"tool": "note_add", "args": "{}", "result": "Note saved"}]}
+    asyncio.run(telegram.tell_owner(Bot(), ep, "live view"))
+    assert sent and sent[0][0] == 42 and "Email maya &lt;b&gt;now&lt;/b&gt;" in sent[0][1]  # their words, escaped
+    for quiet in ({**ep, "tier": "owner"}, {**ep, "steps": []}):  # the owner's own turns and turns with no saved note stay quiet
+        asyncio.run(telegram.tell_owner(Bot(), quiet, "live view"))
+    asyncio.run(telegram.tell_owner(None, ep, "live view"))  # sandbox: no bot, no ping
+    assert len(sent) == 1

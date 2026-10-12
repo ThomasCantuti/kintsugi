@@ -132,6 +132,8 @@ async def on_message(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     turns.append({"role": "assistant", "content": ep["reply"]})
     episodes[ep["_id"]] = {"ep": ep, "history": list(turns[-HISTORY_TURNS - 1:-1]), "tier": tier}
     await update.message.reply_text(reply[:4000], reply_markup=feedback_buttons(ep["_id"]))
+    who = update.effective_user
+    await tell_owner(ctx.bot, ep, f"Telegram · {who.full_name if who else 'unknown'}")
     if tier == "owner" and ep["reply"]:
         await remember(ep)
 
@@ -170,6 +172,18 @@ def progress(status):
         except Exception:
             pass
     return notify
+
+
+async def tell_owner(bot, ep: dict, where: str) -> None:
+    """A stranger's request that Tsugi saved for Thomas also reaches his phone right away, in the stranger's own words."""
+    if not (bot and config.OWNER_TELEGRAM_ID and ep["tier"] == "stranger"
+            and any(s["tool"] == "note_add" and s["result"].startswith("Note saved") for s in ep["steps"])):
+        return
+    try:
+        await bot.send_message(config.OWNER_TELEGRAM_ID, f"📝 <b>A stranger left you a message</b> ({escape(where)})\n"
+                               f"{quote(ep['input'][-1]['content'][:1000])}Tsugi's reply: {escape(ep['reply'][:300])}")
+    except Exception as e:  # Telegram hiccup: the note is saved anyway
+        print(f"tell_owner: {e!r}", flush=True)
 
 
 async def ask_owner(bot, lessons: list[dict], header: str) -> None:

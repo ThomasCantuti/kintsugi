@@ -259,6 +259,7 @@ async def chat(body: Chat):
             await agent.save(ep, "live", chat=f"web-{tier}")
             turns.append({"role": "assistant", "content": ep["reply"]})
             await q.put({"reply": ep["reply"] or ep["error"] or "…", "episode_id": ep["_id"]})
+            await telegram.tell_owner(bot, ep, "live view")
         except Exception as e:
             await q.put({"error": repr(e)[:200]})
 
