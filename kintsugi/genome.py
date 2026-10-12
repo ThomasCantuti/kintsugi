@@ -120,6 +120,8 @@ async def revoke(node_id: str) -> dict:
     ids = [node_id] + await descendants(node_id)
 
     async def txn(s):
+        if not await db.lessons.count_documents({"_id": {"$in": ids}, "status": "active"}, session=s):
+            raise LookupError(node_id)  # unknown, already revoked or nothing live built on it: no empty genome version
         await db.lessons.update_many({"_id": {"$in": ids}, "status": {"$in": ["active", "quarantined"]}},
                                      {"$set": {"status": "revoked", "revoked_at": datetime.now(UTC)}}, session=s)
         await db.lineage.update_many({"_id": {"$in": ids}}, {"$set": {"status": "revoked"}}, session=s)

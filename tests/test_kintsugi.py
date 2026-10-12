@@ -3,6 +3,7 @@ import inspect
 import json
 from datetime import UTC, datetime, timedelta
 
+import pytest
 from bson import ObjectId
 
 from kintsugi import agent, evals, gate, genome, learner, models, tools
@@ -314,6 +315,10 @@ def test_revoke_cascades_through_lineage(run, monkeypatch):
     assert run(db.baselines.find_one({"_id": 4}))["passing"] == ["focus", "note"]
     run(genome.revoke(c["_id"]))
     assert run(db.baselines.find_one({"_id": 5}))["passing"] == ["note"]
+    for again in (c["_id"], "L-unknown"):  # nothing active behind it: no new (empty) genome version
+        with pytest.raises(LookupError):
+            run(genome.revoke(again))
+    assert run(genome.current())["version"] == 5
 
 
 def test_live_turns_go_to_raindrop_with_private_notes_hidden(run, monkeypatch):

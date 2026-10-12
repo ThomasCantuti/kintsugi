@@ -204,7 +204,10 @@ def owner(x_owner_key: str = Header("")) -> None:
 
 @app.post("/api/revoke/{node_id}", dependencies=[Depends(owner)])
 async def revoke(node_id: str):
-    return await genome.revoke(node_id)
+    try:
+        return await genome.revoke(node_id)
+    except LookupError:
+        raise HTTPException(404, "Nothing live to revoke there.")
 
 
 @app.post("/api/quarantine/{lesson_id}/{decision}", dependencies=[Depends(owner)])
