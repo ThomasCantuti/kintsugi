@@ -81,7 +81,7 @@ playwright-cli blocks file://). Icon seams = the 7 lessons live at v7.
       "Thomas said no" (fixed e553461). The teach now also sends Thomas the Telegram ✅/❌ card (e176eea, bot restarted 14:40);
       on live at 15:00 (stranger "Dana from the climbing gym", E-9ce60790): card arrived on Thomas's phone, ❌ None → 3 rejected, v10 unchanged.
 Rebuild after any web/src change: `cd web && npm run build`, commit `web/dist`; since 17:57 it goes live only after `railway up
---service tsugi-prod` from a clean HEAD export (D43; the sandbox `tsugi` likewise). Never start the local bot (Telegram Conflict).
+--service tsugi-prod` from a clean HEAD export (D43; `tsugi` is now only a redirect to prod, D44: never deploy it from the repo). Never start the local bot (Telegram Conflict).
 A hash-only navigation doesn't reload the app: reload to see a new build. Revoke/approve on prod need the owner key (open once
 with `?key=`); without it the toast reads "Only Thomas can do this."
 
